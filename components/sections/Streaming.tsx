@@ -57,8 +57,7 @@ export default function StreamingSection() {
                         <div className="relative aspect-video rounded-3xl overflow-hidden border border-red-500/20 shadow-2xl shadow-red-900/20 bg-black group-hover:shadow-red-500/30 transition-shadow">
                             <iframe
                                 className="absolute inset-0 w-full h-full"
-                                // Using channel uploads list
-                                src="https://www.youtube.com/embed/videoseries?list=UUc-P-q-q-q-q-q-q-q-q-q-q"
+                                src="https://www.youtube.com/embed/7UN_eYHLssE"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
                             ></iframe>
