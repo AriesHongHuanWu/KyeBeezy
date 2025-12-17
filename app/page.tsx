@@ -1,13 +1,15 @@
 "use client";
 
 import { ShaderAnimation } from "@/components/ui/shader-animation";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
 import Navbar from "@/components/Navbar";
 import AboutSection from "@/components/sections/About";
 import MusicSection from "@/components/sections/Music";
 import StreamingSection from "@/components/sections/Streaming";
 import ContactSection from "@/components/sections/Contact";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Twitch, Youtube, Music } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
     return (
@@ -22,28 +24,51 @@ export default function Home() {
 
             <div className="relative z-10 flex flex-col">
                 {/* Hero Section */}
-                <section id="home" className="h-screen flex flex-col items-center justify-center relative px-4">
+                <section id="hero" className="min-h-screen flex flex-col items-center justify-center relative pt-20">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="text-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.5 }}
+                        className="z-10 flex flex-col items-center justify-center space-y-8 md:space-y-12 w-full max-w-4xl px-4"
                     >
-                        <div className="mb-6 inline-block">
-                            {/* Animated Gradient Avatar Border */}
-                            <div className="p-1 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 shadow-2xl shadow-purple-900/50">
-                                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-black flex items-center justify-center text-4xl md:text-6xl font-bold border-4 border-black">
-                                    KB
-                                </div>
-                            </div>
+                        {/* Dynamic Title */}
+                        <div className="h-32 md:h-48 flex items-center justify-center w-full z-20">
+                            <GooeyText
+                                texts={["KYE BEEZY", "ARTIST", "STREAMER", "VISIONARY"]}
+                                morphTime={1.5}
+                                cooldownTime={1}
+                                className="font-outfit"
+                            />
                         </div>
 
-                        <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-gray-400 drop-shadow-sm">
-                            KYE BEEZY
-                        </h1>
-                        <p className="text-xl md:text-2xl text-purple-200 font-light tracking-widest uppercase mb-8">
-                            Digital Creator & Artist
-                        </p>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8, duration: 0.8 }}
+                            className="text-center space-y-4"
+                        >
+                            <p className="text-xl md:text-2xl font-light tracking-[0.2em] text-white/80">
+                                DIGITAL CREATOR & ARTIST
+                            </p>
+                        </motion.div>
+
+                        {/* Social Links - Enhanced with glass effect */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.2, duration: 0.8 }}
+                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10"
+                        >
+                            <Link href="https://twitch.tv/" target="_blank" className="hover:text-purple-400 transition-colors transform hover:scale-110 duration-300">
+                                <Twitch className="w-8 h-8" />
+                            </Link>
+                            <Link href="https://www.bandlab.com/" target="_blank" className="hover:text-red-400 transition-colors transform hover:scale-110 duration-300">
+                                <Music className="w-8 h-8" />
+                            </Link>
+                            <Link href="https://youtube.com/" target="_blank" className="hover:text-red-600 transition-colors transform hover:scale-110 duration-300">
+                                <Youtube className="w-8 h-8" />
+                            </Link>
+                        </motion.div>
                     </motion.div>
 
                     <motion.a
