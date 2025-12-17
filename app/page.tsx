@@ -1,80 +1,68 @@
+"use client";
+
 import { ShaderAnimation } from "@/components/ui/shader-animation";
-import { Youtube, Twitch, Music, ExternalLink } from "lucide-react";
-import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import AboutSection from "@/components/sections/About";
+import MusicSection from "@/components/sections/Music";
+import StreamingSection from "@/components/sections/Streaming";
+import ContactSection from "@/components/sections/Contact";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 export default function Home() {
-    const socialLinks = [
-        {
-            name: "Twitch",
-            icon: <Twitch className="w-6 h-6" />,
-            url: "https://www.twitch.tv/realkyebeezylive",
-            color: "hover:bg-purple-600",
-        },
-        {
-            name: "BandLab",
-            icon: <Music className="w-6 h-6" />,
-            url: "https://www.bandlab.com/kyebeezy",
-            color: "hover:bg-red-600",
-        },
-        {
-            name: "YouTube",
-            icon: <Youtube className="w-6 h-6" />,
-            url: "https://www.youtube.com/@kyebeezy",
-            color: "hover:bg-red-600",
-        },
-        {
-            name: "YouTube Live",
-            icon: <Youtube className="w-6 h-6" />,
-            url: "https://www.youtube.com/@KyeBeezyLiveOnTwitch",
-            color: "hover:bg-red-600",
-        },
-    ];
-
     return (
-        <main className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden text-white font-sans">
-            <ShaderAnimation />
+        <main className="relative text-white font-sans selection:bg-purple-500/30">
+            {/* Background - Fixed */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <ShaderAnimation />
+            </div>
 
-            <div className="z-10 bg-black/30 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 w-full max-w-2xl text-center shadow-2xl animate-fade-in-up">
-                {/* Profile / Header Section */}
-                <div className="mb-8">
-                    <div className="w-32 h-32 mx-auto bg-gradient-to-tr from-purple-500 to-blue-500 rounded-full mb-6 p-1">
-                        {/* Placeholder for Profile Image if available, otherwise Gradient Avatar */}
-                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-4xl font-bold">
-                            KB
-                        </div>
-                    </div>
-                    <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                        Kye Beezy
-                    </h1>
-                    <p className="text-lg md:text-xl text-gray-300 font-medium">
-                        Streamer • Musician • Content Creator
-                    </p>
-                </div>
+            {/* Navigation */}
+            <Navbar />
 
-                {/* Links Section */}
-                <div className="space-y-4">
-                    {socialLinks.map((link) => (
-                        <Link
-                            key={link.url}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/30 transition-all duration-300 ${link.color} hover:shadow-lg hover:bg-opacity-20`}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">
-                                    {link.icon}
+            <div className="relative z-10 flex flex-col">
+                {/* Hero Section */}
+                <section id="home" className="h-screen flex flex-col items-center justify-center relative px-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="text-center"
+                    >
+                        <div className="mb-6 inline-block">
+                            {/* Animated Gradient Avatar Border */}
+                            <div className="p-1 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 shadow-2xl shadow-purple-900/50">
+                                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-black flex items-center justify-center text-4xl md:text-6xl font-bold border-4 border-black">
+                                    KB
                                 </div>
-                                <span className="text-lg font-semibold">{link.name}</span>
                             </div>
-                            <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                    ))}
-                </div>
+                        </div>
 
-                {/* Footer */}
-                <div className="mt-12 text-sm text-gray-500">
-                    © {new Date().getFullYear()} Kye Beezy. All rights reserved.
+                        <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-gray-400 drop-shadow-sm">
+                            KYE BEEZY
+                        </h1>
+                        <p className="text-xl md:text-2xl text-purple-200 font-light tracking-widest uppercase mb-8">
+                            Digital Creator & Artist
+                        </p>
+                    </motion.div>
+
+                    <motion.a
+                        href="#about"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1, duration: 1, repeat: Infinity, repeatType: "reverse" }}
+                        className="absolute bottom-10 p-2 text-white/50 hover:text-white transition-colors"
+                    >
+                        <ChevronDown className="w-8 h-8" />
+                    </motion.a>
+                </section>
+
+                {/* Content Sections */}
+                <div className="bg-gradient-to-b from-transparent via-black/50 to-black backdrop-blur-sm">
+                    <AboutSection />
+                    <MusicSection />
+                    <StreamingSection />
+                    <ContactSection />
                 </div>
             </div>
         </main>
