@@ -42,10 +42,10 @@ export default function Navbar() {
 
     return (
         <nav
-            className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-black/50 backdrop-blur-md py-4" : "bg-transparent py-6"
+            className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "bg-background/80 backdrop-blur-md py-4 border-b border-border" : "bg-transparent py-6"
                 }`}
         >
-            <div className="container mx-auto px-6 flex justify-between items-center text-white">
+            <div className="container mx-auto px-6 flex justify-between items-center text-foreground">
                 <a href="#home" className="text-2xl font-bold tracking-tighter hover:text-purple-400 transition-colors">
                     KYE BEEZY
                 </a>
@@ -56,18 +56,18 @@ export default function Navbar() {
                         <a
                             key={item.name}
                             onClick={(e) => handleNavClick(e, item.href)}
-                            className="text-white/70 hover:text-white transition-colors text-sm uppercase tracking-widest cursor-pointer"
+                            className="text-muted-foreground hover:text-foreground transition-colors text-sm uppercase tracking-widest cursor-pointer"
                         >
                             {item.name}
                         </a>
                     ))}
-                    <div className="pl-4 border-l border-white/10">
+                    <div className="pl-4 border-l border-border">
                         <ThemeToggle />
                     </div>
                 </div>
 
                 {/* Mobile Menu Button */}
-                <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
+                <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
                     {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
             </div>
@@ -79,7 +79,7 @@ export default function Navbar() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="absolute top-full left-0 w-full bg-black/95 backdrop-blur-xl border-t border-white/10 md:hidden flex flex-col items-center py-8 gap-6"
+                        className="absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-t border-border md:hidden flex flex-col items-center py-8 gap-6 text-foreground"
                     >
                         {navLinks.map((link) => (
                             <a
