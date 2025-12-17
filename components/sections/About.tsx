@@ -47,31 +47,31 @@ export default function AboutSection() {
                         </div>
                     </motion.div>
 
-                    {/* Image Area - The Cutout */}
-                    <div className="relative h-[500px] md:h-[700px] w-full flex items-end justify-center md:justify-end">
-                        {/* Glow behind the image */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-600/30 rounded-full blur-[100px] -z-10"></div>
+                    {/* Image Area - Refined */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="relative h-[500px] md:h-[700px] w-full flex items-end justify-center z-10 mt-10 md:mt-0"
+                    >
+                        {/* Glow effect behind image instead of drop-shadow border */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/20 to-transparent opacity-60 rounded-full blur-3xl transform translate-y-20 pointer-events-none" />
 
-                        <motion.div
-                            initial={{ opacity: 0, y: 100 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1, delay: 0.2 }}
-                            viewport={{ once: true }}
-                            className="relative w-full h-full"
-                        >
+                        <div className="relative w-full h-full">
                             {/* The Cutout Image */}
                             <Image
                                 src="/kye-cutout-new.png"
                                 alt="Kye Beezy"
                                 fill
-                                className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                                className="object-contain object-bottom"
                                 priority
                             />
+                        </div>
 
-                            {/* Bottom fade for seamless blending */}
-                            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-10" />
-                        </motion.div>
-                    </div>
+                        {/* Bottom Gradient for blending - Semantic Color */}
+                        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background to-transparent z-20" />
+                    </motion.div>
                 </div>
             </div>
         </section>
