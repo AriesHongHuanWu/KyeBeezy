@@ -20,9 +20,6 @@ export default function AboutSection() {
                     className="absolute right-0 bottom-0 w-full md:w-[65%] h-[70vh] md:h-[90vh] z-0 pointer-events-none"
                     style={{ transform: 'translateX(10%)' }} // Slight offset to right to not clear text completely
                 >
-                    {/* Glow behind image */}
-                    <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px]" />
-
                     <div className="relative w-full h-full">
                         <Image
                             src="/kye-cutout-new.png"
