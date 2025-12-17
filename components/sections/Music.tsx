@@ -89,7 +89,7 @@ export default function MusicSection() {
                         <div className="bg-zinc-900/50 backdrop-blur-md rounded-3xl p-4 border border-white/10 hover:border-blue-500/50 transition-all hover:shadow-2xl hover:shadow-blue-900/20">
                             <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-blue-800 to-indigo-900">
                                 <iframe
-                                    src="https://www.bandlab.com/embed/?id=12345678-1234-1234-1234-1234567890ab" // Placeholder ID 
+                                    src="https://www.bandlab.com/embed/?id=aa0e3a47-380d-ef11-96f5-000d3a425266" // Duplicating the first track's ID for consistency
                                     className="absolute inset-0 w-full h-full"
                                     frameBorder="0"
                                     allow="autoplay"
