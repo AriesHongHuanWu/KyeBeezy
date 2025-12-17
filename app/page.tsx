@@ -7,6 +7,7 @@ import AboutSection from "@/components/sections/About";
 import MusicSection from "@/components/sections/Music";
 import StreamingSection from "@/components/sections/Streaming";
 import ContactSection from "@/components/sections/Contact";
+import SponsorsSection from "@/components/sections/Sponsors";
 import { motion } from "framer-motion";
 import { ChevronDown, Twitch, Youtube, Music } from "lucide-react";
 import Link from "next/link";
@@ -81,6 +82,8 @@ export default function Home() {
                         <ChevronDown className="w-8 h-8" />
                     </motion.a>
                 </section>
+
+                <SponsorsSection />
 
                 {/* Content Sections */}
                 <div className="bg-gradient-to-b from-transparent via-black/50 to-black backdrop-blur-sm">

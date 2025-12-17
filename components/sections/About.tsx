@@ -61,7 +61,7 @@ export default function AboutSection() {
                         >
                             {/* The Cutout Image */}
                             <Image
-                                src="/kye-cutout.png"
+                                src="/kye-cutout-new.png"
                                 alt="Kye Beezy"
                                 fill
                                 className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(168,85,247,0.4)]"

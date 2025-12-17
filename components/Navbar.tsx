@@ -3,18 +3,34 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
-        const handleScroll = () => {
+        const onScroll = () => {
             setScrolled(window.scrollY > 50);
         };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", onScroll);
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
+
+    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+        e.preventDefault();
+        const targetId = href.replace("#", "");
+        const elem = document.getElementById(targetId);
+        if (elem) {
+            // 80px offset for fixed navbar
+            const offsetTop = elem.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({
+                top: offsetTop,
+                behavior: "smooth"
+            });
+        }
+        setIsOpen(false);
+    };
 
     const navLinks = [
         { name: "Home", href: "#home" },
@@ -36,15 +52,18 @@ export default function Navbar() {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex gap-8">
-                    {navLinks.map((link) => (
+                    {navLinks.map((item) => (
                         <a
-                            key={link.name}
-                            href={link.href}
-                            className="hover:text-purple-400 transition-colors text-sm font-medium tracking-wide uppercase"
+                            key={item.name}
+                            onClick={(e) => handleNavClick(e, item.href)}
+                            className="text-white/70 hover:text-white transition-colors text-sm uppercase tracking-widest cursor-pointer"
                         >
-                            {link.name}
+                            {item.name}
                         </a>
                     ))}
+                    <div className="pl-4 border-l border-white/10">
+                        <ThemeToggle />
+                    </div>
                 </div>
 
                 {/* Mobile Menu Button */}
