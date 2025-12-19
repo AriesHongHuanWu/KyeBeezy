@@ -101,13 +101,13 @@ export default function ContactSection() {
                         </p>
 
                         <div className="flex flex-col gap-6">
-                            <a href="mailto:contact@kyebeezy.com" className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 dark:bg-black/20 backdrop-blur-md border border-white/10 hover:border-purple-500/50 transition-all w-fit">
+                            <a href="mailto:KYEBEEZY@GMAIL.COM" className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 dark:bg-black/20 backdrop-blur-md border border-white/10 hover:border-purple-500/50 transition-all w-fit">
                                 <div className="p-3 bg-purple-600/20 text-purple-400 rounded-xl group-hover:scale-110 transition-transform">
                                     <Mail className="w-6 h-6" />
                                 </div>
                                 <div>
                                     <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Email Me</p>
-                                    <p className="text-foreground font-medium text-lg">contact@kyebeezy.com</p>
+                                    <p className="text-foreground font-medium text-lg">KYEBEEZY@GMAIL.COM</p>
                                 </div>
                             </a>
                         </div>
@@ -165,8 +165,8 @@ export default function ContactSection() {
                                 type="submit"
                                 disabled={formStatus === 'submitting' || formStatus === 'success'}
                                 className={`w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all duration-500 ${formStatus === 'success' ? 'bg-green-500 text-white' :
-                                        formStatus === 'error' ? 'bg-red-500 text-white' :
-                                            'bg-foreground text-background hover:opacity-90 hover:scale-[1.01]'
+                                    formStatus === 'error' ? 'bg-red-500 text-white' :
+                                        'bg-foreground text-background hover:opacity-90 hover:scale-[1.01]'
                                     }`}
                             >
                                 {formStatus === 'idle' && (
