@@ -94,14 +94,14 @@ export default function MusicSection() {
                             </div>
                         </motion.div>
                     ))}
-            </div>
+                </motion.div>
 
-            <div className="mt-16 text-center">
-                <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold rounded-full hover:bg-white/20 hover:scale-110 transition-all shadow-lg hover:shadow-purple-500/20">
-                    Listen on BandLab <Music className="w-4 h-4" />
-                </Link>
+                <div className="mt-16 text-center">
+                    <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold rounded-full hover:bg-white/20 hover:scale-110 transition-all shadow-lg hover:shadow-purple-500/20">
+                        Listen on BandLab <Music className="w-4 h-4" />
+                    </Link>
+                </div>
             </div>
-        </div>
         </section >
     );
 }

@@ -233,8 +233,8 @@ export default function DubbyPromo() {
                             </motion.div>
                         </Link>
                     ))}
+                </motion.div>
             </div>
-        </div>
         </section >
     );
 }
