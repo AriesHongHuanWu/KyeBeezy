@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, ArrowUp, Send, Check } from "lucide-react";
+import { Mail, ArrowUp, Send, Check, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function ContactSection() {
@@ -9,16 +9,71 @@ export default function ContactSection() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+    const webhookUrl = "https://discord.com/api/webhooks/1451573702440521892/aP1PT73fnyQskZW3X6UkaS6B4saLctdwU9AhVaM_7oKTWGnA_yH9F5pPM_xpqW92vGyf";
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        message: ""
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormStatus('submitting');
-        // Simulate sending
-        setTimeout(() => {
-            setFormStatus('success');
+
+        const payload = {
+            embeds: [
+                {
+                    title: "📬 New Contact Form Submission",
+                    color: 10181046, // Purple-ish
+                    fields: [
+                        {
+                            name: "Name",
+                            value: formData.name,
+                            inline: true
+                        },
+                        {
+                            name: "Email",
+                            value: formData.email,
+                            inline: true
+                        },
+                        {
+                            name: "Message",
+                            value: formData.message
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                }
+            ]
+        };
+
+        try {
+            const response = await fetch(webhookUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                setFormStatus('success');
+                setFormData({ name: "", email: "", message: "" });
+                setTimeout(() => setFormStatus('idle'), 5000);
+            } else {
+                setFormStatus('error');
+                setTimeout(() => setFormStatus('idle'), 3000);
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+            setFormStatus('error');
             setTimeout(() => setFormStatus('idle'), 3000);
-        }, 1500);
+        }
     };
 
     return (
@@ -71,6 +126,9 @@ export default function ContactSection() {
                                     <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-2">Name</label>
                                     <input
                                         type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
                                         required
                                         className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-6 py-4 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
                                         placeholder="Your Name"
@@ -80,6 +138,9 @@ export default function ContactSection() {
                                     <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-2">Email</label>
                                     <input
                                         type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
                                         required
                                         className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-6 py-4 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
                                         placeholder="hello@example.com"
@@ -90,6 +151,9 @@ export default function ContactSection() {
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-2">Message</label>
                                 <textarea
+                                    name="message"
+                                    value={formData.message}
+                                    onChange={handleChange}
                                     required
                                     rows={4}
                                     className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-6 py-4 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all resize-none"
@@ -100,9 +164,9 @@ export default function ContactSection() {
                             <button
                                 type="submit"
                                 disabled={formStatus === 'submitting' || formStatus === 'success'}
-                                className={`w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all duration-500 ${formStatus === 'success'
-                                        ? 'bg-green-500 text-white'
-                                        : 'bg-foreground text-background hover:opacity-90 hover:scale-[1.01]'
+                                className={`w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all duration-500 ${formStatus === 'success' ? 'bg-green-500 text-white' :
+                                        formStatus === 'error' ? 'bg-red-500 text-white' :
+                                            'bg-foreground text-background hover:opacity-90 hover:scale-[1.01]'
                                     }`}
                             >
                                 {formStatus === 'idle' && (
@@ -113,6 +177,9 @@ export default function ContactSection() {
                                 )}
                                 {formStatus === 'success' && (
                                     <>Message Sent <Check className="w-5 h-5" /></>
+                                )}
+                                {formStatus === 'error' && (
+                                    <>Error Sending <AlertCircle className="w-5 h-5" /></>
                                 )}
                             </button>
                         </form>
