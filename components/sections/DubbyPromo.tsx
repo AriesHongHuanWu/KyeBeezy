@@ -63,7 +63,7 @@ export default function DubbyPromo() {
                     </motion.div>
                 </motion.div>
 
-                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                     {/* Chef's Choice (Surprise) */}
                     <Link href="https://www.dubby.gg/products/chefs-choice-energy-tub-we-surprise-you?ref=gvqslrbj" target="_blank">
                         <motion.div
@@ -135,6 +135,44 @@ export default function DubbyPromo() {
 
                                 <div className="mt-auto flex items-center gap-2 text-blue-400 font-bold group-hover:translate-x-2 transition-transform">
                                     HYDRATE NOW <ExternalLink className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </Link>
+
+                    {/* Pushin Punch */}
+                    <Link href="https://www.dubby.gg/products/pushin-punch-energy-drink-tub?ref=gvqslrbj" target="_blank">
+                        <motion.div
+                            whileHover={{ y: -10 }}
+                            className="h-full bg-gradient-to-br from-red-900/20 to-orange-900/20 border border-white/10 rounded-3xl p-1 overflow-hidden relative group"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                            <div className="bg-black/40 backdrop-blur-sm rounded-[22px] p-6 h-full flex flex-col items-center text-center relative z-10">
+                                <div className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    BEST SELLER
+                                </div>
+
+                                <div className="w-48 h-48 mb-6 relative flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-red-500/20 rounded-full blur-3xl group-hover:bg-red-500/40 transition-all duration-500" />
+                                    <Image
+                                        src="/dubby/PushinPunch_Front.png"
+                                        alt="Pushin Punch Energy Tub"
+                                        width={200}
+                                        height={200}
+                                        className="object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] group-hover:scale-110 transition-transform duration-300 relative z-10"
+                                    />
+                                </div>
+
+                                <h3 className="text-2xl font-bold font-outfit mb-2 group-hover:text-red-400 transition-colors">
+                                    Pushin Punch
+                                </h3>
+                                <p className="text-muted-foreground mb-6">
+                                    A refreshing fruit punch kick. The perfect daily driver without the crash.
+                                </p>
+
+                                <div className="mt-auto flex items-center gap-2 text-red-400 font-bold group-hover:translate-x-2 transition-transform">
+                                    GET PUNCHED <ExternalLink className="w-4 h-4" />
                                 </div>
                             </div>
                         </motion.div>
