@@ -87,8 +87,8 @@ export default function Home() {
                 <SponsorsSection />
                 <DubbyPromo />
 
-                {/* Content Sections */}
-                <div className="bg-gradient-to-b from-transparent via-background/80 to-background backdrop-blur-sm">
+                {/* Content Sections - Transparent Wrapper */}
+                <div className="relative z-10 w-full">
                     <AboutSection />
                     <MusicSection />
                     <StreamingSection />
