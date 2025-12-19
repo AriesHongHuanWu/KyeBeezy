@@ -24,6 +24,8 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider";
 import Noise from "@/components/ui/noise";
+import CustomCursor from "@/components/ui/custom-cursor";
+import ScrollProgress from "@/components/ui/scroll-progress";
 
 export default function RootLayout({
   children,
@@ -43,6 +45,8 @@ export default function RootLayout({
         >
           {children}
           <Noise />
+          <CustomCursor />
+          <ScrollProgress />
         </ThemeProvider>
       </body>
     </html>
