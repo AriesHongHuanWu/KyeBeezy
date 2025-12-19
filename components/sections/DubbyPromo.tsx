@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Copy, ExternalLink, Gift, Zap } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -79,7 +79,13 @@ export default function DubbyPromo() {
 
                                 <div className="w-48 h-48 mb-6 relative flex items-center justify-center">
                                     <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/40 transition-all duration-500" />
-                                    <Gift className="w-24 h-24 text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-300" />
+                                    <Image
+                                        src="/dubby/chef-choice.png"
+                                        alt="Chef's Choice Energy Tub"
+                                        width={200}
+                                        height={200}
+                                        className="object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-300 relative z-10"
+                                    />
                                 </div>
 
                                 <h3 className="text-2xl font-bold font-outfit mb-2 group-hover:text-purple-400 transition-colors">
@@ -111,7 +117,13 @@ export default function DubbyPromo() {
 
                                 <div className="w-48 h-48 mb-6 relative flex items-center justify-center">
                                     <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/40 transition-all duration-500" />
-                                    <Zap className="w-24 h-24 text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform duration-300" />
+                                    <Image
+                                        src="/dubby/hydro-sampler.png"
+                                        alt="Hydro Sampler Pack"
+                                        width={200}
+                                        height={200}
+                                        className="object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform duration-300 relative z-10"
+                                    />
                                 </div>
 
                                 <h3 className="text-2xl font-bold font-outfit mb-2 group-hover:text-blue-400 transition-colors">
