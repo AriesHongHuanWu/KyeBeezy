@@ -8,6 +8,7 @@ import MusicSection from "@/components/sections/Music";
 import StreamingSection from "@/components/sections/Streaming";
 import ContactSection from "@/components/sections/Contact";
 import SponsorsSection from "@/components/sections/Sponsors";
+import DubbyPromo from "@/components/sections/DubbyPromo";
 import { motion } from "framer-motion";
 import { ChevronDown, Twitch, Youtube, Music } from "lucide-react";
 import Link from "next/link";
@@ -84,6 +85,7 @@ export default function Home() {
                 </section>
 
                 <SponsorsSection />
+                <DubbyPromo />
 
                 {/* Content Sections */}
                 <div className="bg-gradient-to-b from-transparent via-background/80 to-background backdrop-blur-sm">
