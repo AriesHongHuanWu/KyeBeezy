@@ -118,9 +118,10 @@ export default function DubbyPromo() {
     };
 
     return (
-        <section className="py-20 relative overflow-hidden bg-background transition-colors duration-300">
+        <section className="py-20 relative overflow-hidden transition-colors duration-300">
             {/* Background elements - Subtle in light mode, dark in dark mode */}
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/50 to-background/0 dark:from-purple-900/10 dark:to-background/0 z-0 pointer-events-none" />
+            {/* REMOVED opaque bg-background, adjusted gradient to be very subtle overlay */}
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
                 <motion.div
@@ -129,7 +130,7 @@ export default function DubbyPromo() {
                     viewport={{ once: true }}
                     className="mb-16 text-center"
                 >
-                    <h2 className="text-4xl md:text-5xl font-black font-outfit mb-4 text-foreground">
+                    <h2 className="text-4xl md:text-5xl font-black font-outfit mb-4 text-foreground drop-shadow-md">
                         POWER UP WITH <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">DUBBY</span>
                     </h2>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -140,7 +141,7 @@ export default function DubbyPromo() {
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="mt-8 inline-flex items-center gap-4 bg-background/50 dark:bg-white/5 backdrop-blur-md border border-border/50 dark:border-white/10 p-4 rounded-xl cursor-pointer group shadow-lg dark:shadow-none hover:shadow-xl transition-all duration-300"
+                        className="mt-8 inline-flex items-center gap-4 bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 dark:border-white/10 p-4 rounded-xl cursor-pointer group shadow-xl transition-all duration-300"
                         onClick={handleCopy}
                     >
                         <div className="text-left">
@@ -150,7 +151,7 @@ export default function DubbyPromo() {
                                 <Copy className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
                         </div>
-                        <div className="pl-4 border-l border-border/50 dark:border-white/10">
+                        <div className="pl-4 border-l border-white/20 dark:border-white/10">
                             <span className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">10% OFF</span>
                         </div>
 
@@ -174,12 +175,13 @@ export default function DubbyPromo() {
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, margin: "-50px" }}
-                                className={`h-full bg-gradient-to-br ${product.gradient} border border-border/50 dark:border-white/10 rounded-3xl p-1 overflow-hidden relative group shadow-sm hover:shadow-md dark:shadow-none transition-shadow duration-500`}
+                                className={`h-full bg-gradient-to-br ${product.gradient} border border-white/20 dark:border-white/10 rounded-3xl p-1 overflow-hidden relative group shadow-lg hover:shadow-xl dark:shadow-none transition-shadow duration-500 backdrop-blur-sm`}
                             >
                                 {/* Hover Glow */}
                                 <div className={`absolute inset-0 bg-gradient-to-r ${product.gradient.replace('/10', '/20').replace('/20', '/10')} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-                                <div className="bg-background/60 dark:bg-black/40 backdrop-blur-md rounded-[22px] p-6 h-full flex flex-col items-center text-center relative z-10 transition-colors group-hover:bg-background/80 dark:group-hover:bg-black/30">
+                                {/* Glass Card Content */}
+                                <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl rounded-[22px] p-6 h-full flex flex-col items-center text-center relative z-10 transition-colors group-hover:bg-white/60 dark:group-hover:bg-black/30">
                                     <div className={`absolute top-4 right-4 ${product.tagColor} text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm`}>
                                         {product.tag}
                                     </div>
@@ -206,7 +208,7 @@ export default function DubbyPromo() {
                                     <h3 className={`text-2xl font-bold font-outfit mb-2 transition-colors ${product.hoverText} text-foreground`}>
                                         {product.title}
                                     </h3>
-                                    <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+                                    <p className="text-foreground/80 mb-6 text-sm leading-relaxed">
                                         {product.description}
                                     </p>
 
