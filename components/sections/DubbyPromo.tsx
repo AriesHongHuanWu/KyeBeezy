@@ -167,14 +167,28 @@ export default function DubbyPromo() {
                     </motion.div>
                 </motion.div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-2">
+                <motion.div
+                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-2"
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={{
+                        hidden: {},
+                        show: {
+                            transition: {
+                                staggerChildren: 0.15
+                            }
+                        }
+                    }}
+                >
                     {products.map((product) => (
                         <Link key={product.id} href={product.link} target="_blank">
                             <motion.div
-                                whileHover={{ y: -8 }}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
+                                variants={{
+                                    hidden: { opacity: 0, scale: 0.8, y: 50 },
+                                    show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 60 } }
+                                }}
+                                whileHover={{ y: -10, transition: { duration: 0.2 } }}
                                 className={`h-full bg-gradient-to-br ${product.gradient} border border-white/20 dark:border-white/10 rounded-3xl p-1 overflow-hidden relative group shadow-lg hover:shadow-xl dark:shadow-none transition-shadow duration-500 backdrop-blur-sm`}
                             >
                                 {/* Hover Glow */}
@@ -219,8 +233,8 @@ export default function DubbyPromo() {
                             </motion.div>
                         </Link>
                     ))}
-                </div>
             </div>
-        </section>
+        </div>
+        </section >
     );
 }

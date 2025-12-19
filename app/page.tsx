@@ -34,14 +34,18 @@ export default function Home() {
                         className="z-10 flex flex-col items-center justify-center space-y-8 md:space-y-12 w-full max-w-4xl px-4"
                     >
                         {/* Dynamic Title */}
-                        <div className="h-32 md:h-48 flex items-center justify-center w-full z-20">
+                        <motion.div
+                            className="h-32 md:h-48 flex items-center justify-center w-full z-20"
+                            animate={{ y: [0, -15, 0] }}
+                            transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                        >
                             <GooeyText
                                 texts={["KYE BEEZY", "ARTIST", "STREAMER", "VISIONARY"]}
                                 morphTime={1.5}
                                 cooldownTime={1}
                                 className="font-outfit text-foreground"
                             />
-                        </div>
+                        </motion.div>
 
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -59,7 +63,7 @@ export default function Home() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1.2, duration: 0.8 }}
-                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10"
+                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all"
                         >
                             <Link href="https://twitch.tv/" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Twitch className="w-8 h-8" />

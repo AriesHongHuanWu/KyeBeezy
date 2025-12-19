@@ -49,13 +49,27 @@ export default function MusicSection() {
                     <p className="text-xl text-muted-foreground">Crafting sounds on BandLab</p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <motion.div
+                    className="grid md:grid-cols-3 gap-8"
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={{
+                        hidden: {},
+                        show: {
+                            transition: {
+                                staggerChildren: 0.2
+                            }
+                        }
+                    }}
+                >
                     {tracks.map((track, index) => (
                         <motion.div
                             key={track.id}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 * (index + 1) }}
+                            variants={{
+                                hidden: { opacity: 0, y: 50 },
+                                show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50, damping: 20 } }
+                            }}
                             className="group"
                         >
                             {/* Glassmorphism Card */}
@@ -80,14 +94,14 @@ export default function MusicSection() {
                             </div>
                         </motion.div>
                     ))}
-                </div>
-
-                <div className="mt-16 text-center">
-                    <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold rounded-full hover:bg-white/20 hover:scale-110 transition-all shadow-lg hover:shadow-purple-500/20">
-                        Listen on BandLab <Music className="w-4 h-4" />
-                    </Link>
-                </div>
             </div>
-        </section>
+
+            <div className="mt-16 text-center">
+                <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold rounded-full hover:bg-white/20 hover:scale-110 transition-all shadow-lg hover:shadow-purple-500/20">
+                    Listen on BandLab <Music className="w-4 h-4" />
+                </Link>
+            </div>
+        </div>
+        </section >
     );
 }
