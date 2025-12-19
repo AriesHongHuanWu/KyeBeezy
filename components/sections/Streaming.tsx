@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Youtube, Twitch, ExternalLink, PlayCircle } from "lucide-react";
+import { Youtube, Twitch, ExternalLink, PlayCircle, Gamepad2, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -9,9 +9,9 @@ export default function StreamingSection() {
     const [hovered, setHovered] = useState<string | null>(null);
 
     return (
-        <section id="stream" className="min-h-screen py-20 relative flex items-center">
+        <section id="stream" className="min-h-screen py-20 relative flex flex-col justify-center">
             {/* Transparent Background */}
-            <div className="container mx-auto px-6 z-10">
+            <div className="container mx-auto px-6 z-10 flex flex-col gap-12">
                 <div className="grid lg:grid-cols-2 gap-12">
                     {/* Twitch Column - Glass Card */}
                     <motion.div
@@ -98,6 +98,34 @@ export default function StreamingSection() {
                         </Link>
                     </motion.div>
                 </div>
+
+                {/* Discord Community Banner */}
+                <motion.div
+                    initial={{ y: 50, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                    <Link href="https://discord.gg/JU3MNRGWXq" target="_blank" className="block group relative overflow-hidden rounded-3xl bg-[#5865F2] hover:bg-[#4752C4] transition-colors shadow-2xl shadow-[#5865F2]/20">
+                        <div className="absolute inset-0 bg-[url('https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png')] bg-center bg-cover opacity-10 group-hover:opacity-20 transition-opacity bg-blend-overlay" />
+
+                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-inner group-hover:scale-110 transition-transform duration-300">
+                                    <Gamepad2 className="w-10 h-10 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl md:text-5xl font-black text-white font-outfit mb-2">JOIN THE SQUAD</h3>
+                                    <p className="text-white/80 text-lg">Connect, game, and vibe with the community on Discord.</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 px-8 py-4 bg-white text-[#5865F2] font-bold rounded-full hover:scale-105 transition-transform shadow-lg">
+                                Join Server <MessageCircle className="w-5 h-5" />
+                            </div>
+                        </div>
+                    </Link>
+                </motion.div>
+
             </div>
         </section>
     );

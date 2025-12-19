@@ -10,7 +10,7 @@ import ContactSection from "@/components/sections/Contact";
 import SponsorsSection from "@/components/sections/Sponsors";
 import DubbyPromo from "@/components/sections/DubbyPromo";
 import { motion } from "framer-motion";
-import { ChevronDown, Twitch, Youtube, Music } from "lucide-react";
+import { ChevronDown, Twitch, Youtube, Music, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -69,6 +69,9 @@ export default function Home() {
                             </Link>
                             <Link href="https://youtube.com/" target="_blank" className="hover:text-red-600 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Youtube className="w-8 h-8" />
+                            </Link>
+                            <Link href="https://discord.gg/JU3MNRGWXq" target="_blank" className="hover:text-indigo-500 text-foreground transition-colors transform hover:scale-110 duration-300">
+                                <Gamepad2 className="w-8 h-8" />
                             </Link>
                         </motion.div>
                     </motion.div>
