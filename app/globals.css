@@ -123,3 +123,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* View Transitions API - Disable default fade for circular reveal */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Ensure the new view is on top */
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* Fallback for dark mode in View Transition */
+.dark::view-transition-old(root) {
+  z-index: 1;
+}
+.dark::view-transition-new(root) {
+  z-index: 9999;
+}
