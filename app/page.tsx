@@ -8,7 +8,6 @@ import MusicSection from "@/components/sections/Music";
 import StreamingSection from "@/components/sections/Streaming";
 import ContactSection from "@/components/sections/Contact";
 import DubbyPromo from "@/components/sections/DubbyPromo";
-import ScheduleSection from "@/components/sections/Schedule";
 import { motion } from "framer-motion";
 import { ChevronDown, Twitch, Youtube, Music, Gamepad2 } from "lucide-react";
 import Link from "next/link";
