@@ -118,7 +118,7 @@ export default function DubbyPromo() {
     };
 
     return (
-        <section className="py-20 relative overflow-hidden transition-colors duration-300">
+        <section id="dubby" className="py-20 relative overflow-hidden transition-colors duration-300">
             {/* Background elements - Subtle in light mode, dark in dark mode */}
             {/* REMOVED opaque bg-background, adjusted gradient to be very subtle overlay */}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
