@@ -21,11 +21,11 @@ export default function Home() {
                 <ShaderAnimation />
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Floating Island */}
             <Navbar />
 
-            <div className="relative z-10 flex flex-col">
-                {/* Hero Section */}
+            <div className="relative z-10 flex flex-col gap-0 md:gap-12">
+                {/* 1. Hero Section */}
                 <section id="hero" className="min-h-screen flex flex-col items-center justify-center relative pt-20">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -59,7 +59,7 @@ export default function Home() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1.2, duration: 0.8 }}
-                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-accent/5 backdrop-blur-sm border border-border"
+                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10"
                         >
                             <Link href="https://twitch.tv/" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Twitch className="w-8 h-8" />
@@ -84,16 +84,19 @@ export default function Home() {
                     </motion.a>
                 </section>
 
-                <SponsorsSection />
-                <DubbyPromo />
-
-                {/* Content Sections - Transparent Wrapper */}
-                <div className="relative z-10 w-full">
+                {/* 2. Content Flow: About -> Music -> Streaming */}
+                <div className="relative z-10 w-full flex flex-col gap-0">
                     <AboutSection />
                     <MusicSection />
                     <StreamingSection />
-                    <ContactSection />
                 </div>
+
+                {/* 3. Promo & Monetization: Dubby -> Sponsors */}
+                <DubbyPromo />
+                <SponsorsSection />
+
+                {/* 4. Action: Contact */}
+                <ContactSection />
             </div>
         </main>
     );
