@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, writeBatch } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, setDoc, writeBatch } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database } from "lucide-react";
+import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 
@@ -88,6 +88,51 @@ const defaultProducts = [
         buttonText: "GET PUNCHED",
         buttonColor: "text-red-600 dark:text-red-400",
         order: 3
+    },
+    {
+        id: "japanese-soda",
+        title: "Japanese Soda",
+        description: "Sweet, bubbly, and unique. Experience the iconic Ramune flavor with a kick.",
+        image: "/dubby/Dubby_JapaneseSoda_Front.png",
+        link: "https://www.dubby.gg/products/japanese-soda-flavor-energy-drink-tub?ref=gvqslrbj",
+        tag: "FAN FAVORITE",
+        tagColor: "bg-pink-500",
+        gradient: "from-pink-500/10 to-cyan-500/10 dark:from-pink-900/20 dark:to-cyan-900/20",
+        glowColor: "rgba(236,72,153,0.5)",
+        hoverText: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
+        buttonText: "TASTE JAPAN",
+        buttonColor: "text-pink-600 dark:text-pink-400",
+        order: 4
+    },
+    {
+        id: "grandmas-lemonade",
+        title: "Grandma's Lemonade",
+        description: "Classic, tart, and sweet. The ultimate caffeine-free hydration refresher.",
+        image: "/dubby/gRandma_lemon.png",
+        link: "https://www.dubby.gg/products/grandmas-lemonade-hydro-hydration-drink-tub-caffeine-free?ref=gvqslrbj",
+        tag: "CAFFEINE FREE",
+        tagColor: "bg-yellow-500",
+        gradient: "from-yellow-500/10 to-green-500/10 dark:from-yellow-900/20 dark:to-green-900/20",
+        glowColor: "rgba(234,179,8,0.5)",
+        hoverText: "group-hover:text-yellow-600 dark:group-hover:text-yellow-400",
+        buttonText: "GET LEMONADE",
+        buttonColor: "text-yellow-600 dark:text-yellow-400",
+        order: 5
+    },
+    {
+        id: "smores",
+        title: "Smores Flavor",
+        description: "Toasted marshmallow and chocolate. A campfire treat in a tub.",
+        image: "/dubby/Dubby_Smores_Front.png",
+        link: "https://www.dubby.gg/products/smores-flavor-energy-drink-tub?ref=gvqslrbj",
+        tag: "LIMITED EDITION",
+        tagColor: "bg-orange-600",
+        gradient: "from-orange-600/10 to-amber-600/10 dark:from-orange-900/20 dark:to-amber-900/20",
+        glowColor: "rgba(234,88,12,0.5)",
+        hoverText: "group-hover:text-orange-600 dark:group-hover:text-orange-400",
+        buttonText: "GET TOASTY",
+        buttonColor: "text-orange-600 dark:text-orange-400",
+        order: 6
     }
 ];
 
@@ -372,10 +417,13 @@ function MusicManager() {
     );
 }
 
+
+
 function ProductsManager() {
     const [products, setProducts] = useState<ProductItem[]>([]);
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, reset, setValue } = useForm();
     const [isAdding, setIsAdding] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
         const q = query(collection(db, "products"), orderBy("order", "asc"));
@@ -387,10 +435,38 @@ function ProductsManager() {
 
     const onSubmit = async (data: any) => {
         try {
-            await addDoc(collection(db, "products"), { ...data, order: products.length + 1 });
-            toast.success("Product added");
-            reset(); setIsAdding(false);
-        } catch (e) { toast.error("Error adding product"); }
+            if (editingId) {
+                await updateDoc(doc(db, "products", editingId), data);
+                toast.success("Product updated");
+                setEditingId(null);
+            } else {
+                await addDoc(collection(db, "products"), { ...data, order: products.length + 1 });
+                toast.success("Product added");
+            }
+            reset();
+            setIsAdding(false);
+        } catch (e) { toast.error("Error saving product"); }
+    };
+
+    const handleEdit = (product: ProductItem) => {
+        setEditingId(product.id);
+        setIsAdding(true);
+        // Populate form
+        setValue("title", product.title);
+        setValue("tag", product.tag);
+        setValue("description", product.description);
+        setValue("image", product.image);
+        setValue("link", product.link);
+        setValue("tagColor", product.tagColor);
+        setValue("gradient", product.gradient);
+        setValue("glowColor", product.glowColor);
+        setValue("buttonColor", product.buttonColor);
+    };
+
+    const handleCancel = () => {
+        setIsAdding(false);
+        setEditingId(null);
+        reset();
     };
 
     const handleSeed = async () => {
@@ -418,15 +494,21 @@ function ProductsManager() {
                                 <Database size={18} /> Seed Defaults
                             </button>
                         )}
-                        <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
-                            <Plus size={20} /> Add Product
-                        </button>
+                        {!isAdding && (
+                            <button onClick={() => { reset(); setEditingId(null); setIsAdding(true); }} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                                <Plus size={20} /> Add Product
+                            </button>
+                        )}
                     </div>
                 }
             />
 
             {isAdding && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden">
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden relative">
+                    <div className="absolute top-4 right-4">
+                        <button onClick={handleCancel} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={20} className="text-neutral-400" /></button>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-4">{editingId ? "Edit Product" : "New Product"}</h3>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <input {...register("title")} placeholder="Product Title" className="input-field" required />
@@ -440,15 +522,15 @@ function ProductsManager() {
 
                         <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest mt-4">Styling (Advanced)</p>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <input {...register("tagColor")} placeholder="Tag Color (Tailwind)" className="input-field text-xs" defaultValue="bg-purple-500" />
-                            <input {...register("gradient")} placeholder="Card Gradient" className="input-field text-xs" defaultValue="from-purple-500/10 to-blue-500/10" />
-                            <input {...register("glowColor")} placeholder="Glow Hex" className="input-field text-xs" defaultValue="rgba(168,85,247,0.5)" />
-                            <input {...register("buttonColor")} placeholder="Btn Color (Tailwind)" className="input-field text-xs" defaultValue="text-purple-600" />
+                            <input {...register("tagColor")} placeholder="Tag Color (Tailwind)" className="input-field text-xs" />
+                            <input {...register("gradient")} placeholder="Card Gradient" className="input-field text-xs" />
+                            <input {...register("glowColor")} placeholder="Glow Hex" className="input-field text-xs" />
+                            <input {...register("buttonColor")} placeholder="Btn Color (Tailwind)" className="input-field text-xs" />
                         </div>
 
                         <div className="flex justify-end gap-3 pt-2">
-                            <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-400 hover:text-white">Cancel</button>
-                            <button type="submit" className="bg-green-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-green-500">Save Product</button>
+                            <button type="button" onClick={handleCancel} className="px-4 py-2 text-neutral-400 hover:text-white">Cancel</button>
+                            <button type="submit" className="bg-green-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-green-500">{editingId ? "Update" : "Save"} Product</button>
                         </div>
                     </form>
                 </motion.div>
@@ -466,9 +548,14 @@ function ProductsManager() {
                                 <p className="text-xs text-neutral-500 font-mono">{product.tag}</p>
                             </div>
                         </div>
-                        <button onClick={() => deleteDoc(doc(db, "products", product.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
-                            <Trash2 size={20} />
-                        </button>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                            <button onClick={() => handleEdit(product)} className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all">
+                                <Pencil size={20} />
+                            </button>
+                            <button onClick={() => deleteDoc(doc(db, "products", product.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                                <Trash2 size={20} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
