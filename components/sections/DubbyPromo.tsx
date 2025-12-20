@@ -186,12 +186,12 @@ export default function DubbyPromo() {
                             <div className="absolute -inset-1 bg-gradient-to-tr from-purple-500/50 to-cyan-500/50 rounded-[2.5rem] backdrop-blur-sm" />
 
                             {/* Main Image */}
-                            <div className="relative h-full w-full rounded-[2rem] overflow-hidden shadow-2xl">
+                            <div className="relative h-full w-full rounded-[2rem] overflow-hidden shadow-2xl isolate transform-gpu">
                                 <Image
                                     src="/dubby/endorsement.jpg"
                                     alt="Kye Beezy with Dubby"
                                     fill
-                                    className="object-cover hover:scale-105 transition-transform duration-700"
+                                    className="object-cover hover:scale-110 transition-transform duration-700 ease-out will-change-transform"
                                     priority
                                 />
 
