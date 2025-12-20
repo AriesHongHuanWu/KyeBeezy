@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Volume2, VolumeX, SkipForward, Globe, Trophy, Sparkles, Zap } from "lucide-react";
+import { Play, Volume2, VolumeX, SkipForward, Zap, User } from "lucide-react";
 import Link from "next/link";
 import { getAwardsData, CategoryData } from "../../data-fetcher";
 import { NOMINEE_IMAGES } from "../../nominee-images";
 import { Confetti } from "@/components/ui/confetti";
+import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 
 // --- CONFIG ---
-// A more dramatic, driving electronic track placeholder
 const AUDIO_URL = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
 
 // --- 3D MATH UTILS ---
@@ -17,7 +17,7 @@ const randomRange = (min: number, max: number) => Math.random() * (max - min) + 
 
 // --- SUB-COMPONENTS ---
 
-// 1. DATA GLOBE (Scene 1)
+// 1. DATA GLOBE (Scene 1 - The World)
 const DataGlobe = () => {
     // Generate points on a sphere
     const points = useMemo(() => {
@@ -25,7 +25,6 @@ const DataGlobe = () => {
         const count = 100;
         const offset = 2 / count;
         const increment = Math.PI * (3 - Math.sqrt(5));
-
         for (let i = 0; i < count; i++) {
             const y = ((i * offset) - 1) + (offset / 2);
             const r = Math.sqrt(1 - Math.pow(y, 2));
@@ -39,6 +38,7 @@ const DataGlobe = () => {
 
     return (
         <div className="absolute inset-0 flex items-center justify-center perspective-1000">
+            {/* Rotating Container */}
             <motion.div
                 className="relative w-0 h-0 transform-3d"
                 animate={{ rotateY: 360, rotateZ: 10 }}
@@ -49,172 +49,159 @@ const DataGlobe = () => {
                     <motion.div
                         key={i}
                         className="absolute w-1 h-1 bg-yellow-500 rounded-full"
-                        style={{
-                            transform: `translate3d(${pt.x}px, ${pt.y}px, ${pt.z}px)`
-                        }}
+                        style={{ transform: `translate3d(${pt.x}px, ${pt.y}px, ${pt.z}px)` }}
                     />
                 ))}
-
-                {/* Floating Data Text for Complexity */}
+                {/* Floating Data Text */}
                 {[...Array(20)].map((_, i) => (
                     <motion.div
                         key={`txt-${i}`}
                         className="absolute text-[8px] text-yellow-500/50 font-mono whitespace-nowrap"
-                        style={{
-                            transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px)`
-                        }}
+                        style={{ transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px)` }}
                         animate={{ opacity: [0, 1, 0] }}
                         transition={{ duration: 2, repeat: Infinity, delay: Math.random() * 2 }}
                     >
                         {Math.floor(Math.random() * 9999)}
                     </motion.div>
                 ))}
-
-                {/* Core Core */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-yellow-500/10 rounded-full blur-xl" />
             </motion.div>
 
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter text-center leading-none mix-blend-difference">
-                    UNLIMITED<br />CREATIVITY
-                </h1>
+                <motion.h1
+                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}
+                    className="text-6xl md:text-8xl font-black text-white tracking-tighter text-center leading-none mix-blend-difference"
+                >
+                    GLOBAL<br />SCALE
+                </motion.h1>
             </div>
         </div>
     );
 };
 
-// 2. CATEGORY TUNNEL (Scene 2)
+// 2. CATEGORY TUNNEL (Scene 2 - The Candidates)
 const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
-    // Get ALL images and duplicate them to create a dense crowd
     const images = useMemo(() => {
         const raw = Object.values(NOMINEE_IMAGES);
-        // Create massive array for density
-        return [...raw, ...raw, ...raw, ...raw, ...raw].sort(() => 0.5 - Math.random()).slice(0, 100);
+        return [...raw, ...raw, ...raw, ...raw].sort(() => 0.5 - Math.random()).slice(0, 80);
     }, []);
 
     return (
         <div className="absolute inset-0 bg-black perspective-500 overflow-hidden">
-            {/* FLYING IMAGE WARP */}
+            {/* Warp Images */}
             <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
-                {images.map((img, i) => {
-                    // Spiral Distribution
-                    const angle = (i * 0.5) + Math.random();
-                    const radius = 400 + Math.random() * 400; // Wide tunnel
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
-
-                    return (
-                        <motion.div
-                            key={`img-${i}`}
-                            className="absolute top-1/2 left-1/2 w-32 h-32 md:w-48 md:h-48 rounded-xl bg-neutral-900 border-2 border-white/20"
-                            style={{
-                                backgroundImage: `url(${img})`,
-                                backgroundSize: "cover",
-                                x: x,
-                                y: y,
-                            }}
-                            initial={{ z: -2000, scale: 0, opacity: 0, rotateZ: 0 }}
-                            animate={{
-                                z: [-2000, 1000], // Fly from deep back to past camera
-                                scale: [0, 1.5],
-                                opacity: [0, 1, 0],
-                                rotateZ: [0, Math.random() * 90 - 45]
-                            }}
-                            transition={{
-                                duration: 3,
-                                delay: Math.random() * 4, // Random stream
-                                ease: "linear",
-                                repeat: Infinity
-                            }}
-                        />
-                    );
-                })}
+                {images.map((img, i) => (
+                    <motion.div
+                        key={`img-${i}`}
+                        className="absolute top-1/2 left-1/2 w-32 h-32 md:w-48 md:h-48 rounded-lg bg-neutral-900 border border-white/20 opacity-60"
+                        style={{
+                            backgroundImage: `url(${img})`, backgroundSize: "cover",
+                            x: Math.cos(i) * (300 + Math.random() * 500),
+                            y: Math.sin(i) * (300 + Math.random() * 500),
+                        }}
+                        initial={{ z: -2000, scale: 0, opacity: 0 }}
+                        animate={{ z: 500, scale: 1, opacity: [0, 1, 0] }}
+                        transition={{ duration: 3, delay: Math.random() * 4, ease: "linear", repeat: Infinity }}
+                    />
+                ))}
             </div>
 
-            {/* Category Names Interspersed */}
+            {/* Category Names */}
             {categories.slice(0, 10).map((cat, i) => (
                 <motion.div
                     key={cat.id}
                     className="absolute top-1/2 left-1/2 flex items-center justify-center w-[80vw]"
                     initial={{ z: -2000, opacity: 0 }}
                     animate={{ z: 800, opacity: [0, 1, 0] }}
-                    transition={{
-                        duration: 3,
-                        delay: i * 0.8, // Stagger flyby
-                        ease: "linear"
-                    }}
-                    style={{
-                        x: "-50%", y: "-50%",
-                        rotateZ: i % 2 === 0 ? -10 : 10
-                    }}
+                    transition={{ duration: 3, delay: i * 0.8, ease: "linear" }}
+                    style={{ x: "-50%", y: "-50%", rotateZ: i % 2 === 0 ? -5 : 5 }}
                 >
-                    <h2 className="text-4xl md:text-7xl font-black text-white uppercase italic tracking-tighter whitespace-nowrap drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] bg-black/50 px-6 py-2 border border-white/10 backdrop-blur-sm">
+                    <h2 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400 uppercase italic tracking-tighter whitespace-nowrap drop-shadow-lg">
                         {cat.title}
                     </h2>
                 </motion.div>
             ))}
-
-            {/* Speed Lines */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay animate-pulse" />
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay animate-pulse" />
         </div>
     );
 };
 
-// 3. THE RITUAL (Scene 3)
-const RitualScene = () => {
+// 3. VOTING BATTLE (Scene 3 - The Fight)
+const VotingBattleScene = () => {
+    // Simulate count up
+    const [countA, setCountA] = useState(1240);
+    const [countB, setCountB] = useState(1190);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCountA(prev => prev + Math.floor(Math.random() * 50));
+            setCountB(prev => prev + Math.floor(Math.random() * 60)); // B catches up
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
-        <div className="absolute inset-0 flex items-center justify-center bg-black perspective-1000 overflow-hidden">
-            {/* Spinning/Flipping Card */}
-            <motion.div
-                className="w-64 h-96 bg-gradient-to-br from-neutral-900 to-black border-4 border-yellow-500 rounded-2xl relative shadow-[0_0_100px_rgba(234,179,8,0.3)]"
-                initial={{ rotateY: 0, rotateX: 0, scale: 0.8, z: 0 }}
-                animate={{
-                    rotateY: [0, 360, 720, 1080, 1440, 1800], // Hyper spin
-                    rotateX: [0, 15, -15, 30, -30, 0], // Wobble
-                    scale: [0.8, 0.6, 0.9, 0.5, 1.2], // Heartbeat
-                    z: [0, -500, 200]
-                }}
-                transition={{ duration: 3, ease: "easeInOut" }}
-                style={{ transformStyle: "preserve-3d" }}
-            >
-                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <Trophy className="w-24 h-24 text-yellow-500" />
-                </div>
-                {/* Backface */}
-                <div className="absolute inset-0 bg-yellow-500 backface-hidden" style={{ transform: "rotateY(180deg)" }} />
-            </motion.div>
-
-            {/* Energy Vortex Rings */}
-            {[...Array(5)].map((_, i) => (
+        <div className="absolute inset-0 flex bg-black">
+            {/* Split Screen */}
+            <div className="flex-1 border-r border-white/20 relative overflow-hidden flex items-center justify-center">
+                <div className="absolute inset-0 bg-blue-900/20" />
                 <motion.div
-                    key={i}
-                    className="absolute border border-yellow-500/50 rounded-full"
-                    style={{ width: 400 + i * 100, height: 400 + i * 100 }}
-                    animate={{ rotate: 360, scale: [1, 0], opacity: [0, 1, 0] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2, ease: "easeIn" }}
-                />
-            ))}
+                    animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}
+                    className="text-8xl md:text-[10rem] font-black text-white mix-blend-overlay"
+                >
+                    {countA}
+                </motion.div>
+                <div className="absolute bottom-10 left-10 text-xl font-bold text-blue-500 tracking-[0.5em]">NOMINEE 01</div>
+            </div>
 
-            {/* Implode Particles */}
-            <motion.div
-                className="absolute inset-0 border-[100px] border-yellow-500 rounded-full"
-                initial={{ scale: 2, opacity: 0 }}
-                animate={{ scale: 0, opacity: 1 }}
-                transition={{ duration: 2.5, ease: "circIn", delay: 0.5 }}
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                <div className="absolute inset-0 bg-red-900/20" />
+                <motion.div
+                    animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }}
+                    className="text-8xl md:text-[10rem] font-black text-white mix-blend-overlay"
+                >
+                    {countB}
+                </motion.div>
+                <div className="absolute top-10 right-10 text-xl font-bold text-red-500 tracking-[0.5em]">NOMINEE 02</div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="bg-black/80 px-8 py-4 border border-white/20 backdrop-blur-md">
+                    <h1 className="text-4xl font-black text-white italic tracking-tighter">VS</h1>
+                </div>
+            </div>
+
+            <div className="absolute bottom-20 w-full text-center">
+                <h2 className="text-3xl font-black text-yellow-500 uppercase tracking-widest animate-pulse">Every Vote Counts</h2>
+            </div>
+        </div>
+    );
+};
+
+// 4. THE RITUAL (Scene 4 - The Mechanic)
+const RitualScene = () => {
+    const [isRevealed, setIsRevealed] = useState(false);
+
+    useEffect(() => {
+        // Auto reveal after 3s
+        setTimeout(() => setIsRevealed(true), 3000);
+    }, []);
+
+    return (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <TeaserHeroCard
+                isRevealed={isRevealed}
+                onRevealComplete={() => { }}
             />
-
-            {/* Lightning Effects */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {[...Array(5)].map((_, i) => (
+            {/* Lightning */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50">
+                {[...Array(3)].map((_, i) => (
                     <motion.path
-                        key={i}
-                        d={`M50,50 L${Math.random() * 100},${Math.random() * 100}`}
-                        stroke="yellow"
-                        strokeWidth="0.5"
+                        key={i} d={`M50,50 L${Math.random() * 100},${Math.random() * 100}`}
+                        stroke="yellow" strokeWidth="1"
                         initial={{ pathLength: 0, opacity: 0 }}
                         animate={{ pathLength: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.2, repeat: Infinity, repeatDelay: Math.random() * 0.5 }}
+                        transition={{ duration: 0.1, repeat: Infinity, repeatDelay: Math.random() }}
                     />
                 ))}
             </svg>
@@ -222,52 +209,21 @@ const RitualScene = () => {
     );
 };
 
-// 4. THE REVEAL (Scene 4)
+// 5. THE REVEAL (Scene 5 - Final)
 const RevealScene = () => {
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white animate-in fade-in duration-300">
-            {/* Flash Fade Out */}
-            <motion.div
-                className="absolute inset-0 bg-black"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.1, delay: 0.2 }}
-            />
+            <Confetti isActive={true} />
+            <div className="relative z-10 flex flex-col items-center mix-blend-difference scale-150">
+                <img src="/bandlab-logo.png" className="w-48 h-48 object-contain mb-6 invert" />
+                <h1 className="text-9xl font-black text-white tracking-tighter">KYEBEEZY</h1>
+                <p className="text-3xl font-bold text-white/50 tracking-[1em]">X BANDLAB</p>
 
-            <div className="relative z-10 flex flex-col items-center mix-blend-difference">
-                <Confetti isActive={true} />
-
-                <motion.div
-                    initial={{ scale: 2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", bounce: 0.3, delay: 0.3 }}
-                >
-                    <img
-                        src="/bandlab-logo.png"
-                        alt="Bandlab"
-                        className="w-32 h-32 md:w-48 md:h-48 object-contain mb-6 invert"
-                    />
-                </motion.div>
-
-                <h1 className="text-6xl md:text-9xl font-black text-white tracking-tighter mb-2">
-                    KYEBEEZY
-                </h1>
-                <p className="text-2xl font-bold text-white/50 tracking-[1em]">
-                    X BANDLAB
-                </p>
-
-                <div className="mt-12 flex flex-col md:flex-row gap-6 items-center">
-                    <Link href="/awards/bandlab2025/live">
-                        <motion.button
-                            className="px-10 py-4 bg-yellow-500 text-black font-black uppercase tracking-widest text-xl hover:scale-105 transition-transform"
-                            initial={{ y: 50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 1 }}
-                        >
-                            Enter Live Event
-                        </motion.button>
-                    </Link>
-                </div>
+                <Link href="/awards/bandlab2025/live" className="mt-12">
+                    <button className="px-12 py-6 bg-yellow-500 text-black font-black uppercase text-2xl hover:scale-110 transition-transform">
+                        ENTER LIVE
+                    </button>
+                </Link>
             </div>
         </div>
     );
@@ -276,38 +232,31 @@ const RevealScene = () => {
 
 // --- CONTROLLER ---
 
-export default function TeaserPageV4() {
+export default function TeaserPageV7() {
     const [started, setStarted] = useState(false);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [muted, setMuted] = useState(false);
-
-    // Timeline
-    const [scene, setScene] = useState(-1); // 0:Globe, 1:Tunnel, 2:Ritual, 3:Reveal
-
-    // Data
+    const [scene, setScene] = useState(-1);
     const [categories, setCategories] = useState<CategoryData[]>([]);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        // Fetch Real Data
         getAwardsData().then(data => setCategories(data));
     }, []);
 
     useEffect(() => {
         if (!started) return;
 
-        // Play Audio
         if (audioRef.current) {
-            audioRef.current.muted = muted;
             audioRef.current.currentTime = 0;
             audioRef.current.play();
         }
 
-        // Timeline Sequence
+        // 45s TIMELINE
         const timeline = [
-            { time: 0, scene: 0 },       // 0s: Globe (Scale)
-            { time: 4000, scene: 1 },    // 4s: Tunnel (Categories)
-            { time: 10000, scene: 2 },   // 10s: Ritual (Build Up)
-            { time: 13000, scene: 3 },   // 13s: Reveal (Drop)
+            { time: 0, scene: 0 },       // 0s: Globe (5s)
+            { time: 5000, scene: 1 },    // 5s: Tunnel (10s)
+            { time: 15000, scene: 2 },   // 15s: Voting Battle (10s)
+            { time: 25000, scene: 3 },   // 25s: Ritual (10s)
+            { time: 35000, scene: 4 },   // 35s: Reveal (Loop)
         ];
 
         let timers: NodeJS.Timeout[] = [];
@@ -318,84 +267,38 @@ export default function TeaserPageV4() {
         return () => timers.forEach(clearTimeout);
     }, [started]);
 
-    // Mute Sync
-    useEffect(() => {
-        if (audioRef.current) audioRef.current.muted = muted;
-    }, [muted]);
-
-    // --- RENDER ---
-
     if (!started) {
         return (
             <div onClick={() => setStarted(true)} className="h-screen w-screen bg-black flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-900 transition-colors">
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center animate-pulse mb-6 border border-white/20">
-                    <Play className="w-8 h-8 text-white fill-white ml-1" />
+                <div className="w-24 h-24 rounded-full border-2 border-white/20 flex items-center justify-center animate-pulse mb-6">
+                    <Play className="w-10 h-10 text-white fill-white ml-2" />
                 </div>
-                <h1 className="text-white font-bold tracking-[0.5em] text-sm uppercase">Initialize Experience</h1>
-                <p className="text-neutral-500 text-xs mt-2 uppercase">Audio Recommended</p>
-                <audio ref={audioRef} src={AUDIO_URL} preload="auto" />
+                <h1 className="text-white font-black tracking-[0.5em] text-xl uppercase">Initiate Sequence</h1>
+                <p className="text-neutral-500 text-sm mt-2 uppercase tracking-widest">Duration: 45s • Audio: ON</p>
+                <audio ref={audioRef} src={AUDIO_URL} preload="auto" loop />
             </div>
         );
     }
 
     return (
         <div className="h-screen w-screen bg-black overflow-hidden relative font-sans">
-            {/* Controls */}
-            <div className="absolute top-6 right-6 z-[100] flex gap-4 mix-blend-difference">
-                <button onClick={() => setMuted(!muted)} className="text-white/50 hover:text-white transition-colors">
-                    {muted ? <VolumeX /> : <Volume2 />}
-                </button>
+            <div className="absolute top-6 right-6 z-[100] flex gap-4">
                 <button onClick={() => { setStarted(false); setScene(-1); }} className="text-white/50 hover:text-white font-bold text-xs uppercase tracking-widest">
-                    Replay
+                    Restart
                 </button>
             </div>
 
-            {/* SCENES */}
             <AnimatePresence mode="wait">
-                {scene === 0 && (
-                    <motion.div key="scene-1" className="absolute inset-0" exit={{ opacity: 0 }} transition={{ duration: 1 }}>
-                        <DataGlobe />
-                    </motion.div>
-                )}
-                {scene === 1 && (
-                    <motion.div key="scene-2" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
-                        <CategoryTunnel categories={categories} />
-                        {/* Overlay Text */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <motion.h1
-                                initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                                className="text-xl md:text-3xl text-white font-bold tracking-[1em] bg-black/50 backdrop-blur-md px-6 py-2 rounded-full border border-white/10"
-                            >
-                                THE CONTENDERS
-                            </motion.h1>
-                        </div>
-                    </motion.div>
-                )}
-                {scene === 2 && (
-                    <motion.div key="scene-3" className="absolute inset-0" exit={{ opacity: 0 }}>
-                        <RitualScene />
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <motion.h1
-                                className="absolute bottom-20 text-xl text-yellow-500 font-bold tracking-[0.5em] animate-pulse"
-                            >
-                                SYSTEM OVERLOAD
-                            </motion.h1>
-                        </div>
-                    </motion.div>
-                )}
-                {scene === 3 && (
-                    <motion.div key="scene-4" className="absolute inset-0">
-                        <RevealScene />
-                    </motion.div>
-                )}
+                {scene === 0 && <motion.div key="s0" className="absolute inset-0" exit={{ opacity: 0 }}><DataGlobe /></motion.div>}
+                {scene === 1 && <motion.div key="s1" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><CategoryTunnel categories={categories} /></motion.div>}
+                {scene === 2 && <motion.div key="s2" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><VotingBattleScene /></motion.div>}
+                {scene === 3 && <motion.div key="s3" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><RitualScene /></motion.div>}
+                {scene === 4 && <motion.div key="s4" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><RevealScene /></motion.div>}
             </AnimatePresence>
 
-            {/* CINEMATIC BARS */}
-            <div className="absolute top-0 left-0 right-0 h-[10vh] bg-black z-50 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 right-0 h-[10vh] bg-black z-50 pointer-events-none" />
-
-            {/* GLOBAL GRAIN */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 pointer-events-none z-[60] mix-blend-overlay" />
+            {/* Cinematic Overlay */}
+            <div className="absolute top-0 w-full h-[12vh] bg-black z-50 pointer-events-none" />
+            <div className="absolute bottom-0 w-full h-[12vh] bg-black z-50 pointer-events-none" />
         </div>
     );
 }
