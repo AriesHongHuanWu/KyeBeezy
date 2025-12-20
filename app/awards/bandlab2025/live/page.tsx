@@ -79,16 +79,16 @@ const IntroSlide = ({ onStart }: { onStart: () => void }) => (
                 />
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-400 to-yellow-700 drop-shadow-[0_0_50px_rgba(234,179,8,0.4)] mb-4 tracking-tighter">
+            <h1 className="text-4xl md:text-6xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-400 to-yellow-700 drop-shadow-[0_0_50px_rgba(234,179,8,0.4)] mb-4 tracking-tighter mx-4">
                 Bandlab Award
             </h1>
-            <p className="text-xl md:text-2xl text-white/50 font-light tracking-[0.6em] uppercase mb-16">
+            <p className="text-sm md:text-xl lg:text-2xl text-white/50 font-light tracking-[0.4em] md:tracking-[0.6em] uppercase mb-16">
                 2025 Ceremony
             </p>
 
             <button
                 onClick={onStart}
-                className="group px-10 py-5 bg-white text-black hover:bg-yellow-400 font-black tracking-widest uppercase transition-all rounded-full flex items-center gap-3 mx-auto shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.6)] hover:scale-105"
+                className="group px-8 py-4 md:px-10 md:py-5 bg-white text-black hover:bg-yellow-400 font-black tracking-widest uppercase transition-all rounded-full flex items-center gap-3 mx-auto shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.6)] hover:scale-105 active:scale-95"
             >
                 Start Show <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -242,7 +242,7 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
             />
 
             <motion.div
-                className="relative w-[340px] h-[520px] cursor-pointer group"
+                className="relative w-[300px] h-[460px] md:w-[340px] md:h-[520px] cursor-pointer group"
                 initial={{ y: 0, scale: 0 }}
                 animate={{
                     scale: phase === 'IDLE' ? 0 : 1,
@@ -385,10 +385,10 @@ const CategorySlide = ({
                     initial={{ opacity: 0, y: -50 }}
                     animate={{ opacity: (phase !== 'IDLE' ? 0 : 1), y: (phase !== 'IDLE' ? -50 : 0) }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className={`mb-24 transition-all duration-1000 ${phase !== 'IDLE' ? 'scale-90' : ''}`}
+                    className={`mb-12 md:mb-24 transition-all duration-1000 ${phase !== 'IDLE' ? 'scale-90' : ''}`}
                 >
-                    <h2 className="text-yellow-500 font-bold tracking-[0.5em] uppercase mb-6 text-center">Current Category</h2>
-                    <h1 className="text-6xl md:text-8xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tighter">
+                    <h2 className="text-yellow-500 font-bold tracking-[0.3em] md:tracking-[0.5em] uppercase mb-4 md:mb-6 text-center text-sm md:text-base">Current Category</h2>
+                    <h1 className="text-4xl md:text-6xl lg:text-8xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tighter px-2">
                         {category.title}
                     </h1>
                 </motion.div>
@@ -406,10 +406,10 @@ const CategorySlide = ({
                                 transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
                             >
                                 {category.nominees.map((nominee, idx) => (
-                                    <div key={nominee.name} className="flex flex-col items-center gap-6 group cursor-pointer relative z-20">
+                                    <div key={nominee.name} className="flex flex-col items-center gap-4 md:gap-6 group cursor-pointer relative z-20">
                                         <motion.div
                                             layoutId={`nominee-${nominee.name}`}
-                                            className="relative w-36 h-36 md:w-48 md:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
+                                            className="relative w-24 h-24 md:w-36 md:h-36 lg:w-48 lg:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
                                             whileHover={{ scale: 1.2, boxShadow: "0 0 40px rgba(234,179,8,0.6)" }}
                                             animate={{ y: [0, -15, 0] }}
                                             transition={{
@@ -439,7 +439,7 @@ const CategorySlide = ({
                             </motion.div>
                         ) : (
                             // VORTEX / ORBIT LAYOUT
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none scale-[0.4] md:scale-100 transition-transform duration-700">
                                 <motion.div
                                     className="relative w-[800px] h-[800px]"
                                     animate={phase === 'GATHERING' || phase === 'ABSORBING' ? { rotate: 360 } : { rotate: 0 }}
@@ -501,7 +501,7 @@ const CategorySlide = ({
                         {phase === 'IDLE' && (
                             <button
                                 onClick={onStartRitual}
-                                className="mx-auto px-12 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xl tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 transition-all"
+                                className="mx-auto px-8 py-3 md:px-12 md:py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-lg md:text-xl tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 transition-all active:scale-95"
                             >
                                 START RITUAL
                             </button>
