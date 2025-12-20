@@ -124,48 +124,91 @@ export default function DubbyPromo() {
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="mb-16 text-center"
-                >
-                    <h2 className="text-4xl md:text-5xl font-black font-outfit mb-4 text-foreground drop-shadow-md">
-                        POWER UP WITH <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">DUBBY</span>
-                    </h2>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        Focus better, react faster. No crash, no jitters.
-                    </p>
-
-                    {/* Discount Code */}
+                <div className="mb-20 flex flex-col lg:flex-row items-center gap-12 max-w-7xl mx-auto">
+                    {/* Text Section */}
                     <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="mt-8 inline-flex items-center gap-4 bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 dark:border-white/10 p-4 rounded-xl cursor-pointer group shadow-xl transition-all duration-300"
-                        onClick={handleCopy}
+                        initial={{ opacity: 0, x: -50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="flex-1 text-center lg:text-left z-10"
                     >
-                        <div className="text-left">
-                            <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest font-bold">Discount Code</p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl md:text-2xl font-mono font-bold text-foreground">BONNET-ENERGY</span>
-                                <Copy className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl">
+                            POWER UP WITH <br className="hidden lg:block" />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 animate-gradient-x">DUBBY</span>
+                        </h2>
+                        <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
+                            Focus better. React faster. <br />
+                            <span className="text-foreground font-semibold">No crash. No jitters.</span> Just pure performance.
+                        </p>
+
+                        {/* Discount Code */}
+                        <motion.div
+                            whileHover={{ scale: 1.02, translateY: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="mt-10 inline-flex flex-col sm:flex-row items-center gap-6 bg-white/5 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 p-2 pr-6 rounded-[2rem] cursor-pointer group shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 mx-auto lg:mx-0 max-w-fit"
+                            onClick={handleCopy}
+                        >
+                            <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white px-6 py-4 rounded-[1.5rem] font-bold shadow-lg">
+                                10% OFF
+                            </div>
+                            <div className="text-center sm:text-left py-2">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold mb-1">Discount Code</p>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl font-mono font-bold text-foreground tracking-tight">BONNET-ENERGY</span>
+                                    <Copy className="w-5 h-5 text-muted-foreground group-hover:text-purple-400 transition-colors" />
+                                </div>
+                            </div>
+
+                            {copied && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    className="absolute -top-12 left-1/2 -translate-x-1/2 lg:left-20 lg:translate-x-0 bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2"
+                                >
+                                    <span>COPIED!</span>
+                                </motion.div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+
+                    {/* Image Section */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 50, rotate: 5 }}
+                        whileInView={{ opacity: 1, x: 0, rotate: 3 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="flex-1 relative w-full max-w-md lg:max-w-xl"
+                    >
+                        <div className="relative aspect-square">
+                            {/* Decorative Elements */}
+                            <div className="absolute -inset-4 bg-gradient-to-tr from-purple-500 to-cyan-500 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse" />
+                            <div className="absolute -inset-1 bg-gradient-to-tr from-purple-500/50 to-cyan-500/50 rounded-[2.5rem] backdrop-blur-sm" />
+
+                            {/* Main Image */}
+                            <div className="relative h-full w-full rounded-[2rem] overflow-hidden shadow-2xl">
+                                <Image
+                                    src="/dubby/endorsement.jpg"
+                                    alt="Kye Beezy with Dubby"
+                                    fill
+                                    className="object-cover hover:scale-105 transition-transform duration-700"
+                                    priority
+                                />
+
+                                {/* Floating Badge */}
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 1, duration: 0.5 }}
+                                    className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"
+                                >
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    OFFICIAL PARTNER
+                                </motion.div>
                             </div>
                         </div>
-                        <div className="pl-4 border-l border-white/20 dark:border-white/10">
-                            <span className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">10% OFF</span>
-                        </div>
-
-                        {copied && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="absolute -top-10 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
-                            >
-                                COPIED!
-                            </motion.div>
-                        )}
                     </motion.div>
-                </motion.div>
+                </div>
 
                 <motion.div
                     className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-2"
