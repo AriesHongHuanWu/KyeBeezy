@@ -357,28 +357,38 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                     {/* We use LayoutGroup to magically morph them */}
                     <LayoutGroup>
                         {phase === 'IDLE' ? (
-                            // GRID LAYOUT
-                            <motion.div className="flex flex-wrap justify-center items-center gap-8 w-full max-w-7xl relative z-10">
+                            // GRID LAYOUT (Circular Avatars - Restored)
+                            <motion.div className="flex flex-wrap justify-center items-center gap-12 md:gap-16 w-full max-w-7xl relative z-10 px-4">
                                 {category.nominees.map((nominee) => (
-                                    <motion.div
-                                        layoutId={`nominee-${nominee.name}`}
-                                        key={nominee.name}
-                                        className="group relative w-[200px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-neutral-900"
-                                        whileHover={{ scale: 1.05, y: -10 }}
-                                    >
-                                        {nominee.image ? (
-                                            <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                                        ) : (
-                                            <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-600">
-                                                {nominee.name.substring(0, 1)}
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-                                        <div className="absolute bottom-4 left-4">
-                                            <p className="font-bold text-white text-lg leading-tight">{nominee.name}</p>
-                                            <p className="text-yellow-500 text-xs font-mono mt-1">{nominee.voteCount} Votes</p>
-                                        </div>
-                                    </motion.div>
+                                    <div key={nominee.name} className="flex flex-col items-center gap-4 group">
+                                        {/* The Flying Element (Head) - Matches Vortex layoutId */}
+                                        <motion.div
+                                            layoutId={`nominee-${nominee.name}`}
+                                            className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
+                                            whileHover={{ scale: 1.1, boxShadow: "0 0 30px rgba(234,179,8,0.4)" }}
+                                        >
+                                            {nominee.image ? (
+                                                <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                                            ) : (
+                                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-600">
+                                                    {nominee.name.substring(0, 1)}
+                                                </div>
+                                            )}
+                                            {/* Shine effect */}
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </motion.div>
+
+                                        {/* Name Label */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="text-center"
+                                        >
+                                            <p className="font-bold text-white text-lg md:text-xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
+                                            <p className="text-white/30 text-xs font-mono mt-1">{nominee.voteCount} Votes</p>
+                                        </motion.div>
+                                    </div>
                                 ))}
                             </motion.div>
                         ) : (
