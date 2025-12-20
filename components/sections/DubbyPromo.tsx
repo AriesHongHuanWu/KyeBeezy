@@ -107,6 +107,20 @@ const products: Product[] = [
         hoverText: "group-hover:text-orange-600 dark:group-hover:text-orange-400",
         buttonText: "GET TOASTY",
         buttonColor: "text-orange-600 dark:text-orange-400"
+    },
+    {
+        id: "hydro-surge",
+        title: "Dubby Hydro Surge",
+        description: "Power Up Your Hydration with Electric Lemonade Flavor!",
+        image: "/dubby-promo-3.jpg",
+        link: "https://www.dubby.gg?ref=gvqslrbj",
+        tag: "NEW ARRIVAL",
+        tagColor: "bg-yellow-400",
+        gradient: "from-yellow-400/10 to-yellow-600/10 dark:from-yellow-400/20 dark:to-yellow-600/20",
+        glowColor: "rgba(250,204,21,0.5)",
+        hoverText: "group-hover:text-yellow-500 dark:group-hover:text-yellow-400",
+        buttonText: "POWER UP",
+        buttonColor: "text-yellow-500 dark:text-yellow-400"
     }
 ];
 

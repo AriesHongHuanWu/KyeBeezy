@@ -131,7 +131,7 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
                 {/* Image */}
                 <img
                     src={imgSrc}
-                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert brightness-125' : 'brightness-100'}`}
+                    className="w-full h-full object-cover transition-all duration-75 brightness-100"
                 />
 
                 {/* Glass Gloss */}
@@ -141,14 +141,8 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
                 <div className="absolute inset-0 border-[1px] border-white/30 rounded-2xl" />
             </motion.div>
 
-            {/* Negative Film Name Overlay (Synced) */}
-            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
-                {isFlash && (
-                    <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter text-center uppercase scale-150 blur-sm opacity-50">
-                        {name}
-                    </h1>
-                )}
-            </div>
+            {/* Negative Film Name Overlay REMOVED for less flashing */}
+            <div className="hidden" />
 
             {/* Bottom Left Name Tag - Clean & Premium */}
             <div className="absolute bottom-[15vh] left-[5vw] z-30 flex flex-col items-start gap-2">
