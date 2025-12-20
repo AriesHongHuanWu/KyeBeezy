@@ -135,21 +135,18 @@ export default function DubbyPromo() {
                         transition={{ duration: 0.8 }}
                         className="flex-1 text-center lg:text-left z-10"
                     >
-                        <div className="flex flex-col items-center lg:items-start">
-                            <h2 className="text-4xl md:text-5xl font-black font-outfit mb-4 text-foreground leading-tight drop-shadow-xl">
-                                POWER UP WITH
-                            </h2>
-                            <div className="relative w-64 h-24 md:w-80 md:h-28 mb-6 transition-transform hover:scale-105 duration-300">
-                                <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full opacity-50 dark:opacity-20" />
+                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl flex flex-col lg:block items-center lg:items-start gap-4">
+                            <span>POWER UP WITH</span>
+                            <div className="relative h-16 md:h-24 w-48 md:w-72 lg:inline-block lg:ml-4 align-middle">
                                 <Image
-                                    src="/dubby/logo.png"
-                                    alt="DUBBY Logo"
+                                    src="/dubby/dubby-logo.webp"
+                                    alt="Dubby Energy"
                                     fill
-                                    className="object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] dark:drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]"
+                                    className="object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
                                     priority
                                 />
                             </div>
-                        </div>
+                        </h2>
                         <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
                             Focus better. React faster. <br />
                             <span className="text-foreground font-semibold">No crash. No jitters.</span> Just pure performance.
