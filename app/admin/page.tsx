@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, writeBatch } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon } from "lucide-react";
+import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 
@@ -14,12 +14,86 @@ import { useAuth } from "@/context/AuthContext";
 interface VideoItem { id: string; title: string; url: string; platform: "youtube" | "twitch"; order: number; }
 interface MusicItem { id: string; title: string; embedCode: string; order: number; }
 interface AdminUser { email: string; createdAt: any; }
+interface ProductItem {
+    id: string;
+    title: string;
+    description: string;
+    image: string;
+    link: string;
+    tag: string;
+    tagColor: string;
+    gradient: string;
+    glowColor: string;
+    hoverText: string;
+    buttonText: string;
+    buttonColor: string;
+    order: number;
+}
 
 const SUPER_ADMIN = "arieswu001@gmail.com";
 
+// --- Default Data for Seeding ---
+const defaultVideos = [
+    { title: "Current Stream", url: "https://www.twitch.tv/realkyebeezylive", platform: "twitch", order: 1 },
+    { title: "Latest Highlight", url: "https://www.youtube.com/watch?v=7UN_eYHLssE", platform: "youtube", order: 2 }
+];
+
+const defaultMusic = [
+    { title: "Kye Beezy - 4AM IN TAIPEI", embedCode: '<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1987654321&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>', order: 1 },
+    { title: "BandLab Beat 1", embedCode: '<iframe src="https://www.bandlab.com/embed/?id=6d3c0519-7538-ef11-86c3-000d3a425266&blur=true" width="100%" height="450" frameborder="0" allowfullscreen></iframe>', order: 2 }
+];
+
+const defaultProducts = [
+    {
+        id: "chefs-choice",
+        title: "Chef's Choice Energy Tub",
+        description: "Can't decide? Let us surprise you! The staff picks a flavor they think you'll love.",
+        image: "/dubby/chef-choice.png",
+        link: "https://www.dubby.gg/products/chefs-choice-energy-tub-we-surprise-you?ref=gvqslrbj",
+        tag: "MYSTERY FLAVOR",
+        tagColor: "bg-purple-500",
+        gradient: "from-purple-500/10 to-blue-500/10 dark:from-purple-900/20 dark:to-blue-900/20",
+        glowColor: "rgba(168,85,247,0.5)",
+        hoverText: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+        buttonText: "GET SURPRISED",
+        buttonColor: "text-purple-600 dark:text-purple-400",
+        order: 1
+    },
+    {
+        id: "hydro-sampler",
+        title: "Hydro Sampler Pack",
+        description: "6 caffeine-free refreshing drinks. Hydrate with flavor and electrolytes.",
+        image: "/dubby/hydro-sampler.png",
+        link: "https://www.dubby.gg/products/hydro-sampler-pack-6-caffeine-free-drinks?ref=gvqslrbj",
+        tag: "CAFFEINE FREE",
+        tagColor: "bg-blue-500",
+        gradient: "from-blue-500/10 to-cyan-500/10 dark:from-blue-900/20 dark:to-cyan-900/20",
+        glowColor: "rgba(59,130,246,0.5)",
+        hoverText: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+        buttonText: "HYDRATE NOW",
+        buttonColor: "text-blue-600 dark:text-blue-400",
+        order: 2
+    },
+    {
+        id: "pushin-punch",
+        title: "Pushin Punch",
+        description: "A refreshing fruit punch kick. The perfect daily driver without the crash.",
+        image: "/dubby/PushinPunch_Front.png",
+        link: "https://www.dubby.gg/products/pushin-punch-energy-drink-tub?ref=gvqslrbj",
+        tag: "BEST SELLER",
+        tagColor: "bg-red-500",
+        gradient: "from-red-500/10 to-orange-500/10 dark:from-red-900/20 dark:to-orange-900/20",
+        glowColor: "rgba(239,68,68,0.5)",
+        hoverText: "group-hover:text-red-600 dark:group-hover:text-red-400",
+        buttonText: "GET PUNCHED",
+        buttonColor: "text-red-600 dark:text-red-400",
+        order: 3
+    }
+];
+
 // --- Main Dashboard Component ---
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "admins">("videos");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins">("videos");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -35,7 +109,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
-                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.0.0 • SUPERUSER</p>
+                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.1.0 • ACCESS GRANTED</p>
                         </div>
                     </div>
 
@@ -71,6 +145,7 @@ export default function AdminDashboard() {
                                 <div className="space-y-1">
                                     <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={<Video size={20} />} label="Stream Highlights" />
                                     <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} icon={<Music size={20} />} label="Music Embeds" />
+                                    <TabButton active={activeTab === 'products'} onClick={() => setActiveTab('products')} icon={<ShoppingBag size={20} />} label="Dubby Products" />
                                 </div>
 
                                 <div className="my-4 h-px bg-white/5 mx-4" />
@@ -100,6 +175,7 @@ export default function AdminDashboard() {
                         <AnimatePresence mode="wait">
                             {activeTab === 'videos' && <VideosManager key="videos" />}
                             {activeTab === 'music' && <MusicManager key="music" />}
+                            {activeTab === 'products' && <ProductsManager key="products" />}
                             {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
                         </AnimatePresence>
                     </main>
@@ -116,8 +192,8 @@ function TabButton({ active, onClick, icon, label }: any) {
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-300 font-medium group relative overflow-hidden ${active
-                    ? 'bg-white text-black shadow-lg shadow-white/10 scale-[1.02]'
-                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-white text-black shadow-lg shadow-white/10 scale-[1.02]'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
         >
             <span className={`relative z-10 ${active ? 'text-black' : 'group-hover:scale-110 transition-transform duration-300'}`}>{icon}</span>
@@ -159,15 +235,35 @@ function VideosManager() {
         } catch (e) { toast.error("Failed to add video"); }
     };
 
+    const handleSeed = async () => {
+        if (!confirm("Seed default videos? This will add entries to your database.")) return;
+        try {
+            const batch = writeBatch(db);
+            defaultVideos.forEach(v => {
+                const docRef = doc(collection(db, "videos"));
+                batch.set(docRef, { ...v, createdAt: new Date() });
+            });
+            await batch.commit();
+            toast.success("Seeded default videos");
+        } catch (e) { toast.error("Seed failed"); }
+    }
+
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
             <SectionHeader
                 title="Stream Highlights"
                 subtitle="Manage YouTube and Twitch content."
                 action={
-                    <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
-                        <Plus size={20} /> Add New
-                    </button>
+                    <div className="flex gap-2">
+                        {videos.length === 0 && (
+                            <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
+                                <Database size={18} /> Seed Defaults
+                            </button>
+                        )}
+                        <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                            <Plus size={20} /> Add New
+                        </button>
+                    </div>
                 }
             />
 
@@ -276,6 +372,110 @@ function MusicManager() {
     );
 }
 
+function ProductsManager() {
+    const [products, setProducts] = useState<ProductItem[]>([]);
+    const { register, handleSubmit, reset } = useForm();
+    const [isAdding, setIsAdding] = useState(false);
+
+    useEffect(() => {
+        const q = query(collection(db, "products"), orderBy("order", "asc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductItem)));
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const onSubmit = async (data: any) => {
+        try {
+            await addDoc(collection(db, "products"), { ...data, order: products.length + 1 });
+            toast.success("Product added");
+            reset(); setIsAdding(false);
+        } catch (e) { toast.error("Error adding product"); }
+    };
+
+    const handleSeed = async () => {
+        if (!confirm("Seed default Dubby products?")) return;
+        try {
+            const batch = writeBatch(db);
+            defaultProducts.forEach(p => {
+                const docRef = doc(collection(db, "products"));
+                batch.set(docRef, p);
+            });
+            await batch.commit();
+            toast.success("Seeded Dubby products");
+        } catch (e) { toast.error("Seed failed"); }
+    }
+
+    return (
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Dubby Products"
+                subtitle="Manage your affiliate product showcase."
+                action={
+                    <div className="flex gap-2">
+                        {products.length === 0 && (
+                            <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
+                                <Database size={18} /> Seed Defaults
+                            </button>
+                        )}
+                        <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                            <Plus size={20} /> Add Product
+                        </button>
+                    </div>
+                }
+            />
+
+            {isAdding && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input {...register("title")} placeholder="Product Title" className="input-field" required />
+                            <input {...register("tag")} placeholder="Tag (e.g. BEST SELLER)" className="input-field" required />
+                        </div>
+                        <input {...register("description")} placeholder="Description" className="input-field" required />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input {...register("image")} placeholder="Image Path (e.g. /dubby/image.png)" className="input-field" required />
+                            <input {...register("link")} placeholder="Affiliate Link" className="input-field" required />
+                        </div>
+
+                        <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest mt-4">Styling (Advanced)</p>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <input {...register("tagColor")} placeholder="Tag Color (Tailwind)" className="input-field text-xs" defaultValue="bg-purple-500" />
+                            <input {...register("gradient")} placeholder="Card Gradient" className="input-field text-xs" defaultValue="from-purple-500/10 to-blue-500/10" />
+                            <input {...register("glowColor")} placeholder="Glow Hex" className="input-field text-xs" defaultValue="rgba(168,85,247,0.5)" />
+                            <input {...register("buttonColor")} placeholder="Btn Color (Tailwind)" className="input-field text-xs" defaultValue="text-purple-600" />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-400 hover:text-white">Cancel</button>
+                            <button type="submit" className="bg-green-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-green-500">Save Product</button>
+                        </div>
+                    </form>
+                </motion.div>
+            )}
+
+            <div className="grid gap-4">
+                {products.map((product) => (
+                    <div key={product.id} className="bg-neutral-900/30 border border-white/5 p-5 rounded-2xl flex items-center justify-between group hover:border-green-500/30 hover:bg-neutral-900/50 transition-all duration-300">
+                        <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-neutral-400 group-hover:text-green-400 group-hover:scale-110 transition-all overflow-hidden relative">
+                                <img src={product.image} alt="Product" className="object-cover w-full h-full" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white text-lg">{product.title}</h4>
+                                <p className="text-xs text-neutral-500 font-mono">{product.tag}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => deleteDoc(doc(db, "products", product.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                            <Trash2 size={20} />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    );
+}
+
 function AdminsManager({ currentUser }: { currentUser: string }) {
     const [admins, setAdmins] = useState<AdminUser[]>([]);
     const { register, handleSubmit, reset } = useForm();
@@ -285,7 +485,6 @@ function AdminsManager({ currentUser }: { currentUser: string }) {
         const q = query(collection(db, "admins"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const adminList = snapshot.docs.map(doc => ({ email: doc.id, ...doc.data() } as AdminUser));
-            // Always ensure Super Admin is in the list for display, even if not in DB
             if (!adminList.find(a => a.email === SUPER_ADMIN)) {
                 adminList.unshift({ email: SUPER_ADMIN, createdAt: null });
             }

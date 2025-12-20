@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import { Copy, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface Product {
     id: string;
@@ -110,8 +112,25 @@ const products: Product[] = [
 
 export default function DubbyPromo() {
     const [copied, setCopied] = useState(false);
-
     const [isAltImage, setIsAltImage] = useState(false);
+    const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
+
+    useEffect(() => {
+        try {
+            const q = query(collection(db, "products"), orderBy("order", "asc"));
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+                    setDisplayProducts(fetchedProducts);
+                }
+            }, (error) => {
+                // Keep default products if error or no permission
+            });
+            return () => unsubscribe();
+        } catch (e) {
+            // Firebase not initialized
+        }
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText("BONNET-ENERGY");
@@ -258,7 +277,7 @@ export default function DubbyPromo() {
                         }
                     }}
                 >
-                    {products.map((product) => (
+                    {displayProducts.map((product) => (
                         <Link key={product.id} href={product.link} target="_blank">
                             <motion.div
                                 variants={{
