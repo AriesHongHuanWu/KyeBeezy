@@ -1,46 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Share2, ExternalLink, Star, Crown, ChevronDown } from "lucide-react";
+import { Trophy, Share2, ExternalLink, Star, Crown, Loader2, RefreshCw } from "lucide-react";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
 import Link from "next/link";
+import { getAwardsData } from "./actions";
 
 // --- Configuration ---
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYw_lYGgNBndvw6TlCYqm6JCcd0QUtON501jjLqOx10Pu_wQ/viewform";
 
-// Fake Data - Replace with real nominees later
-const CATEGORIES = [
-    {
-        id: "best-clip",
-        title: "🔥 Best Clip of the Year",
-        nominees: ["Jump Scare 3000", "The Impossible Clutch", "Controller Disconnect", "Singing in the Rain"],
-        winner: "The Impossible Clutch"
-    },
-    {
-        id: "funniest",
-        title: "🤣 Funniest Moment",
-        nominees: ["Mic Drop Fail", "Donation TTS Prank", "Uber Eats Mishap", "Wrong Chat Message"],
-        winner: "Mic Drop Fail"
-    },
-    {
-        id: "best-beat",
-        title: "🎵 Best Beat Produced",
-        nominees: ["Midnight Vibes", "Trap Soul 4", "Cyber Chase", "Lofi Sunday"],
-        winner: "Midnight Vibes"
-    },
-    {
-        id: "community-mvp",
-        title: "👑 Community MVP",
-        nominees: ["ModBot3000", "SuperFan_99", "DailyViewer", "GiftSubKing"],
-        winner: "ModBot3000"
-    }
-];
+interface CategoryData {
+    id: string;
+    title: string;
+    nominees: string[];
+    winner: string;
+}
 
 export default function AwardsPage() {
     const [revealWinners, setRevealWinners] = useState(false);
-    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [categories, setCategories] = useState<CategoryData[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const data = await getAwardsData();
+            setCategories(data);
+        } catch (e) {
+            toast.error("Failed to load awards data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const copyInvite = () => {
         const url = window.location.href;
@@ -96,64 +93,81 @@ export default function AwardsPage() {
             </div>
 
             {/* --- Nominees & Winners -- */}
-            <div className="container mx-auto px-6 py-24">
-                <div className="flex items-center justify-between mb-16">
+            <div className="container mx-auto px-6 py-24 min-h-[600px]">
+                <div className="flex items-center justify-between mb-16 wrap flex-wrap gap-4">
                     <h2 className="text-4xl md:text-5xl font-bold font-outfit text-white">
                         Nominees <span className="text-yellow-500">&</span> Categories
                     </h2>
 
-                    {/* Secret Admin Button to Toggle Winners (for demo purposes, usually hidden behind auth) */}
-                    <button
-                        onClick={() => setRevealWinners(!revealWinners)}
-                        className={`text-xs uppercase tracking-widest font-bold px-4 py-2 rounded-lg border transition-all ${revealWinners ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-white/20 border-white/10 hover:text-white hover:border-white'}`}
-                    >
-                        {revealWinners ? 'Hide Results' : 'Reveal Winners'}
-                    </button>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8">
-                    {CATEGORIES.map((cat, index) => (
-                        <motion.div
-                            key={cat.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="relative group p-[1px] rounded-3xl bg-gradient-to-b from-white/10 to-transparent hover:from-yellow-500/50 transition-all duration-500"
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={fetchData}
+                            className="p-3 rounded-lg border border-white/10 hover:bg-white/5 text-white/50 hover:text-white transition-all"
+                            title="Refresh Data"
                         >
-                            <div className="bg-black/90 backdrop-blur-xl p-8 rounded-[23px] h-full relative overflow-hidden">
-                                <div className="flex items-start justify-between mb-6">
-                                    <h3 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors">
-                                        {cat.title}
-                                    </h3>
-                                    <Trophy className={`w-6 h-6 ${revealWinners ? 'text-yellow-500' : 'text-white/10'}`} />
-                                </div>
+                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
 
-                                {/* Nominees List */}
-                                <div className="space-y-3 mb-8">
-                                    {cat.nominees.map((nominee) => (
-                                        <div key={nominee} className="flex items-center gap-3 text-white/60">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                                            {nominee}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Winner Reveal Overlay */}
-                                <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center text-center p-6 transition-opacity duration-700"
-                                    style={{
-                                        opacity: revealWinners ? 1 : 0,
-                                        pointerEvents: revealWinners ? 'auto' : 'none',
-                                    }}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent" />
-                                    <Crown className="w-12 h-12 text-yellow-400 mb-4 animate-bounce" />
-                                    <p className="text-yellow-500 text-sm font-bold uppercase tracking-widest mb-2">The Winner Is</p>
-                                    <p className="text-3xl font-black text-white">{cat.winner}</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                        <button
+                            onClick={() => setRevealWinners(!revealWinners)}
+                            className={`text-xs uppercase tracking-widest font-bold px-4 py-3 rounded-lg border transition-all ${revealWinners ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-white/20 border-white/10 hover:text-white hover:border-white'}`}
+                        >
+                            {revealWinners ? 'Hide Results' : 'Reveal Winners'}
+                        </button>
+                    </div>
                 </div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
+                    </div>
+                ) : (
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {categories.map((cat, index) => (
+                            <motion.div
+                                key={cat.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="relative group p-[1px] rounded-3xl bg-gradient-to-b from-white/10 to-transparent hover:from-yellow-500/50 transition-all duration-500 h-full"
+                            >
+                                <div className="bg-black/90 backdrop-blur-xl p-8 rounded-[23px] h-full relative overflow-hidden flex flex-col">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <h3 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                            {cat.title}
+                                        </h3>
+                                        <Trophy className={`w-6 h-6 flex-shrink-0 ${revealWinners ? 'text-yellow-500' : 'text-white/10'}`} />
+                                    </div>
+
+                                    {/* Nominees List */}
+                                    <div className="space-y-3 mb-8 flex-1">
+                                        {cat.nominees.length > 0 ? cat.nominees.map((nominee, i) => (
+                                            <div key={i} className="flex items-center gap-3 text-white/60">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                                                <span className="break-all">{nominee}</span>
+                                            </div>
+                                        )) : (
+                                            <p className="text-white/20 italic">No nominees yet</p>
+                                        )}
+                                    </div>
+
+                                    {/* Winner Reveal Overlay */}
+                                    <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center text-center p-6 transition-opacity duration-700 z-20"
+                                        style={{
+                                            opacity: revealWinners ? 1 : 0,
+                                            pointerEvents: revealWinners ? 'auto' : 'none',
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent" />
+                                        <Crown className="w-12 h-12 text-yellow-400 mb-4 animate-bounce" />
+                                        <p className="text-yellow-500 text-sm font-bold uppercase tracking-widest mb-2">The Winner Is</p>
+                                        <p className="text-3xl font-black text-white break-words max-w-full">{cat.winner}</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Footer */}
