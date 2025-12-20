@@ -245,14 +245,24 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                 animate={{
                     scale: phase === 'IDLE' ? 0 : 1,
                     rotateY: isRevealed ? 180 : 0,
-                    y: isRevealed ? [0, -40, 0] : (isCharging ? [0, -5, 0] : 0),
-                    x: isCharging ? (isAbsorbing ? [-10, 10, -10, 10, 0] : [-2, 2, -2, 2, 0]) : 0, // Violent Shake on Absorb
+                    // Y: Float logic. Gathering = Smooth Float. Absorbing = Static/Tense. Revealed = Bounce.
+                    y: isRevealed ? [0, -40, 0] : (phase === 'GATHERING' ? [0, -20, 0] : 0),
+                    // X: Shake logic. Absorbing = Violent. Gathering = Shake once (1s) then settle.
+                    x: phase === 'ABSORBING' ? [-5, 5, -5, 5] : (phase === 'GATHERING' ? [-2, 2, -2, 2, -1, 1, 0] : 0),
                 }}
                 transition={{
                     scale: { type: "spring", stiffness: 100, damping: 20 },
                     rotateY: { duration: 0.8, ease: "easeInOut" },
-                    y: { duration: isCharging ? 0.1 : 4, repeat: Infinity, ease: isCharging ? "linear" : "easeInOut" },
-                    x: { duration: isAbsorbing ? 0.02 : 0.05, repeat: Infinity },
+                    y: {
+                        duration: phase === 'GATHERING' ? 3 : 4, // Smooth float during gathering
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    },
+                    x: {
+                        duration: phase === 'ABSORBING' ? 0.1 : 1, // Fast shake or 1s settle shake
+                        repeat: phase === 'ABSORBING' ? Infinity : 0, // Infinite violent shake vs One-time settle
+                        ease: "linear"
+                    }
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
@@ -332,7 +342,7 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                                 {winner.name}
                             </h2>
                             <div className="px-5 py-2 bg-white text-black text-sm font-black uppercase rounded-full inline-block shadow-xl">
-                                WINNER • {winner.voteCount} Votes
+                                WINNER
                             </div>
                         </motion.div>
                     </div>
@@ -393,11 +403,11 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                 transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
                             >
                                 {category.nominees.map((nominee, idx) => (
-                                    <div key={nominee.name} className="flex flex-col items-center gap-6 group">
+                                    <div key={nominee.name} className="flex flex-col items-center gap-6 group cursor-pointer relative z-20">
                                         {/* The Flying Element (Head) - Matches Vortex layoutId */}
                                         <motion.div
                                             layoutId={`nominee-${nominee.name}`}
-                                            className="relative w-36 h-36 md:w-48 md:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300 cursor-pointer"
+                                            className="relative w-36 h-36 md:w-48 md:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
                                             whileHover={{ scale: 1.2, boxShadow: "0 0 40px rgba(234,179,8,0.6)" }}
                                             animate={{
                                                 y: [0, -15, 0] // Floating Effect
@@ -426,7 +436,6 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                             className="text-center"
                                         >
                                             <p className="font-bold text-white text-xl md:text-2xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
-                                            <p className="text-white/30 text-sm font-mono mt-1">{nominee.voteCount} Votes</p>
                                         </motion.div>
                                     </div>
                                 ))}
