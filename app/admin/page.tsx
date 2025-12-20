@@ -6,7 +6,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, setDoc, writeBatch, getDocs } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X, Trophy } from "lucide-react";
+import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X, Trophy, MonitorPlay } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 
@@ -139,7 +139,7 @@ const defaultProducts = [
 
 // --- Settings Manager (NEW) ---
 function SettingsManager() {
-    const [settings, setSettings] = useState<any>({ showAwardsWinners: false });
+    const [settings, setSettings] = useState<any>({ showAwardsWinners: false, isLiveActive: false });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -153,11 +153,11 @@ function SettingsManager() {
         return () => unsub();
     }, []);
 
-    const toggleAwards = async () => {
+    const toggleSetting = async (key: string) => {
         try {
-            const newVal = !settings.showAwardsWinners;
-            await setDoc(doc(db, "settings", "config"), { ...settings, showAwardsWinners: newVal }, { merge: true });
-            toast.success(`Awards Winners ${newVal ? 'ENABLED' : 'DISABLED'}`);
+            const newVal = !settings[key];
+            await setDoc(doc(db, "settings", "config"), { ...settings, [key]: newVal }, { merge: true });
+            toast.success(`Setting '${key}' updated to ${newVal ? 'ON' : 'OFF'}`);
         } catch (e) {
             toast.error("Failed to update settings");
         }
@@ -171,7 +171,8 @@ function SettingsManager() {
                 action={<div />}
             />
 
-            <div className="bg-neutral-900/30 border border-white/5 p-6 rounded-2xl">
+            <div className="bg-neutral-900/30 border border-white/5 p-6 rounded-2xl space-y-4">
+                {/* Winners Reveal Toggle */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${settings?.showAwardsWinners ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/5 text-neutral-400'}`}>
@@ -188,10 +189,36 @@ function SettingsManager() {
                     </div>
 
                     <button
-                        onClick={toggleAwards}
+                        onClick={() => toggleSetting('showAwardsWinners')}
                         className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-black ${settings?.showAwardsWinners ? 'bg-yellow-500' : 'bg-neutral-700'}`}
                     >
                         <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings?.showAwardsWinners ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+
+                <div className="h-px bg-white/10 w-full" />
+
+                {/* Live Ceremony Toggle */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${settings?.isLiveActive ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-neutral-400'}`}>
+                            <MonitorPlay size={24} />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white text-lg">Awards: Live Ceremony</h4>
+                            <p className="text-sm text-neutral-500">
+                                {settings?.isLiveActive
+                                    ? "Live Page is ACTIVE. Streamers can start."
+                                    : "Live Page is LOCKED in 'Waiting Room' state."}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => toggleSetting('isLiveActive')}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black ${settings?.isLiveActive ? 'bg-red-500' : 'bg-neutral-700'}`}
+                    >
+                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings?.isLiveActive ? 'translate-x-7' : 'translate-x-1'}`} />
                     </button>
                 </div>
             </div>
