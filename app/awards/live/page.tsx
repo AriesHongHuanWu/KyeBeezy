@@ -129,10 +129,24 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
     const [isRevealed, setIsRevealed] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
 
+    // --- Audio Helper ---
+    const playSound = (type: 'drum' | 'tada' | 'click') => {
+        const sounds = {
+            drum: "https://www.myinstants.com/media/sounds/drum-roll.mp3",
+            tada: "https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3",
+            click: "https://github.com/wilcooo/TagPro-SoundPacks/raw/master/SoundPacks/minimal/click.mp3"
+        };
+        const audio = new Audio(sounds[type]);
+        audio.volume = type === 'drum' ? 0.6 : 0.8;
+        audio.play().catch(e => console.warn("Audio play failed", e));
+    };
+
     const handleClick = () => {
         if (isRevealed) return;
+        playSound('drum');
         setIsShaking(true);
         setTimeout(() => {
+            playSound('tada');
             setIsShaking(false);
             setIsRevealed(true);
             onReveal();
@@ -161,13 +175,13 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
             >
                 {/* --- 3D THICKNESS SIDES (Inset to match rounded corners) --- */}
                 {/* Right Side */}
-                <div className="absolute top-[30px] right-0 w-[20px] h-[calc(100%-60px)] bg-yellow-800 origin-right transform rotateY(-90deg) translateZ(1px)" />
+                <div className="absolute top-[30px] right-0 w-[16px] h-[calc(100%-60px)] bg-yellow-800 origin-right transform rotateY(-90deg) translateZ(1px)" />
                 {/* Left Side */}
-                <div className="absolute top-[30px] left-0 w-[20px] h-[calc(100%-60px)] bg-yellow-600 origin-left transform rotateY(90deg) translateZ(1px)" />
+                <div className="absolute top-[30px] left-0 w-[16px] h-[calc(100%-60px)] bg-yellow-600 origin-left transform rotateY(90deg) translateZ(1px)" />
                 {/* Top Side */}
-                <div className="absolute top-0 left-[30px] w-[calc(100%-60px)] h-[20px] bg-yellow-700 origin-top transform rotateX(-90deg) translateZ(1px)" />
+                <div className="absolute top-0 left-[30px] w-[calc(100%-60px)] h-[16px] bg-yellow-700 origin-top transform rotateX(-90deg) translateZ(1px)" />
                 {/* Bottom Side */}
-                <div className="absolute bottom-0 left-[30px] w-[calc(100%-60px)] h-[20px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
+                <div className="absolute bottom-0 left-[30px] w-[calc(100%-60px)] h-[16px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
 
 
                 {/* CARD BACK (Mystery) */}
@@ -277,9 +291,10 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext?: 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                            className="w-full max-w-7xl"
+                            className="w-full max-w-[95vw]"
                         >
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+                            {/* FLEX ROW for Single Line Layout */}
+                            <div className="flex flex-wrap justify-center items-center gap-12 md:gap-16">
                                 {category.nominees.map((nominee, i) => (
                                     <motion.div
                                         key={nominee.name}
@@ -288,7 +303,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext?: 
                                         transition={{ delay: i * 0.1 }}
                                         className="flex flex-col items-center gap-4 group cursor-default"
                                     >
-                                        <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full p-1 bg-gradient-to-b from-white/20 to-transparent group-hover:from-yellow-500 group-hover:to-yellow-800 transition-all duration-300">
+                                        <div className="relative w-32 h-32 md:w-36 md:h-36 lg:w-44 lg:h-44 rounded-full p-1 bg-gradient-to-b from-white/20 to-transparent group-hover:from-yellow-500 group-hover:to-yellow-800 transition-all duration-300">
                                             <div className="absolute inset-0 bg-black rounded-full m-[2px]" />
                                             {nominee.image ? (
                                                 <img src={nominee.image} alt={nominee.name} className="relative z-10 w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 pointer-events-none" />
@@ -298,7 +313,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext?: 
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-white/60 font-bold text-lg group-hover:text-yellow-400 transition-colors text-center">{nominee.name}</span>
+                                        <span className="text-white/60 font-bold text-lg md:text-xl group-hover:text-yellow-400 transition-colors text-center max-w-[180px] leading-tight">{nominee.name}</span>
                                     </motion.div>
                                 ))}
                             </div>
