@@ -60,66 +60,81 @@ const NarrativeOverlay = ({ text, subtext }: { text: string, subtext?: string })
     );
 };
 
-// SCENE 1: MANIFESTO
-const ManifestoVisuals = ({ tick }: { tick: number }) => (
-    <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
-        {[1, 2, 3].map(i => (
-            <div key={i}
-                className={`absolute rounded-full border-[10px] md:border-[30px] border-white/10`}
-                style={{
-                    width: `${25 * i}vw`, height: `${25 * i}vw`,
-                    transform: `scale(${1 + (tick % 4) * 0.2}) rotate(${tick * 10 * (i % 2 === 0 ? 1 : -1)}deg)`
-                }}
-            />
-        ))}
-        {tick % 4 === 0 && <div className="absolute inset-0 bg-white mix-blend-exclusion" />}
+// --- EFFCTS ---
+const CRTScanline = () => (
+    <div className="absolute inset-0 pointer-events-none z-[800] opacity-30 mix-blend-overlay">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+        <div className="absolute inset-0 animate-[scan_5s_linear_infinite] bg-[linear-gradient(transparent_0%,rgba(255,255,255,0.1)_50%,transparent_100%)] h-[20vh]" />
     </div>
 );
 
-// SCENE 2: ROSTER (Synced & Negative Flash)
-const RosterVisuals = ({ tick }: { tick: number }) => {
+// SCENE 1: AUDIO MANIFESTO (Circular EQ)
+const AudioSpectrumVisuals = ({ tick }: { tick: number }) => (
+    <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
+        {/* Pulsing Core */}
+        <div className="absolute w-[20vw] h-[20vw] bg-yellow-500 rounded-full blur-[50px] animate-pulse opacity-20" />
+
+        {/* Circular EQ Bars */}
+        {[...Array(36)].map((_, i) => (
+            <div
+                key={i}
+                className="absolute bg-white/80 w-2 md:w-4 rounded-full origin-bottom"
+                style={{
+                    height: `${10 + Math.sin(tick * 0.5 + i) * 10}vh`,
+                    transform: `rotate(${i * 10}deg) translateY(-10vh)`, // Circle arrangement
+                }}
+            />
+        ))}
+        {/* Flash Center */}
+        {tick % 4 === 0 && <div className="absolute w-[30vh] h-[30vh] rounded-full border-[20px] border-white opacity-20 animate-ping" />}
+    </div>
+);
+
+// SCENE 2: ROSTER (3D Gacha Card Flip)
+const GachaRosterVisuals = ({ tick }: { tick: number }) => {
     const keys = Object.keys(NOMINEE_IMAGES);
     const images = Object.values(NOMINEE_IMAGES);
     const total = keys.length;
 
-    // Cycle linearly to ensure everyone is shown
+    // Cycle linearly
     const idx = tick % total;
-    const name = keys[idx].replace('@', '').split('(')[0].trim().toUpperCase(); // Clean name
+    const name = keys[idx].replace('@', '').split('(')[0].trim().toUpperCase();
 
-    // Negative Film Flash Logic
+    // Flash Logic
     const isFlash = tick % 2 === 0;
 
     return (
-        <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden">
-            {/* Background Grid (Randomized) */}
-            <div className="absolute inset-0 grid grid-cols-6 opacity-30 grayscale blur-sm">
-                {images.slice(0, 24).map((src, i) => (
-                    <div key={i} className="bg-cover bg-center" style={{ backgroundImage: `url(${src})`, opacity: Math.random() * 0.5 }} />
+        <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden perspective-1000">
+            {/* Dynamic Background Audio Waveform */}
+            <div className="absolute inset-0 flex items-center gap-1 justify-center opacity-20">
+                {[...Array(20)].map((_, i) => (
+                    <div key={i} className="w-[4vw] bg-yellow-500" style={{ height: `${Math.random() * 100}vh`, transition: 'height 0.1s' }} />
                 ))}
             </div>
 
-            {/* Main Image Layer */}
-            <div className="relative z-10 w-[100vw] h-[100vh] md:w-[600px] md:h-[700px]">
+            {/* 3D Card Container */}
+            <motion.div
+                key={idx} // Re-mounts on change to trigger animation
+                initial={{ rotateY: 90, scale: 0.5, opacity: 0 }}
+                animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+                exit={{ rotateY: -90, scale: 0.5, opacity: 0 }}
+                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+                className="relative z-10 w-[80vw] h-[60vh] md:w-[400px] md:h-[600px] bg-black border-[10px] border-white rounded-xl overflow-hidden shadow-[0_0_100px_rgba(255,255,0,0.3)]"
+            >
                 <img
                     src={images[idx]}
-                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert contrast-150' : 'contrast-125'}`}
+                    className={`w-full h-full object-cover ${isFlash ? 'filter invert contrast-150' : 'contrast-125'}`}
                 />
-            </div>
 
-            {/* Negative Film Name Overlay */}
-            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
-                {isFlash && (
-                    <h1 className="text-[15vw] md:text-[10vw] font-black text-white leading-none tracking-tighter text-center uppercase">
-                        {name}
-                    </h1>
-                )}
-            </div>
+                {/* Holographic Sheen */}
+                <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.4)_45%,transparent_50%)] animate-[shine_2s_infinite]" />
+            </motion.div>
 
-            {/* Bottom Left Name Tag (Always Visible) */}
-            <div className="absolute bottom-[12vh] left-8 z-30 bg-yellow-500 text-black px-4 py-2 skew-x-[-10deg] border-4 border-black box-content">
-                <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">
-                    {name}
-                </h2>
+            {/* Bottom Left Name Tag (Variable height to clear bars) */}
+            <div className="absolute bottom-[15vh] left-[5vw] z-30">
+                <div className="bg-yellow-500 text-black px-6 py-2 skew-x-[-10deg] border-4 border-black shadow-[10px_10px_0px_white]">
+                    <h2 className="text-3xl md:text-6xl font-black uppercase tracking-tighter line-clamp-1">{name}</h2>
+                </div>
             </div>
         </div>
     );
@@ -153,33 +168,27 @@ const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tic
     );
 };
 
-// SCENE 4: VOTING WAR
-const VotingVisuals = ({ tick }: { tick: number }) => {
+// SCENE 4: VOTING WAR (EQ Meter)
+const EQMeterVisuals = ({ tick }: { tick: number }) => {
     const [a, setA] = useState(50);
     useEffect(() => {
-        const diff = (Math.random() - 0.5) * 15;
+        const diff = (Math.random() - 0.5) * 20;
         setA(prev => Math.min(90, Math.max(10, prev + diff)));
     }, [tick]);
 
     return (
-        <div className="absolute inset-0 bg-black flex items-end">
-            {/* Left Bar */}
-            <div className="relative h-full bg-blue-600 border-r-4 border-white transition-all duration-75" style={{ width: `${a}%` }}>
-                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-multiply" />
-                <h1 className="absolute top-10 right-10 text-8xl font-black text-white italic">{Math.floor(a * 1000)}</h1>
+        <div className="absolute inset-0 bg-black flex flex-col items-center justify-center gap-4">
+            {/* Digital Meter Container */}
+            <div className="w-[80vw] h-[20vh] bg-neutral-900 border-4 border-white flex items-center p-2 gap-1">
+                {/* Left Channel */}
+                <div className="h-full bg-blue-500 transition-all duration-75 shadow-[0_0_20px_blue]" style={{ width: `${a}%` }} />
             </div>
-            {/* Right Bar */}
-            <div className="relative h-full bg-red-600 border-l-4 border-white transition-all duration-75" style={{ width: `${100 - a}%` }}>
-                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-multiply" />
-                <h1 className="absolute bottom-10 left-10 text-8xl font-black text-white italic">{Math.floor((100 - a) * 1000)}</h1>
+            <div className="w-[80vw] h-[20vh] bg-neutral-900 border-4 border-white flex items-center p-2 gap-1 justify-end">
+                {/* Right Channel */}
+                <div className="h-full bg-red-500 transition-all duration-75 shadow-[0_0_20px_red]" style={{ width: `${100 - a}%` }} />
             </div>
 
-            {/* Glitch Overlay */}
-            {tick % 8 === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center z-10 bg-white mix-blend-exclusion">
-                    <h1 className="text-[10vw] font-black text-black">LEADER CHANGE</h1>
-                </div>
-            )}
+            <h1 className="text-[10vw] font-black text-white mix-blend-difference mt-8">LIVE STATS</h1>
         </div>
     );
 };
@@ -365,6 +374,7 @@ export default function TeaserPageV17() {
                         animate={{ x: tick % 4 === 0 ? [3, -3, 0] : 0 }} // Subtle Shake
                         transition={{ duration: 0.05 }}
                     >
+                        {/* CINEMATIC SCENE RENDERER */}
                         <AnimatePresence mode="wait">
                             {currentStep.type === 'TEXT' ? (
                                 <motion.div
@@ -381,16 +391,16 @@ export default function TeaserPageV17() {
                                 <motion.div
                                     key={`scene-${currentStep.sceneId}`}
                                     className="absolute inset-0 z-10"
-                                    initial={{ opacity: 0, scale: 1.1 }} // Zoom In Entrace
+                                    initial={{ opacity: 0, scale: 1.1 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, filter: "brightness(2)" }} // Flash Out
+                                    exit={{ opacity: 0, filter: "brightness(2)" }}
                                     transition={{ duration: 0.4 }}
                                 >
-                                    {currentStep.sceneId === 1 && <ManifestoVisuals tick={tick} />}
+                                    {currentStep.sceneId === 1 && <AudioSpectrumVisuals tick={tick} />}
                                     {/* Pass Key prop to force re-render/animate on return if needed, but SceneId handles it */}
-                                    {currentStep.sceneId === 2 && <RosterVisuals tick={tick} />}
+                                    {currentStep.sceneId === 2 && <GachaRosterVisuals tick={tick} />}
                                     {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={tick} />}
-                                    {currentStep.sceneId === 4 && <VotingVisuals tick={tick} />}
+                                    {currentStep.sceneId === 4 && <EQMeterVisuals tick={tick} />}
                                     {currentStep.sceneId === 5 && <RitualVisuals />}
                                     {currentStep.sceneId === 6 && <FinaleVisuals />}
                                 </motion.div>
@@ -399,6 +409,7 @@ export default function TeaserPageV17() {
                     </motion.div>
 
                     {/* GLOBAL VISUALS */}
+                    <CRTScanline />
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_120%)] pointer-events-none mix-blend-overlay opacity-50" />
 
