@@ -56,125 +56,7 @@ const defaultSettings: GlobalSettings = {
 };
 
 
-function SettingsManager() {
-    const { register, handleSubmit, reset, setValue } = useForm();
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const docRef = doc(db, "settings", "global");
-            const snapshot = await new Promise<any>((resolve) => onSnapshot(docRef, resolve)()); // Get initial
-            if (snapshot.exists()) {
-                const data = snapshot.data() as GlobalSettings;
-                setValue("heroTitle", data.heroTitle.join(", "));
-                setValue("heroSubtitle", data.heroSubtitle);
-                setValue("socials.twitch", data.socials.twitch);
-                setValue("socials.youtube", data.socials.youtube);
-                setValue("socials.discord", data.socials.discord);
-                setValue("socials.bandlab", data.socials.bandlab);
-            } else {
-                // If no settings exist, seed defaults immediately (optional, or wait for user)
-                await setDoc(docRef, defaultSettings);
-                reset({
-                    heroTitle: defaultSettings.heroTitle.join(", "),
-                    heroSubtitle: defaultSettings.heroSubtitle,
-                    socials: defaultSettings.socials
-                });
-            }
-            setLoading(false);
-        };
-        fetchSettings();
-    }, [setValue, reset]);
-
-    const onSubmit = async (data: any) => {
-        try {
-            const settingsData: GlobalSettings = {
-                heroTitle: data.heroTitle.split(",").map((s: string) => s.trim()),
-                heroSubtitle: data.heroSubtitle,
-                socials: {
-                    twitch: data.socials.twitch,
-                    youtube: data.socials.youtube,
-                    discord: data.socials.discord,
-                    bandlab: data.socials.bandlab
-                }
-            };
-            await setDoc(doc(db, "settings", "global"), settingsData);
-            toast.success("Global settings updated");
-        } catch (e) { toast.error("Failed to update settings"); }
-    };
-
-    const handleSeed = async () => {
-        if (!confirm("Reset global settings to defaults?")) return;
-        try {
-            await setDoc(doc(db, "settings", "global"), defaultSettings);
-            setValue("heroTitle", defaultSettings.heroTitle.join(", "));
-            setValue("heroSubtitle", defaultSettings.heroSubtitle);
-            setValue("socials.twitch", defaultSettings.socials.twitch);
-            setValue("socials.youtube", defaultSettings.socials.youtube);
-            setValue("socials.discord", defaultSettings.socials.discord);
-            setValue("socials.bandlab", defaultSettings.socials.bandlab);
-            toast.success("Settings reset to defaults");
-        } catch (e) { toast.error("Reset failed"); }
-    }
-
-    if (loading) return <div className="text-neutral-500">Loading settings...</div>;
-
-    return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-            <SectionHeader
-                title="Global Settings"
-                subtitle="Manage site-wide text and links."
-                action={
-                    <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
-                        <Database size={18} /> Reset Defaults
-                    </button>
-                }
-            />
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
-                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Settings size={18} /> Hero Section</h3>
-                    <div>
-                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Morphing Titles (Comma separated)</label>
-                        <input {...register("heroTitle")} className="input-field" placeholder="KYE BEEZY, ARTIST, STREAMER" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Subtitle</label>
-                        <input {...register("heroSubtitle")} className="input-field" placeholder="DIGITAL CREATOR" />
-                    </div>
-                </div>
-
-                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Users size={18} /> Social Links</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Twitch URL</label>
-                            <input {...register("socials.twitch")} className="input-field" placeholder="https://twitch.tv/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">YouTube URL</label>
-                            <input {...register("socials.youtube")} className="input-field" placeholder="https://youtube.com/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Discord URL</label>
-                            <input {...register("socials.discord")} className="input-field" placeholder="https://discord.gg/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">BandLab URL</label>
-                            <input {...register("socials.bandlab")} className="input-field" placeholder="https://bandlab.com/..." />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-end">
-                    <button type="submit" className="bg-purple-600 px-8 py-3 rounded-xl text-white font-bold hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all hover:scale-105">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
-        </motion.div>
-    );
-}
 
 const SUPER_ADMIN = "arieswu001@gmail.com";
 
@@ -368,7 +250,7 @@ export default function AdminDashboard() {
                             {activeTab === 'videos' && <VideosManager key="videos" />}
                             {activeTab === 'music' && <MusicManager key="music" />}
                             {activeTab === 'products' && <ProductsManager key="products" />}
-                            {activeTab === 'settings' && <SettingsManager />}
+                            {activeTab === 'settings' && <SettingsManager key="settings" />}
                             {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
                         </AnimatePresence>
                     </main>
@@ -777,6 +659,126 @@ function ProductsManager() {
                     </div>
                 ))}
             </div>
+        </motion.div>
+    );
+}
+
+
+function SettingsManager() {
+    const { register, handleSubmit, reset, setValue } = useForm();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const docRef = doc(db, "settings", "global");
+            const snapshot = await new Promise<any>((resolve) => onSnapshot(docRef, resolve)());
+            if (snapshot.exists()) {
+                const data = snapshot.data() as GlobalSettings;
+                setValue("heroTitle", data.heroTitle.join(", "));
+                setValue("heroSubtitle", data.heroSubtitle);
+                setValue("socials.twitch", data.socials.twitch);
+                setValue("socials.youtube", data.socials.youtube);
+                setValue("socials.discord", data.socials.discord);
+                setValue("socials.bandlab", data.socials.bandlab);
+            } else {
+                await setDoc(docRef, defaultSettings);
+                reset({
+                    heroTitle: defaultSettings.heroTitle.join(", "),
+                    heroSubtitle: defaultSettings.heroSubtitle,
+                    socials: defaultSettings.socials
+                });
+            }
+            setLoading(false);
+        };
+        fetchSettings();
+    }, [setValue, reset]);
+
+    const onSubmit = async (data: any) => {
+        try {
+            const settingsData: GlobalSettings = {
+                heroTitle: data.heroTitle.split(",").map((s: string) => s.trim()),
+                heroSubtitle: data.heroSubtitle,
+                socials: {
+                    twitch: data.socials.twitch,
+                    youtube: data.socials.youtube,
+                    discord: data.socials.discord,
+                    bandlab: data.socials.bandlab
+                }
+            };
+            await setDoc(doc(db, "settings", "global"), settingsData);
+            toast.success("Global settings updated");
+        } catch (e) { toast.error("Failed to update settings"); }
+    };
+
+    const handleSeed = async () => {
+        if (!confirm("Reset global settings to defaults?")) return;
+        try {
+            await setDoc(doc(db, "settings", "global"), defaultSettings);
+            setValue("heroTitle", defaultSettings.heroTitle.join(", "));
+            setValue("heroSubtitle", defaultSettings.heroSubtitle);
+            setValue("socials.twitch", defaultSettings.socials.twitch);
+            setValue("socials.youtube", defaultSettings.socials.youtube);
+            setValue("socials.discord", defaultSettings.socials.discord);
+            setValue("socials.bandlab", defaultSettings.socials.bandlab);
+            toast.success("Settings reset to defaults");
+        } catch (e) { toast.error("Reset failed"); }
+    }
+
+    if (loading) return <div className="text-neutral-500">Loading settings...</div>;
+
+    return (
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Global Settings"
+                subtitle="Manage site-wide text and links."
+                action={
+                    <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
+                        <Database size={18} /> Reset Defaults
+                    </button>
+                }
+            />
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
+                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Settings size={18} /> Hero Section</h3>
+                    <div>
+                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Morphing Titles (Comma separated)</label>
+                        <input {...register("heroTitle")} className="input-field" placeholder="KYE BEEZY, ARTIST, STREAMER" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Subtitle</label>
+                        <input {...register("heroSubtitle")} className="input-field" placeholder="DIGITAL CREATOR" />
+                    </div>
+                </div>
+
+                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Users size={18} /> Social Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Twitch URL</label>
+                            <input {...register("socials.twitch")} className="input-field" placeholder="https://twitch.tv/..." />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">YouTube URL</label>
+                            <input {...register("socials.youtube")} className="input-field" placeholder="https://youtube.com/..." />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Discord URL</label>
+                            <input {...register("socials.discord")} className="input-field" placeholder="https://discord.gg/..." />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">BandLab URL</label>
+                            <input {...register("socials.bandlab")} className="input-field" placeholder="https://bandlab.com/..." />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end">
+                    <button type="submit" className="bg-purple-600 px-8 py-3 rounded-xl text-white font-bold hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all hover:scale-105">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </motion.div>
     );
 }
