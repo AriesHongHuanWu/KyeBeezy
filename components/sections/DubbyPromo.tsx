@@ -126,7 +126,7 @@ const products: Product[] = [
 
 export default function DubbyPromo() {
     const [copied, setCopied] = useState(false);
-    const [isAltImage, setIsAltImage] = useState(false);
+    const [heroImageIndex, setHeroImageIndex] = useState(0); // 0: Main, 1: Alt, 2: New
     const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
 
     useEffect(() => {
@@ -151,6 +151,15 @@ export default function DubbyPromo() {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    const heroImages = [
+        "/dubby/endorsement.jpg",
+        "/dubby/endorsement-alt.jpg",
+        "/dubby/endorsement-3.jpg"
+    ];
+
+    const currentHeroImage = heroImages[heroImageIndex];
+    const isAlt = heroImageIndex > 0;
 
     return (
         <section id="dubby" className="py-20 relative overflow-hidden transition-colors duration-300">
@@ -214,18 +223,18 @@ export default function DubbyPromo() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="flex-1 relative w-full max-w-md lg:max-w-xl cursor-pointer"
-                        onClick={() => setIsAltImage(!isAltImage)}
+                        onClick={() => setHeroImageIndex(prev => (prev + 1) % 3)}
                         whileTap={{ scale: 0.95 }}
                     >
                         <div className="relative aspect-square">
                             {/* Decorative Elements */}
-                            <div className={`absolute -inset-4 bg-gradient-to-tr ${isAltImage ? 'from-pink-500 to-yellow-500' : 'from-purple-500 to-cyan-500'} rounded-[2.5rem] blur-2xl opacity-30 animate-pulse transition-colors duration-1000`} />
+                            <div className={`absolute -inset-4 bg-gradient-to-tr ${isAlt ? 'from-pink-500 to-yellow-500' : 'from-purple-500 to-cyan-500'} rounded-[2.5rem] blur-2xl opacity-30 animate-pulse transition-colors duration-1000`} />
                             <div className="absolute -inset-1 bg-gradient-to-tr from-purple-500/50 to-cyan-500/50 rounded-[2.5rem] backdrop-blur-sm" />
 
                             {/* Main Image */}
                             <div className="relative h-full w-full rounded-[2rem] overflow-hidden shadow-2xl isolate transform-gpu group">
                                 <motion.div
-                                    key={isAltImage ? "alt" : "main"}
+                                    key={heroImageIndex}
                                     initial={{ opacity: 0, scale: 1.1 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0 }}
@@ -233,7 +242,7 @@ export default function DubbyPromo() {
                                     className="absolute inset-0 w-full h-full"
                                 >
                                     <Image
-                                        src={isAltImage ? "/dubby/endorsement-alt.jpg" : "/dubby/endorsement.jpg"}
+                                        src={currentHeroImage}
                                         alt="Kye Beezy with Dubby"
                                         fill
                                         className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out will-change-transform"
@@ -248,7 +257,7 @@ export default function DubbyPromo() {
                                     transition={{ delay: 1, duration: 0.5 }}
                                     className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 pointer-events-none z-10"
                                 >
-                                    <span className={`w-2 h-2 rounded-full ${isAltImage ? 'bg-pink-500' : 'bg-green-500'} animate-pulse`} />
+                                    <span className={`w-2 h-2 rounded-full ${heroImageIndex === 1 ? 'bg-pink-500' : heroImageIndex === 2 ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
                                     OFFICIAL PARTNER
                                 </motion.div>
 
