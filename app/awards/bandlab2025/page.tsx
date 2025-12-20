@@ -94,7 +94,7 @@ export default function BandlabAwardsPage() {
                     </div>
 
                     <h1 className="text-6xl md:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-400 via-yellow-600 to-yellow-900 dark:from-yellow-200 dark:via-yellow-500 dark:to-yellow-800 drop-shadow-sm dark:drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]">
-                        BANDLAB<br />AWARD
+                        BANDLAB AWARD<br />2025
                     </h1>
 
                     <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl font-light">
@@ -129,7 +129,7 @@ export default function BandlabAwardsPage() {
 
                     <div className="flex items-center gap-2">
                         <Link
-                            href="/awards/live"
+                            href="/awards/bandlab2025/live"
                             target="_blank"
                             className="p-3 rounded-lg border border-border hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all"
                             title="Live Presentation Mode"

@@ -45,7 +45,7 @@ export default function AwardsHubPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                     >
-                        <Link href="/awards/bandlab" className="group block relative h-full">
+                        <Link href="/awards/bandlab2025" className="group block relative h-full">
                             <div className="absolute inset-0 bg-yellow-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-3xl" />
 
                             <div className="relative h-full bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden hover:border-yellow-500/50 transition-all duration-500 group-hover:transform group-hover:-translate-y-2 group-hover:shadow-2xl">

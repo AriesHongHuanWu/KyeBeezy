@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { ChevronRight, ChevronLeft, Star, Crown, Sparkles, MonitorPlay, ArrowLeft, Lock, Trophy } from "lucide-react";
-import { getAwardsData } from "../data-fetcher";
+import { getAwardsData } from "../../data-fetcher";
 import { Confetti } from "@/components/ui/confetti";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 // --- Types ---
 interface Nominee {
@@ -352,24 +353,26 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
     );
 };
 
-// 4. Category Slide (Vortex Ritual)
-const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: () => void }) => {
+// 4. Category Slide (Vortex Ritual) - Controlled by Props
+const CategorySlide = ({
+    category,
+    phase,
+    isAdmin,
+    onStartRitual,
+    onNext
+}: {
+    category: CategoryData,
+    phase: RitualPhase,
+    isAdmin: boolean,
+    onStartRitual: () => void,
+    onNext: () => void
+}) => {
     const [winner, setWinner] = useState<Nominee | null>(null);
-    const [phase, setPhase] = useState<RitualPhase>('IDLE');
 
     useEffect(() => {
         const sorted = [...category.nominees].sort((a, b) => b.voteCount - a.voteCount);
         setWinner(sorted[0]);
     }, [category]);
-
-    const startRitual = () => {
-        if (phase !== 'IDLE') return;
-        setPhase('GATHERING'); // Nominees fly to orbit
-
-        // Sequence
-        setTimeout(() => setPhase('ABSORBING'), 2500); // 2.5s of orbiting/charging
-        setTimeout(() => setPhase('REVEALED'), 3000);  // 0.5s Suck in -> Reveal
-    };
 
     return (
         <div className="flex flex-col h-screen bg-black relative overflow-hidden font-sans">
@@ -392,10 +395,9 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                 <div className="flex-1 flex flex-col items-center justify-center relative perspective-distant">
 
                     {/* --- NOMINEES: Grid vs Vortex --- */}
-                    {/* We use LayoutGroup to magically morph them */}
                     <LayoutGroup>
                         {phase === 'IDLE' ? (
-                            // GRID LAYOUT (Circular Avatars - Restored)
+                            // GRID LAYOUT
                             <motion.div
                                 className="flex flex-wrap justify-center items-start gap-10 w-full max-w-[90vw] relative z-10 px-4"
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -404,17 +406,14 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                             >
                                 {category.nominees.map((nominee, idx) => (
                                     <div key={nominee.name} className="flex flex-col items-center gap-6 group cursor-pointer relative z-20">
-                                        {/* The Flying Element (Head) - Matches Vortex layoutId */}
                                         <motion.div
                                             layoutId={`nominee-${nominee.name}`}
                                             className="relative w-36 h-36 md:w-48 md:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
                                             whileHover={{ scale: 1.2, boxShadow: "0 0 40px rgba(234,179,8,0.6)" }}
-                                            animate={{
-                                                y: [0, -15, 0] // Floating Effect
-                                            }}
+                                            animate={{ y: [0, -15, 0] }}
                                             transition={{
                                                 y: { duration: 3 + ((idx % 3) * 0.5), repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 },
-                                                layout: { duration: 0.8 } // Smooth morph
+                                                layout: { duration: 0.8 }
                                             }}
                                         >
                                             {nominee.image ? (
@@ -424,15 +423,12 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                                     {nominee.name.substring(0, 1)}
                                                 </div>
                                             )}
-                                            {/* Shine effect */}
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </motion.div>
 
-                                        {/* Name Label */}
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.5 + (idx * 0.1) }} // Staggered Names
+                                            transition={{ delay: 0.5 + (idx * 0.1) }}
                                             className="text-center"
                                         >
                                             <p className="font-bold text-white text-xl md:text-2xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
@@ -450,7 +446,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                 >
                                     {category.nominees.map((nominee, idx) => {
                                         const angle = (idx / category.nominees.length) * 2 * Math.PI;
-                                        const radius = 350; // Orbit Radius
+                                        const radius = 350;
                                         const x = Math.cos(angle) * radius;
                                         const y = Math.sin(angle) * radius;
 
@@ -459,10 +455,10 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                                 layoutId={`nominee-${nominee.name}`}
                                                 key={nominee.name}
                                                 className="absolute top-1/2 left-1/2 w-20 h-20 rounded-full border-2 border-yellow-500 overflow-hidden shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-black"
-                                                initial={{ x: 0, y: 0 }} // Start center? No, layoutId handles start pos
+                                                initial={{ x: 0, y: 0 }}
                                                 animate={
                                                     phase === 'ABSORBING' || phase === 'REVEALED'
-                                                        ? { x: 0, y: 0, scale: 0, opacity: 0 } // Suck into center
+                                                        ? { x: 0, y: 0, scale: 0, opacity: 0 }
                                                         : { x, y, scale: 1, opacity: 1, rotate: -360 }
                                                 }
                                                 transition={{
@@ -493,31 +489,33 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                     )}
                 </div>
 
-                {/* Footer / Controls */}
-                <motion.div
-                    className="flex justify-between items-end mt-10 z-30"
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1, duration: 0.8 }}
-                >
-                    {phase === 'IDLE' && (
-                        <button
-                            onClick={startRitual}
-                            className="mx-auto px-12 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xl tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 transition-all animate-pulse"
-                        >
-                            START RITUAL
-                        </button>
-                    )}
+                {/* Footer / Controls (ADMIN ONLY) */}
+                {isAdmin && (
+                    <motion.div
+                        className="flex justify-between items-end mt-10 z-30"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1, duration: 0.8 }}
+                    >
+                        {phase === 'IDLE' && (
+                            <button
+                                onClick={onStartRitual}
+                                className="mx-auto px-12 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xl tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 transition-all"
+                            >
+                                START RITUAL
+                            </button>
+                        )}
 
-                    {phase === 'REVEALED' && (
-                        <button
-                            onClick={onNext}
-                            className="ml-auto px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white font-bold backdrop-blur-md transition-all flex items-center gap-2"
-                        >
-                            NEXT CATEGORY <ChevronRight className="w-4 h-4" />
-                        </button>
-                    )}
-                </motion.div>
+                        {phase === 'REVEALED' && (
+                            <button
+                                onClick={onNext}
+                                className="ml-auto px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white font-bold backdrop-blur-md transition-all flex items-center gap-2"
+                            >
+                                NEXT CATEGORY <ChevronRight className="w-4 h-4" />
+                            </button>
+                        )}
+                    </motion.div>
+                )}
             </div>
         </div>
     );
@@ -525,53 +523,93 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
 
 // --- Page Controller ---
 export default function LiveAwardsPage() {
+    const { user } = useAuth();
+    const isAdmin = !!user; // Assume any logged-in user is Admin for this context
+
     const [categories, setCategories] = useState<CategoryData[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentIndex, setCurrentIndex] = useState(-1); // -1 = Intro, categories.length = Outro
+
+    // Synced State
+    const [currentIndex, setCurrentIndex] = useState(-1);
+    const [ritualPhase, setRitualPhase] = useState<RitualPhase>('IDLE');
+
+    // Local Access Control
     const [isLiveActive, setIsLiveActive] = useState(false);
-    const router = useRouter();
 
     useEffect(() => {
-        getAwardsData().then(data => {
+        const load = async () => {
+            const data = await getAwardsData();
             setCategories(data);
             setLoading(false);
+        };
+        load();
+
+        // 1. Listen for Live Active Status
+        const unsubConfig = onSnapshot(doc(db, "settings", "config"), (doc) => {
+            setIsLiveActive(doc.data()?.isLiveActive || false);
         });
 
-        // Listen for Admin 'Live' status
-        const unsub = onSnapshot(doc(db, "settings", "config"), (doc) => {
+        // 2. Listen for Shared Live State (Slide & Phase)
+        const unsubState = onSnapshot(doc(db, "settings", "liveState"), (doc) => {
             const data = doc.data();
-            setIsLiveActive(data?.isLiveActive || false);
+            if (data) {
+                // Only update if changed prevents jitter? React handles this.
+                if (data.currentIndex !== undefined) setCurrentIndex(data.currentIndex);
+                if (data.ritualPhase) setRitualPhase(data.ritualPhase as RitualPhase);
+            }
         });
-        return () => unsub();
+
+        return () => { unsubConfig(); unsubState(); };
     }, []);
 
-    // Keyboard Navigation
-    useEffect(() => {
-        const handleKey = (e: KeyboardEvent) => {
-            if (!isLiveActive && currentIndex === -1) return; // Prevent nav if waiting
-            if (e.key === "ArrowRight" || e.key === " ") nextSlide();
-            if (e.key === "ArrowLeft") prevSlide();
-        };
-        window.addEventListener("keydown", handleKey);
-        return () => window.removeEventListener("keydown", handleKey);
-    }, [categories, currentIndex, isLiveActive]);
+    // --- Admin Actions ---
+    const updateCloudState = async (updates: any) => {
+        if (!isAdmin) return;
+        await setDoc(doc(db, "settings", "liveState"), updates, { merge: true });
+    };
+
+    const handleStartRitual = async () => {
+        if (!isAdmin) return;
+        // 1. GATHERING
+        await updateCloudState({ ritualPhase: 'GATHERING' });
+
+        // 2. ABSORBING (Auto-sequence)
+        setTimeout(() => updateCloudState({ ritualPhase: 'ABSORBING' }), 2500);
+
+        // 3. REVEAL (Auto-sequence)
+        setTimeout(() => updateCloudState({ ritualPhase: 'REVEALED' }), 5500); // 3s absorb
+    };
 
     const nextSlide = () => {
-        if (currentIndex < categories.length) { // Allow going to Outro (length)
-            setCurrentIndex(prev => prev + 1);
+        if (!isAdmin) return;
+        if (currentIndex < categories.length) {
+            updateCloudState({ currentIndex: currentIndex + 1, ritualPhase: 'IDLE' });
         }
     };
 
     const prevSlide = () => {
+        if (!isAdmin) return;
         if (currentIndex > -1) {
-            setCurrentIndex(prev => prev - 1);
+            updateCloudState({ currentIndex: currentIndex - 1, ritualPhase: 'IDLE' });
         }
     };
 
+    // Keyboard (Admin Only)
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (!isAdmin) return;
+            if (e.key === "ArrowRight") nextSlide();
+            if (e.key === "ArrowLeft") prevSlide();
+        };
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+    }, [isAdmin, currentIndex, categories.length]);
+
+
     if (loading) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500"><MonitorPlay className="animate-bounce" /></div>;
 
-    // Show waiting room if Admin hasn't started stream AND we are at the beginning
-    if (!isLiveActive && currentIndex === -1) {
+    // Viewers wait if not live
+    if (!isAdmin && !isLiveActive) {
         return <WaitingRoom />;
     }
 
@@ -580,11 +618,13 @@ export default function LiveAwardsPage() {
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(50,50,50,1)_0%,rgba(0,0,0,1)_100%)] -z-10" />
 
-            {/* Content Carousel */}
             <AnimatePresence mode="wait">
                 {currentIndex === -1 ? (
                     <motion.div key="intro" exit={{ opacity: 0, y: -100 }} className="absolute inset-0">
-                        <IntroSlide onStart={() => setCurrentIndex(0)} />
+                        {/* Intro Slide Start Button -> Admin Only */}
+                        <IntroSlide onStart={() => isAdmin && updateCloudState({ currentIndex: 0 })} />
+                        {/* Mask button if not admin? IntroSlide has button. Viewers shouldn't click it. */}
+                        {!isAdmin && <div className="absolute inset-0 z-50 cursor-default" />}
                     </motion.div>
                 ) : currentIndex < categories.length ? (
                     <motion.div
@@ -597,6 +637,9 @@ export default function LiveAwardsPage() {
                     >
                         <CategorySlide
                             category={categories[currentIndex]}
+                            phase={ritualPhase}
+                            isAdmin={isAdmin}
+                            onStartRitual={handleStartRitual}
                             onNext={nextSlide}
                         />
                     </motion.div>
@@ -607,14 +650,13 @@ export default function LiveAwardsPage() {
                 )}
             </AnimatePresence>
 
-            {/* Navigation Controls (Only if Live) */}
-            {isLiveActive && (
+            {/* Admin Controls Overlay */}
+            {isAdmin && (
                 <>
                     <div className="fixed bottom-8 left-8 z-50">
                         <button
                             onClick={prevSlide}
-                            className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/50 hover:text-white transition-all border border-white/5 hover:border-white/20 hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
-                            disabled={currentIndex === -1}
+                            className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/50 hover:text-white transition-all border border-white/5 hover:border-white/20 hover:scale-110"
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
@@ -623,8 +665,7 @@ export default function LiveAwardsPage() {
                     <div className="fixed bottom-8 right-8 z-50">
                         <button
                             onClick={nextSlide}
-                            className="p-4 bg-yellow-500/20 hover:bg-yellow-500/40 backdrop-blur-md rounded-full text-yellow-500 hover:text-yellow-200 transition-all border border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] disabled:opacity-0 disabled:pointer-events-none"
-                            disabled={currentIndex === categories.length}
+                            className="p-4 bg-yellow-500/20 hover:bg-yellow-500/40 backdrop-blur-md rounded-full text-yellow-500 hover:text-yellow-200 transition-all border border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
                         >
                             <ChevronRight className="w-6 h-6" />
                         </button>
@@ -633,10 +674,17 @@ export default function LiveAwardsPage() {
             )}
 
             <div className="fixed top-6 left-6 z-50">
-                <Link href="/awards" className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white/30 hover:text-white transition-colors border border-white/5 hover:border-white/20">
+                <Link href="/awards/bandlab2025" className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white/30 hover:text-white transition-colors border border-white/5 hover:border-white/20">
                     <ArrowLeft className="w-4 h-4" /> <span className="text-xs uppercase tracking-widest font-bold">Exit</span>
                 </Link>
             </div>
+
+            {/* Admin Indicator */}
+            {isAdmin && (
+                <div className="fixed top-6 right-6 z-50 px-4 py-2 bg-red-500/20 border border-red-500 text-red-500 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
+                    Admin Control Active
+                </div>
+            )}
         </div>
     );
 }
