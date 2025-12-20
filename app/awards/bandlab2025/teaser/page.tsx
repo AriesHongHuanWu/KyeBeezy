@@ -314,7 +314,7 @@ export default function TeaserPageV19() {
     const [tick, setTick] = useState(0);
     const [stepIndex, setStepIndex] = useState(0);
     const [categories, setCategories] = useState<CategoryData[]>([]);
-    const [flash, setFlash] = useState(false);
+    // Removed flash state for smoothness
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // FETCH
@@ -364,9 +364,7 @@ export default function TeaserPageV19() {
         sequence.forEach((step, index) => {
             timeouts.push(setTimeout(() => {
                 setStepIndex(index);
-                // Trigger Cinematic Flash on Step Change
-                setFlash(true);
-                setTimeout(() => setFlash(false), 300); // 300ms flash
+                // Removed Flash Trigger for Smoothness
             }, elapsed * 1000));
             elapsed += step.duration;
         });
@@ -394,8 +392,7 @@ export default function TeaserPageV19() {
             {/* PERSISTENT ELEMENTS */}
             {started && <PersistentCredits />}
 
-            {/* CINEMATIC FLASH OVERLAY (Global) */}
-            <div className={`fixed inset-0 bg-white z-[9999] pointer-events-none transition-opacity duration-300 ease-out ${flash ? 'opacity-30' : 'opacity-0'}`} />
+            {/* CINEMATIC FLASH OVERLAY REMOVED */}\n
 
             {!started ? (
                 // --- NEW PREMIUM START SCREEN ---
@@ -454,8 +451,8 @@ export default function TeaserPageV19() {
                                     className="absolute inset-0 z-10"
                                     initial={{ opacity: 0, scale: 1.1 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, filter: "brightness(2)" }}
-                                    transition={{ duration: 0.4 }}
+                                    exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }} // Smooth Fade Out
+                                    transition={{ duration: 0.8, ease: "easeInOut" }} // Slower transition
                                 >
                                     {currentStep.sceneId === 1 && <CinematicIntroVisuals tick={tick} />}
                                     {currentStep.sceneId === 2 && <PremiumCardVisuals tick={tick} />}
