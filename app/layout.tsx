@@ -23,18 +23,14 @@ export const metadata: Metadata = {
   keywords: ["Kye Beezy", "Streamer", "Twitch", "Music Producer", "Beats", "Hip Hop", "Dubby Energy", "Content Creator"],
   authors: [{ name: "Kye Beezy", url: "https://kyebeezy.com" }],
   metadataBase: new URL('https://kyebeezy.com'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: "Kye Beezy | Artist, Producer & Streamer",
     description: "Join the Squad. Listen to beats, watch live, and connect.",
     url: "https://kyebeezy.com",
     siteName: "Kye Beezy",
-    images: [
-      {
-        url: "/kye-cutout-new.png", // Using the existing image as a fallback OG image
-        width: 1200,
-        height: 630,
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
@@ -42,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kye Beezy",
     description: "Artist, Producer, Streamer.",
-    images: ["/kye-cutout-new.png"],
+    // images automatically handled by opengraph-image.tsx
   },
   robots: {
     index: true,
