@@ -522,8 +522,13 @@ const CategorySlide = ({
 };
 
 // --- Page Controller ---
+import { useAuth } from "@/context/AuthContext";
+import { setDoc } from "firebase/firestore";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+
 export default function LiveAwardsPage() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const isAdmin = !!user; // Assume any logged-in user is Admin for this context
 
     const [categories, setCategories] = useState<CategoryData[]>([]);
@@ -553,7 +558,6 @@ export default function LiveAwardsPage() {
         const unsubState = onSnapshot(doc(db, "settings", "liveState"), (doc) => {
             const data = doc.data();
             if (data) {
-                // Only update if changed prevents jitter? React handles this.
                 if (data.currentIndex !== undefined) setCurrentIndex(data.currentIndex);
                 if (data.ritualPhase) setRitualPhase(data.ritualPhase as RitualPhase);
             }
@@ -563,6 +567,16 @@ export default function LiveAwardsPage() {
     }, []);
 
     // --- Admin Actions ---
+    const handleLogin = async () => {
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            toast.success("Admin Access Granted");
+        } catch (error) {
+            toast.error("Login Failed");
+        }
+    };
+
     const updateCloudState = async (updates: any) => {
         if (!isAdmin) return;
         await setDoc(doc(db, "settings", "liveState"), updates, { merge: true });
@@ -605,84 +619,40 @@ export default function LiveAwardsPage() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [isAdmin, currentIndex, categories.length]);
 
-    // DEBUG: Check Auth State
-    const { loading: authLoading } = useAuth();
-
-
 
     if (loading) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500"><MonitorPlay className="animate-bounce" /></div>;
 
-    // Viewers wait if not live
-    if (!isAdmin && !isLiveActive) {
-        return <WaitingRoom />;
-    }
+    // WAITING ROOM (Viewer Only)
+    // If not admin AND live is not active, show waiting room.
+    // NOTE: We render the login button ON TOP of this so admins can login even here.
+    const showWaitingRoom = !isAdmin && !isLiveActive;
 
     return (
         <div className="bg-black min-h-screen text-white overflow-hidden relative font-sans">
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(50,50,50,1)_0%,rgba(0,0,0,1)_100%)] -z-10" />
 
-            {/* DEBUG OVERLAY */}
-            <div className="fixed top-20 left-6 z-50 text-xs text-red-500 font-mono bg-white/10 p-2 backdrop-blur-sm pointer-events-none">
-                <p>Auth Loading: {authLoading ? "YES" : "NO"}</p>
-                <p>User: {user ? user.email : "NULL"}</p>
-                <p>IsAdmin: {isAdmin ? "YES" : "NO"}</p>
-            </div>
-
-            <AnimatePresence mode="wait">
-                {currentIndex === -1 ? (
-                    <motion.div key="intro" exit={{ opacity: 0, y: -100 }} className="absolute inset-0">
-                        {/* Intro Slide Start Button -> Admin Only */}
-                        <IntroSlide onStart={() => isAdmin && updateCloudState({ currentIndex: 0 })} />
-                        {/* Mask button if not admin? IntroSlide has button. Viewers shouldn't click it. */}
-                        {!isAdmin && <div className="absolute inset-0 z-50 cursor-default" />}
-                    </motion.div>
-                ) : currentIndex < categories.length ? (
-                    <motion.div
-                        key={categories[currentIndex].title}
-                        initial={{ opacity: 0, x: 100 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -100 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="absolute inset-0"
-                    >
-                        <CategorySlide
-                            category={categories[currentIndex]}
-                            phase={ritualPhase}
-                            isAdmin={isAdmin}
-                            onStartRitual={handleStartRitual}
-                            onNext={nextSlide}
-                        />
-                    </motion.div>
+            {/* --- TOP RIGHT LOGIN / ADMIN UI --- */}
+            <div className="fixed top-6 right-6 z-[60] flex items-center gap-3">
+                {authLoading ? (
+                    <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                ) : user ? (
+                    <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/50 pr-4 pl-2 py-1.5 rounded-full backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+                        <img src={user.photoURL || ""} alt="Admin" className="w-6 h-6 rounded-full border border-red-500" />
+                        <span className="text-xs font-bold text-red-500 uppercase tracking-widest">Admin Active</span>
+                        <button onClick={() => signOut(auth)} className="ml-2 hover:bg-red-500/20 p-1 rounded-full text-red-500/50 hover:text-red-500 transition-colors">
+                            <Lock className="w-3 h-3" />
+                        </button>
+                    </div>
                 ) : (
-                    <motion.div key="outro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
-                        <OutroSlide />
-                    </motion.div>
+                    <button
+                        onClick={handleLogin}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-black font-bold uppercase text-xs tracking-widest rounded-full hover:bg-neutral-200 transition-colors shadow-lg shadow-white/10"
+                    >
+                        <Lock className="w-3 h-3" /> Admin Login
+                    </button>
                 )}
-            </AnimatePresence>
-
-            {/* Admin Controls Overlay */}
-            {isAdmin && (
-                <>
-                    <div className="fixed bottom-8 left-8 z-50">
-                        <button
-                            onClick={prevSlide}
-                            className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/50 hover:text-white transition-all border border-white/5 hover:border-white/20 hover:scale-110"
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    <div className="fixed bottom-8 right-8 z-50">
-                        <button
-                            onClick={nextSlide}
-                            className="p-4 bg-yellow-500/20 hover:bg-yellow-500/40 backdrop-blur-md rounded-full text-yellow-500 hover:text-yellow-200 transition-all border border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    </div>
-                </>
-            )}
+            </div>
 
             <div className="fixed top-6 left-6 z-50">
                 <Link href="/awards/bandlab2025" className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white/30 hover:text-white transition-colors border border-white/5 hover:border-white/20">
@@ -690,11 +660,65 @@ export default function LiveAwardsPage() {
                 </Link>
             </div>
 
-            {/* Admin Indicator */}
-            {isAdmin && (
-                <div className="fixed top-6 right-6 z-50 px-4 py-2 bg-red-500/20 border border-red-500 text-red-500 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
-                    Admin Control Active
-                </div>
+            {showWaitingRoom ? (
+                <WaitingRoom />
+            ) : (
+                <>
+                    <AnimatePresence mode="wait">
+                        {currentIndex === -1 ? (
+                            <motion.div key="intro" exit={{ opacity: 0, y: -100 }} className="absolute inset-0">
+                                {/* Intro Slide Start Button -> Admin Only */}
+                                <IntroSlide onStart={() => isAdmin && updateCloudState({ currentIndex: 0 })} />
+                                {/* Mask button if not admin? IntroSlide has button. Viewers shouldn't click it. */}
+                                {!isAdmin && <div className="absolute inset-0 z-40 cursor-default" />}
+                            </motion.div>
+                        ) : currentIndex < categories.length ? (
+                            <motion.div
+                                key={categories[currentIndex].title}
+                                initial={{ opacity: 0, x: 100 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -100 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                className="absolute inset-0"
+                            >
+                                <CategorySlide
+                                    category={categories[currentIndex]}
+                                    phase={ritualPhase}
+                                    isAdmin={isAdmin}
+                                    onStartRitual={handleStartRitual}
+                                    onNext={nextSlide}
+                                />
+                            </motion.div>
+                        ) : (
+                            <motion.div key="outro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
+                                <OutroSlide />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Admin Controls Overlay */}
+                    {isAdmin && (
+                        <>
+                            <div className="fixed bottom-8 left-8 z-50">
+                                <button
+                                    onClick={prevSlide}
+                                    className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/50 hover:text-white transition-all border border-white/5 hover:border-white/20 hover:scale-110"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="fixed bottom-8 right-8 z-50">
+                                <button
+                                    onClick={nextSlide}
+                                    className="p-4 bg-yellow-500/20 hover:bg-yellow-500/40 backdrop-blur-md rounded-full text-yellow-500 hover:text-yellow-200 transition-all border border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </>
             )}
         </div>
     );
