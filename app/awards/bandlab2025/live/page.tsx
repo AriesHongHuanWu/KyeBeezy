@@ -605,6 +605,10 @@ export default function LiveAwardsPage() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [isAdmin, currentIndex, categories.length]);
 
+    // DEBUG: Check Auth State
+    const { loading: authLoading } = useAuth();
+
+
 
     if (loading) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500"><MonitorPlay className="animate-bounce" /></div>;
 
@@ -617,6 +621,13 @@ export default function LiveAwardsPage() {
         <div className="bg-black min-h-screen text-white overflow-hidden relative font-sans">
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(50,50,50,1)_0%,rgba(0,0,0,1)_100%)] -z-10" />
+
+            {/* DEBUG OVERLAY */}
+            <div className="fixed top-20 left-6 z-50 text-xs text-red-500 font-mono bg-white/10 p-2 backdrop-blur-sm pointer-events-none">
+                <p>Auth Loading: {authLoading ? "YES" : "NO"}</p>
+                <p>User: {user ? user.email : "NULL"}</p>
+                <p>IsAdmin: {isAdmin ? "YES" : "NO"}</p>
+            </div>
 
             <AnimatePresence mode="wait">
                 {currentIndex === -1 ? (
