@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  icons: {
+    icon: '/icon.svg',
+  },
   openGraph: {
     title: "Kye Beezy | Artist, Producer & Streamer",
     description: "Join the Squad. Listen to beats, watch live, and connect.",
