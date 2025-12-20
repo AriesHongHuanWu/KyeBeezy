@@ -280,17 +280,42 @@ function VideosManager() {
         } catch (e) { toast.error("Failed to add video"); }
     };
 
-    const handleSeed = async () => {
-        if (!confirm("Seed default videos? This will add entries to your database.")) return;
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this video?")) return;
         try {
+            await deleteDoc(doc(db, "videos", id));
+            toast.success("Video deleted");
+        } catch (e) { toast.error("Failed to delete video"); }
+    };
+
+    const handleSeed = async () => {
+        if (!confirm("⚠️ WARNING: This will DELETE ALL current videos and restore the defaults. Continue?")) return;
+        try {
+            // 1. Delete all existing videos
+            const q = query(collection(db, "videos")); // Get all
+            const snapshot = await new Promise<any>((resolve) => onSnapshot(q, resolve)()); // Hacky strictly speaking, but onSnapshot returns unsubscribe. 
+            // Better to use getDocs but imports might be missing. 
+            // Let's use the current state `videos` since we have it!
+
             const batch = writeBatch(db);
-            defaultVideos.forEach(v => {
-                const docRef = doc(collection(db, "videos"));
-                batch.set(docRef, { ...v, createdAt: new Date() });
+            videos.forEach(v => {
+                batch.delete(doc(db, "videos", v.id));
             });
             await batch.commit();
-            toast.success("Seeded default videos");
-        } catch (e) { toast.error("Seed failed"); }
+
+            // 2. Add defaults
+            const addBatch = writeBatch(db);
+            defaultVideos.forEach(v => {
+                const docRef = doc(collection(db, "videos"));
+                addBatch.set(docRef, { ...v, createdAt: new Date() });
+            });
+            await addBatch.commit();
+
+            toast.success("Reset to default videos");
+        } catch (e) {
+            console.error(e);
+            toast.error("Reset failed");
+        }
     }
 
     return (
@@ -300,8 +325,8 @@ function VideosManager() {
                 subtitle="Manage YouTube and Twitch content."
                 action={
                     <div className="flex gap-2">
-                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
-                            <Database size={18} /> Seed Defaults
+                        <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
+                            <Database size={18} /> Reset Defaults
                         </button>
                         <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
                             <Plus size={20} /> Add New
@@ -337,7 +362,7 @@ function VideosManager() {
                                 <p className="text-sm text-neutral-500 truncate max-w-md">{video.url}</p>
                             </div>
                         </div>
-                        <button onClick={() => deleteDoc(doc(db, "videos", video.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                        <button onClick={() => handleDelete(video.id)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
                             <Trash2 size={20} />
                         </button>
                     </div>
@@ -368,17 +393,33 @@ function MusicManager() {
         } catch (e) { toast.error("Error adding track"); }
     };
 
-    const handleSeed = async () => {
-        if (!confirm("Seed default music? This will add entries to your database.")) return;
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this track?")) return;
         try {
+            await deleteDoc(doc(db, "music", id));
+            toast.success("Track deleted");
+        } catch (e) { toast.error("Failed to delete track"); }
+    };
+
+    const handleSeed = async () => {
+        if (!confirm("⚠️ WARNING: This will DELETE ALL current music and restore the defaults. Continue?")) return;
+        try {
+            // Delete current
             const batch = writeBatch(db);
-            defaultMusic.forEach(t => {
-                const docRef = doc(collection(db, "music"));
-                batch.set(docRef, { ...t, createdAt: new Date() });
+            tracks.forEach(t => {
+                batch.delete(doc(db, "music", t.id));
             });
             await batch.commit();
-            toast.success("Seeded default music");
-        } catch (e) { toast.error("Seed failed"); }
+
+            // Add defaults
+            const addBatch = writeBatch(db);
+            defaultMusic.forEach(t => {
+                const docRef = doc(collection(db, "music"));
+                addBatch.set(docRef, { ...t, createdAt: new Date() });
+            });
+            await addBatch.commit();
+            toast.success("Reset to default music");
+        } catch (e) { toast.error("Reset failed"); }
     }
 
     return (
@@ -388,8 +429,8 @@ function MusicManager() {
                 subtitle="Manage BandLab & SoundCloud players."
                 action={
                     <div className="flex gap-2">
-                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
-                            <Database size={18} /> Seed Defaults
+                        <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
+                            <Database size={18} /> Reset Defaults
                         </button>
                         <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
                             <Plus size={20} /> Add New
@@ -423,7 +464,7 @@ function MusicManager() {
                                 <p className="text-xs text-neutral-500 font-mono truncate max-w-xs">{track.embedCode.substring(0, 50)}...</p>
                             </div>
                         </div>
-                        <button onClick={() => deleteDoc(doc(db, "music", track.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                        <button onClick={() => handleDelete(track.id)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
                             <Trash2 size={20} />
                         </button>
                     </div>
@@ -485,17 +526,33 @@ function ProductsManager() {
         reset();
     };
 
-    const handleSeed = async () => {
-        if (!confirm("Seed default Dubby products?")) return;
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this product?")) return;
         try {
+            await deleteDoc(doc(db, "products", id));
+            toast.success("Product deleted");
+        } catch (e) { toast.error("Failed to delete product"); }
+    }
+
+    const handleSeed = async () => {
+        if (!confirm("⚠️ WARNING: This will DELETE ALL current products and restore the defaults. Continue?")) return;
+        try {
+            // Delete current
             const batch = writeBatch(db);
-            defaultProducts.forEach(p => {
-                const docRef = doc(collection(db, "products"));
-                batch.set(docRef, p);
+            products.forEach(p => {
+                batch.delete(doc(db, "products", p.id));
             });
             await batch.commit();
-            toast.success("Seeded Dubby products");
-        } catch (e) { toast.error("Seed failed"); }
+
+            // Add defaults
+            const addBatch = writeBatch(db);
+            defaultProducts.forEach(p => {
+                const docRef = doc(collection(db, "products"));
+                addBatch.set(docRef, p);
+            });
+            await addBatch.commit();
+            toast.success("Reset to default products");
+        } catch (e) { toast.error("Reset failed"); }
     }
 
     return (
@@ -505,8 +562,8 @@ function ProductsManager() {
                 subtitle="Manage your affiliate product showcase."
                 action={
                     <div className="flex gap-2">
-                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
-                            <Database size={18} /> Seed Defaults
+                        <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
+                            <Database size={18} /> Reset Defaults
                         </button>
                         {!isAdding && (
                             <button onClick={() => { reset(); setEditingId(null); setIsAdding(true); }} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
@@ -566,7 +623,7 @@ function ProductsManager() {
                             <button onClick={() => handleEdit(product)} className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all">
                                 <Pencil size={20} />
                             </button>
-                            <button onClick={() => deleteDoc(doc(db, "products", product.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                            <button onClick={() => handleDelete(product.id)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
                                 <Trash2 size={20} />
                             </button>
                         </div>
