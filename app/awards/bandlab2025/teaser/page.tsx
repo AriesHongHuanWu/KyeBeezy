@@ -105,9 +105,12 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
     const [rawName, imgSrc] = entries[idx];
     const name = rawName.replace('@', '').split('(')[0].trim().toUpperCase();
 
+    // Flash Logic
+    const isFlash = tick % 2 === 0;
+
     return (
         <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden perspective-1000">
-            {/* Premium Background: Dark Grid + Spotlight */}
+            {/* Premium Background: Dark Grid + Spotlight (No Cheap Yellow) */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-50" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.1)_0%,transparent_60%)]" />
 
@@ -128,19 +131,24 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
                 {/* Image */}
                 <img
                     src={imgSrc}
-                    className="w-full h-full object-cover transition-all duration-75 brightness-100"
-                    onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/awbest-logo.png"; // Fallback to logo
-                        (e.target as HTMLImageElement).style.filter = "grayscale(100%) opacity(0.5)";
-                    }}
+                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert brightness-125' : 'brightness-100'}`}
                 />
 
                 {/* Glass Gloss */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50 mix-blend-overlay" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50 mixing-blend-overlay" />
 
                 {/* Border Glow */}
                 <div className="absolute inset-0 border-[1px] border-white/30 rounded-2xl" />
             </motion.div>
+
+            {/* Negative Film Name Overlay (Synced) */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
+                {isFlash && (
+                    <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter text-center uppercase scale-150 blur-sm opacity-50">
+                        {name}
+                    </h1>
+                )}
+            </div>
 
             {/* Bottom Left Name Tag - Clean & Premium */}
             <div className="absolute bottom-[15vh] left-[5vw] z-30 flex flex-col items-start gap-2">
@@ -367,6 +375,17 @@ export default function TeaserPageV19() {
         };
     }, [started]);
 
+    // Calculate Tick Relative to Scene Start
+    const calculateSceneTick = () => {
+        let elapsedSec = 0;
+        for (let i = 0; i < stepIndex; i++) {
+            elapsedSec += sequence[i].duration;
+        }
+        const startTick = (elapsedSec * 1000) / TICK_MS;
+        return Math.max(0, Math.floor(tick - startTick));
+    };
+    const sceneTick = calculateSceneTick();
+
     const handleStart = () => {
         if (audioRef.current) {
             audioRef.current.volume = 1.0;
@@ -384,7 +403,7 @@ export default function TeaserPageV19() {
             {/* PERSISTENT ELEMENTS */}
             {started && <PersistentCredits />}
 
-            {/* CINEMATIC FLASH OVERLAY REMOVED */}\n
+            {/* CINEMATIC FLASH OVERLAY REMOVED */}
 
             {!started ? (
                 // --- NEW PREMIUM START SCREEN ---
@@ -413,7 +432,7 @@ export default function TeaserPageV19() {
 
                     {/* Footer Tech Text */}
                     <div className="absolute bottom-8 text-[10px] text-neutral-800 font-mono tracking-widest">
-                        v19.0.2 // AUDIO_ REACTIVE // SYSTEM_READY
+                        v24.0.0 // ARIES_WU_SYNC // SMOOTH_MOTION
                     </div>
                 </div>
             ) : (
@@ -432,7 +451,7 @@ export default function TeaserPageV19() {
                                     className="absolute inset-0 z-50"
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 1.2, filter: "blur(10px)" }}
+                                    exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
                                     transition={{ duration: 0.3, ease: "circOut" }}
                                 >
                                     <NarrativeOverlay text={currentStep.text?.main || ""} subtext={currentStep.text?.sub} />
@@ -446,9 +465,9 @@ export default function TeaserPageV19() {
                                     exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }} // Smooth Fade Out
                                     transition={{ duration: 0.8, ease: "easeInOut" }} // Slower transition
                                 >
-                                    {currentStep.sceneId === 1 && <CinematicIntroVisuals tick={tick} />}
-                                    {currentStep.sceneId === 2 && <PremiumCardVisuals tick={tick} />}
-                                    {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={tick} />}
+                                    {currentStep.sceneId === 1 && <CinematicIntroVisuals tick={sceneTick} />}
+                                    {currentStep.sceneId === 2 && <PremiumCardVisuals tick={sceneTick} />}
+                                    {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={Math.floor(sceneTick / 8)} />}
                                     {currentStep.sceneId === 4 && <EQMeterVisuals tick={tick} />}
                                     {currentStep.sceneId === 5 && <RitualVisuals />}
                                     {currentStep.sceneId === 6 && <FinaleVisuals />}

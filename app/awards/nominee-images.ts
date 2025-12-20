@@ -1,7 +1,7 @@
 export const NOMINEE_IMAGES: Record<string, string> =
 {
     "@officialmissmercy": "https://lh7-rt.googleusercontent.com/formsz/AN7BsVAKMw9DdTFtgCi3VMsuZqeEopOwsn-RjNsLWpMrw6-3_ELqgKpdZPl5jihaYBue3hQbRqdUmFEZN3zH8NzaTCtsehcfNdM2sS714GHCz7OIkQzlaE6poI6pIePdDKl2O-1ixbC58awoC7sbz1TQ7XZ3MadlYB39rECTgH21GSojLW3Jfcx6-rdveXXVc1MFYfs2q8McM5lpIZw=w130?key=vSw4m_lUzhGwGno7J0vKTg",
-    "@arieswu (RuGo)": "/arieswu.png",
+    "@arieswu (RuGo)": "https://lh7-rt.googleusercontent.com/formsz/AN7BsVBtopTK9bRX2OlV58xDFEup36Cp2Op1A2u3ZIHAjCLBOmf-jLKKCnmHVSrOITgBXhsV4BA0dVQNfn07KnyGPHx0GVcTLtWR3vXlc0DdhNv3S3YseTbD6TQ3Z7D8e2JyfCsFq42cR1FW62xOLlGiZR5C-TqVFqF2umJO5CmOLBjpgH5cwwhTSlvpmGVPVgf2SbulF5Ob83NYlsPt=w64?key=vSw4m_lUzhGwGno7J0vKTg",
     "@ayee_astro (The Red Tape)": "https://lh7-rt.googleusercontent.com/formsz/AN7BsVBA9wdfyoBoIFew_sXF40JsYC3mnKhxTDiFiwZFKy1mtXUKVRPUDkXYfOfzDwmVQKQ2RpN2Jjez0Fa4_WPGs3MuGmD_kEwRIILbT1qyKBUgPs5D9fXkxRNA0HD4E5Ooy2_cBFZ8VBTRyLA_kIMyYB5T780-wYeaFyp3zc6Y2ciyUC9nFk9IpuO-i2TaRC2KNhbr-cgWTKQihzB0=w130?key=vSw4m_lUzhGwGno7J0vKTg",
     "@betwiin": "https://lh7-rt.googleusercontent.com/formsz/AN7BsVAl5oRLIW2-UorrCwJZOqF9VQmwyIzqCACV6EBceKmkoQ0iy8KYYrMLkqKiQ7spIUZ1R3Zocw87iHWwwaJhWaCSWibTCNJsnbUu077r7JYw6P07x7e2Qwf4H1gGOJk8KyCr6_Uw6PKZs7qE1rGBt0rDczAy1z04dj0xokQKonZWldipEfBBwexZ10yUyk-R55jYKj_dVSwWZL8=w130?key=vSw4m_lUzhGwGno7J0vKTg",
     "@bp1102": "https://lh7-rt.googleusercontent.com/formsz/AN7BsVDw_wMXCs1vHpcW3tlVCke66uMdrLHWb5ssZu48lsqjLbID9x9TexCzLSoD7F0Dh5Y5HFpswNmWqiJvpX-3gA9clET5_En69w8oHtHFptin-ck0WnlDl2A6G2nMeUyFm_69488gji-DeaF0LKnLmvrcgXZbs73Dcho23_Nc65pd6Q1rd3MCRMEvJj7_vuQI9RuLucJSUvFBozrG=w130?key=vSw4m_lUzhGwGno7J0vKTg",
