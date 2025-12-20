@@ -143,7 +143,7 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
 
     const handleClick = () => {
         if (isRevealed) return;
-        playSound('drum');
+        // playSound('drum'); // Removed as requested
         setIsShaking(true);
         setTimeout(() => {
             playSound('tada');
