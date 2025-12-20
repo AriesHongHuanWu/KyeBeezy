@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { ChevronRight, ChevronLeft, Star, Crown, Sparkles, MonitorPlay, ArrowLeft, Lock, Trophy } from "lucide-react";
 import { getAwardsData } from "../data-fetcher";
 import { Confetti } from "@/components/ui/confetti";
@@ -158,104 +158,90 @@ const GoldDust = () => (
     </div>
 );
 
-// 3. Thick 3D Gacha Card (Cinematic Ritual Version)
-const GachaCard = ({ winner, onReveal, onFocus }: { winner: Nominee, onReveal: () => void, onFocus: (focused: boolean) => void }) => {
-    const [isRevealed, setIsRevealed] = useState(false);
-    const [isCharging, setIsCharging] = useState(false);
+// --- Types ---
+type RitualPhase = 'IDLE' | 'GATHERING' | 'ABSORBING' | 'REVEALED';
+
+// 3. Thick 3D Gacha Card (Vortex Compatible)
+const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: RitualPhase, onReveal?: () => void }) => {
+    const isRevealed = phase === 'REVEALED';
+    const isCharging = phase === 'GATHERING' || phase === 'ABSORBING';
+
+    // Internal Flash State
     const [showFlash, setShowFlash] = useState(false);
 
-    // --- Audio Helper ---
-    const playSound = (type: 'tada' | 'charge') => {
-        // Mock Charging sound if available, otherwise just silent anticipation
-        if (type === 'tada') {
+    useEffect(() => {
+        if (isRevealed) {
+            setShowFlash(true);
             const audio = new Audio("https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3");
             audio.volume = 0.8;
-            audio.play().catch(e => console.warn("Audio play failed", e));
-        }
-    };
-
-    const handleClick = () => {
-        if (isRevealed || isCharging) return;
-
-        // 1. Start Ritual (Charge Up)
-        setIsCharging(true);
-        onFocus(true); // Dim background
-
-        // playSound('charge'); // Optional: Add charging sound here
-
-        // 2. Wait for Build-up (Anticipation)
-        setTimeout(() => {
-            // 3. EXPLOSION & REVEAL
-            setShowFlash(true);
-            playSound('tada');
-            setIsRevealed(true);
-            setIsCharging(false);
-            onReveal();
-
-            // 4. Cleanup Flash
+            audio.play().catch(e => console.warn("Audio play failed"));
             setTimeout(() => setShowFlash(false), 800);
-        }, 1500); // 1.5s Suspense
-    };
+            onReveal?.();
+        }
+    }, [isRevealed, onReveal]);
 
     return (
         <div className="flex flex-col items-center justify-center py-10 relative z-20 perspective-1000">
-            {/* Cinematic Spotlight (Appears during charging/reveal) */}
+            {/* Cinematic Spotlight */}
             <motion.div
                 animate={{ opacity: isCharging || isRevealed ? 1 : 0 }}
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[radial-gradient(circle_choke,rgba(234,179,8,0.15)_0%,transparent_70%)] pointer-events-none transition-opacity duration-1000"
             />
 
-            {/* Energy Field (Charging Effect) */}
+            {/* Energy Vortex Rings (Charging) */}
             {isCharging && (
-                <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[600px] rounded-[50px] border-2 border-yellow-400 opacity-0"
-                    animate={{ scale: [1, 1.1], opacity: [0, 1, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                />
+                <>
+                    <motion.div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-yellow-500/30 rounded-full"
+                        style={{ width: 400, height: 400 }}
+                        animate={{ scale: [1, 0.1], opacity: [0, 1, 0], rotate: 180 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "easeIn" }}
+                    />
+                    <motion.div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-yellow-200/50 rounded-full"
+                        style={{ width: 600, height: 600 }}
+                        animate={{ scale: [1, 0.1], opacity: [0, 0.5, 0], rotate: -180 }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5, ease: "easeIn" }}
+                    />
+                </>
             )}
 
-            {/* Glow Effect behind the card */}
+            {/* Glow Effect */}
             <motion.div
                 animate={{
-                    scale: isCharging ? 1.5 : (isRevealed ? 1.2 : 1),
-                    opacity: isCharging ? 0.8 : (isRevealed ? 0.8 : 0.4)
+                    scale: isCharging ? [1, 1.5, 1] : (isRevealed ? 1.2 : 1),
+                    opacity: isCharging ? 0.8 : (isRevealed ? 0.8 : 0)
                 }}
-                transition={{ duration: 1 }}
+                transition={{ duration: isCharging ? 0.5 : 1, repeat: isCharging ? Infinity : 0 }}
                 className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[100px] rounded-full transition-opacity duration-1000`}
             />
 
             <motion.div
                 className="relative w-[340px] h-[520px] cursor-pointer group"
-                onClick={handleClick}
-                initial={{ y: 0 }}
+                initial={{ y: 0, scale: 0 }}
                 animate={{
+                    scale: phase === 'IDLE' ? 0 : 1,
                     rotateY: isRevealed ? 180 : 0,
-                    y: isRevealed ? [0, -40, 0] : (isCharging ? [0, -20, 0] : [0, -15, 0]),
+                    y: isRevealed ? [0, -40, 0] : (isCharging ? [0, -5, 0] : 0),
                     x: isCharging ? [-2, 2, -2, 2, 0] : 0, // Vibration
-                    scale: isCharging ? 1.05 : 1,
                 }}
                 transition={{
+                    scale: { type: "spring", stiffness: 100, damping: 20 },
                     rotateY: { duration: 0.8, ease: "easeInOut" },
-                    y: { duration: isCharging ? 0.2 : 4, repeat: Infinity, ease: isCharging ? "linear" : "easeInOut" }, // Rapid float vibrate when charging
-                    x: { duration: 0.05, repeat: Infinity }, // Vibration
-                    scale: { duration: 1.5, ease: "easeOut" } // Grow during charge
+                    y: { duration: isCharging ? 0.1 : 4, repeat: Infinity, ease: isCharging ? "linear" : "easeInOut" },
+                    x: { duration: 0.05, repeat: Infinity },
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
-                {/* --- 3D THICKNESS SIDES (Hiding on Reveal to prevent Glitch) --- */}
-                {/* Visual Fix: Opacity 0 when revealed so they don't clip through the front face */}
-                <motion.div animate={{ opacity: isRevealed ? 0 : 1 }} transition={{ duration: 0.3 }}>
-                    {/* Right Side */}
+                {/* --- 3D THICKNESS SIDES (Hiding on Reveal) --- */}
+                <motion.div animate={{ opacity: isRevealed ? 0 : 1 }} transition={{ duration: 0.1 }}>
                     <div className="absolute top-[60px] right-0 w-[12px] h-[calc(100%-120px)] bg-yellow-800 origin-right transform rotateY(-90deg) translateZ(1px)" />
-                    {/* Left Side */}
                     <div className="absolute top-[60px] left-0 w-[12px] h-[calc(100%-120px)] bg-yellow-600 origin-left transform rotateY(90deg) translateZ(1px)" />
-                    {/* Top Side */}
                     <div className="absolute top-0 left-[60px] w-[calc(100%-120px)] h-[12px] bg-yellow-700 origin-top transform rotateX(-90deg) translateZ(1px)" />
-                    {/* Bottom Side */}
                     <div className="absolute bottom-0 left-[60px] w-[calc(100%-120px)] h-[12px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
                 </motion.div>
 
-                {/* White Flash Overlay */}
+                {/* White Flash */}
                 <AnimatePresence>
                     {showFlash && (
                         <motion.div
@@ -268,15 +254,11 @@ const GachaCard = ({ winner, onReveal, onFocus }: { winner: Nominee, onReveal: (
                     )}
                 </AnimatePresence>
 
-                {/* CARD BACK (Mystery) */}
-                <div
-                    className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden"
-                    style={{ backfaceVisibility: "hidden", transform: "translateZ(2px)" }}
-                >
+                {/* CARD BACK */}
+                <div className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "translateZ(2px)" }}>
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-yellow-900/40" />
 
-                    {/* Charging Overlay */}
                     {isCharging && <div className="absolute inset-0 bg-yellow-500/20 mix-blend-overlay animate-pulse" />}
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -285,27 +267,18 @@ const GachaCard = ({ winner, onReveal, onFocus }: { winner: Nominee, onReveal: (
                             <Sparkles className={`w-24 h-24 text-yellow-400 relative z-10 ${isCharging ? 'animate-spin' : ''} transition-all duration-[2s]`} />
                         </div>
                         <h3 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 uppercase tracking-widest text-center drop-shadow-sm">
-                            {isCharging ? "SUMMONING..." : <>SECRET<br />REVEAL</>}
+                            {isCharging ? "SUMMONING" : "SECRET"}
                         </h3>
-                        <div className="mt-8 px-6 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 text-sm font-bold opacity-80">
-                            {isCharging ? "CHARGING POWER..." : "TAP TO OPEN"}
-                        </div>
                     </div>
                 </div>
 
-                {/* CARD FRONT (Winner) */}
-                <div
-                    className="absolute inset-0 rounded-[30px] border-[6px] border-yellow-400 shadow-[0_0_100px_rgba(234,179,8,0.6)] bg-black z-20 overflow-hidden"
-                    style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg) translateZ(2px)" }}
-                >
-                    {/* SSR/Legendary Background Effect */}
+                {/* CARD FRONT */}
+                <div className="absolute inset-0 rounded-[30px] border-[6px] border-yellow-400 shadow-[0_0_100px_rgba(234,179,8,0.6)] bg-black z-20 overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg) translateZ(2px)" }}>
+                    {/* ... (Existing Inner Content Refined) ... */}
                     <div className="absolute inset-0 bg-gradient-to-b from-yellow-500 via-yellow-900/50 to-black animate-pulse" />
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay" />
-
-                    {/* Particles / Rays */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,223,0,0.4)_0%,transparent_70%)]" />
 
-                    {/* WINNER CONTENT - FLY OUT ANIMATION */}
                     <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center" style={{ transformStyle: "preserve-3d" }}>
                         <motion.div
                             initial={{ scale: 0.5, z: 0, opacity: 0 }}
@@ -346,99 +319,143 @@ const GachaCard = ({ winner, onReveal, onFocus }: { winner: Nominee, onReveal: (
     );
 };
 
-// 4. Category Slide (The Main Stage)
+// 4. Category Slide (Vortex Ritual)
 const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: () => void }) => {
     const [winner, setWinner] = useState<Nominee | null>(null);
-    const [isFocused, setIsFocused] = useState(false); // Focus mode for Card Ritual
+    const [phase, setPhase] = useState<RitualPhase>('IDLE');
 
-    // Select Winner Logic
     useEffect(() => {
         const sorted = [...category.nominees].sort((a, b) => b.voteCount - a.voteCount);
         setWinner(sorted[0]);
     }, [category]);
 
+    const startRitual = () => {
+        if (phase !== 'IDLE') return;
+        setPhase('GATHERING'); // Nominees fly to orbit
+
+        // Sequence
+        setTimeout(() => setPhase('ABSORBING'), 2500); // 2.5s of orbiting/charging
+        setTimeout(() => setPhase('REVEALED'), 3000);  // 0.5s Suck in -> Reveal
+    };
+
     return (
         <div className="flex flex-col h-screen bg-black relative overflow-hidden font-sans">
-            {/* Ambient Gold Dust (Persistent) */}
             <GoldDust />
 
             <div className="z-10 flex-1 flex flex-col p-10">
-                {/* Header */}
-                <div className={`mb-12 transition-all duration-1000 ${isFocused ? 'opacity-30 blur-sm scale-95' : 'opacity-100'}`}>
+                {/* Header (Fades out during ritual to focus attention) */}
+                <div className={`mb-12 transition-all duration-1000 ${phase !== 'IDLE' ? 'opacity-0 scale-90' : 'opacity-100'}`}>
                     <h2 className="text-yellow-500 font-bold tracking-[0.5em] uppercase mb-4 text-center">Current Category</h2>
                     <h1 className="text-5xl md:text-7xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                         {category.title}
                     </h1>
                 </div>
 
-                {/* Main Content Area */}
-                <div className="flex-1 flex flex-col items-center justify-center relative">
+                <div className="flex-1 flex flex-col items-center justify-center relative perspective-distant">
 
-                    {/* Nominees Grid (Dims during Ritual) */}
-                    <motion.div
-                        className="flex flex-wrap justify-center items-center gap-8 w-full max-w-7xl absolute inset-0 z-0 pointer-events-none"
-                        animate={{
-                            opacity: isFocused ? 0.1 : 1,
-                            scale: isFocused ? 0.9 : 1,
-                            filter: isFocused ? "blur(8px) grayscale(100%)" : "blur(0px) grayscale(0%)"
-                        }}
-                        transition={{ duration: 1 }}
-                    >
-                        {category.nominees.map((nominee, idx) => (
-                            <motion.div
-                                key={nominee.name}
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: [0, -10, 0],
-                                }}
-                                transition={{
-                                    opacity: { delay: idx * 0.1 },
-                                    y: { duration: 3 + idx, repeat: Infinity, ease: "easeInOut", delay: idx * 0.5 }
-                                }}
-                                className="group relative w-[200px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-neutral-900"
-                            >
-                                {nominee.image ? (
-                                    <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-                                ) : (
-                                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-600">
-                                        {nominee.name.substring(0, 1)}
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-                                <div className="absolute bottom-4 left-4">
-                                    <p className="font-bold text-white text-lg leading-tight">{nominee.name}</p>
-                                    <p className="text-yellow-500 text-xs font-mono mt-1">{nominee.voteCount} Votes</p>
-                                </div>
+                    {/* --- NOMINEES: Grid vs Vortex --- */}
+                    {/* We use LayoutGroup to magically morph them */}
+                    <LayoutGroup>
+                        {phase === 'IDLE' ? (
+                            // GRID LAYOUT
+                            <motion.div className="flex flex-wrap justify-center items-center gap-8 w-full max-w-7xl relative z-10">
+                                {category.nominees.map((nominee) => (
+                                    <motion.div
+                                        layoutId={`nominee-${nominee.name}`}
+                                        key={nominee.name}
+                                        className="group relative w-[200px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-neutral-900"
+                                        whileHover={{ scale: 1.05, y: -10 }}
+                                    >
+                                        {nominee.image ? (
+                                            <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                        ) : (
+                                            <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-600">
+                                                {nominee.name.substring(0, 1)}
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                                        <div className="absolute bottom-4 left-4">
+                                            <p className="font-bold text-white text-lg leading-tight">{nominee.name}</p>
+                                            <p className="text-yellow-500 text-xs font-mono mt-1">{nominee.voteCount} Votes</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </motion.div>
-                        ))}
-                    </motion.div>
+                        ) : (
+                            // VORTEX / ORBIT LAYOUT
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <motion.div
+                                    className="relative w-[800px] h-[800px]"
+                                    animate={phase === 'GATHERING' || phase === 'ABSORBING' ? { rotate: 360 } : { rotate: 0 }}
+                                    transition={{ duration: 3, ease: "linear", repeat: Infinity }}
+                                >
+                                    {category.nominees.map((nominee, idx) => {
+                                        const angle = (idx / category.nominees.length) * 2 * Math.PI;
+                                        const radius = 350; // Orbit Radius
+                                        const x = Math.cos(angle) * radius;
+                                        const y = Math.sin(angle) * radius;
 
-                    {/* The Gacha Card (Center Stage) */}
+                                        return (
+                                            <motion.div
+                                                layoutId={`nominee-${nominee.name}`}
+                                                key={nominee.name}
+                                                className="absolute top-1/2 left-1/2 w-20 h-20 rounded-full border-2 border-yellow-500 overflow-hidden shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-black"
+                                                initial={{ x: 0, y: 0 }} // Start center? No, layoutId handles start pos
+                                                animate={
+                                                    phase === 'ABSORBING' || phase === 'REVEALED'
+                                                        ? { x: 0, y: 0, scale: 0, opacity: 0 } // Suck into center
+                                                        : { x, y, scale: 1, opacity: 1, rotate: -360 } // Orbit (Counter-rotate to stay upright?)
+                                                    // Actually, rotating the container rotates the items. 
+                                                    // To keep heads upright, we might need to counter-rotate.
+                                                    // For Vortex, spinning heads is fine/chaotic good.
+                                                }
+                                                transition={{
+                                                    duration: phase === 'ABSORBING' ? 0.5 : 0.8,
+                                                    ease: phase === 'ABSORBING' ? "backIn" : "easeInOut"
+                                                }}
+                                            >
+                                                {nominee.image ? (
+                                                    <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-xl font-bold text-neutral-600">
+                                                        {nominee.name.substring(0, 1)}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </motion.div>
+                            </div>
+                        )}
+                    </LayoutGroup>
+
+                    {/* --- CENTER STAGE: The Card --- */}
                     {winner && (
-                        <div className="z-20 scale-125 md:scale-150 transition-transform duration-1000">
-                            <GachaCard
-                                winner={winner}
-                                onFocus={setIsFocused}
-                                onReveal={() => {
-                                    // Optional: Add post-reveal logic
-                                }}
-                            />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 scale-125">
+                            <GachaCard winner={winner} phase={phase} />
                         </div>
                     )}
                 </div>
 
-                {/* Footer Controls */}
-                <div className={`flex justify-between items-end mt-10 transition-opacity duration-500 ${isFocused ? 'opacity-0' : 'opacity-100'}`}>
-                    <div className="text-neutral-500 text-sm font-mono">
-                        PRESS SPACE TO CONTINUE
-                    </div>
-                    <button
-                        onClick={onNext}
-                        className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white font-bold backdrop-blur-md transition-all flex items-center gap-2"
-                    >
-                        NEXT CATEGORY <ChevronRight className="w-4 h-4" />
-                    </button>
+                {/* Footer / Controls */}
+                <div className="flex justify-between items-end mt-10 z-30">
+                    {phase === 'IDLE' && (
+                        <button
+                            onClick={startRitual}
+                            className="mx-auto px-12 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xl tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 transition-all animate-pulse"
+                        >
+                            START RITUAL
+                        </button>
+                    )}
+
+                    {phase === 'REVEALED' && (
+                        <button
+                            onClick={onNext}
+                            className="ml-auto px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white font-bold backdrop-blur-md transition-all flex items-center gap-2"
+                        >
+                            NEXT CATEGORY <ChevronRight className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
