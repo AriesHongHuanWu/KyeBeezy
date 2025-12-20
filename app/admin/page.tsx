@@ -292,14 +292,11 @@ function VideosManager() {
         if (!confirm("⚠️ WARNING: This will DELETE ALL current videos and restore the defaults. Continue?")) return;
         try {
             // 1. Delete all existing videos
-            const q = query(collection(db, "videos")); // Get all
-            const snapshot = await new Promise<any>((resolve) => onSnapshot(q, resolve)()); // Hacky strictly speaking, but onSnapshot returns unsubscribe. 
-            // Better to use getDocs but imports might be missing. 
-            // Let's use the current state `videos` since we have it!
+            const snapshot = await getDocs(collection(db, "videos"));
 
             const batch = writeBatch(db);
-            videos.forEach(v => {
-                batch.delete(doc(db, "videos", v.id));
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
             });
             await batch.commit();
 
