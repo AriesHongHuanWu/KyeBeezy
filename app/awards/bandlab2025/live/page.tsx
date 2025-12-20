@@ -523,6 +523,8 @@ const CategorySlide = ({
 };
 
 // --- Page Controller ---
+// --- Page Controller ---
+
 export default function LiveAwardsPage() {
     const { user, loading: authLoading } = useAuth();
     const isAdmin = !!user; // Assume any logged-in user is Admin for this context
@@ -531,10 +533,12 @@ export default function LiveAwardsPage() {
     const [loading, setLoading] = useState(true);
 
     // Synced State
-    const [currentIndex, setCurrentIndex] = useState(-1);
+    const [cloudIndex, setCloudIndex] = useState(-1);
     const [ritualPhase, setRitualPhase] = useState<RitualPhase>('IDLE');
 
-    // Local Access Control
+    // Local State (what the user actually sees)
+    const [localIndex, setLocalIndex] = useState(-1);
+    const [isFreeRoam, setIsFreeRoam] = useState(false);
     const [isLiveActive, setIsLiveActive] = useState(false);
 
     useEffect(() => {
@@ -545,16 +549,20 @@ export default function LiveAwardsPage() {
         };
         load();
 
-        // 1. Listen for Live Active Status
+        // 1. Listen for Config (Live Active & Free Roam)
         const unsubConfig = onSnapshot(doc(db, "settings", "config"), (doc) => {
-            setIsLiveActive(doc.data()?.isLiveActive || false);
+            const data = doc.data();
+            if (data) {
+                setIsLiveActive(data.isLiveActive || false);
+                setIsFreeRoam(data.isFreeRoam || false);
+            }
         });
 
-        // 2. Listen for Shared Live State (Slide & Phase)
+        // 2. Listen for Shared Live State
         const unsubState = onSnapshot(doc(db, "settings", "liveState"), (doc) => {
             const data = doc.data();
             if (data) {
-                if (data.currentIndex !== undefined) setCurrentIndex(data.currentIndex);
+                if (data.currentIndex !== undefined) setCloudIndex(data.currentIndex);
                 if (data.ritualPhase) setRitualPhase(data.ritualPhase as RitualPhase);
             }
         });
@@ -562,7 +570,17 @@ export default function LiveAwardsPage() {
         return () => { unsubConfig(); unsubState(); };
     }, []);
 
-    // --- Admin Actions ---
+    // Sync Local to Cloud UNLESS Free Roam is on for non-admins
+    useEffect(() => {
+        if (!isFreeRoam || isAdmin) {
+            setLocalIndex(cloudIndex);
+        }
+        // If Free Roam is ON and NOT Admin, we don't force update localIndex, allowing them to browse.
+        // However, if Free Roam just turned ON, we might want to let them start from current? existing logic is fine.
+    }, [cloudIndex, isFreeRoam, isAdmin]);
+
+
+    // --- Actions ---
     const handleLogin = async () => {
         try {
             const provider = new GoogleAuthProvider();
@@ -578,8 +596,16 @@ export default function LiveAwardsPage() {
         await setDoc(doc(db, "settings", "liveState"), updates, { merge: true });
     };
 
-    const handleStartRitual = async () => {
+    const toggleFreeRoam = async () => {
         if (!isAdmin) return;
+        await setDoc(doc(db, "settings", "config"), { isFreeRoam: !isFreeRoam }, { merge: true });
+        toast.info(isFreeRoam ? "Free Roam DISABLED" : "Free Roam ENABLED");
+    };
+
+    const handleStartRitual = async () => {
+        if (!isAdmin) return; // Only Admin starts ritual
+        if (isFreeRoam) return; // Disable ritual triggering in free roam mode to prevent confusion? Or allow it? Let's allow it but warn.
+
         // 1. GATHERING
         await updateCloudState({ ritualPhase: 'GATHERING' });
 
@@ -591,51 +617,89 @@ export default function LiveAwardsPage() {
     };
 
     const nextSlide = () => {
-        if (!isAdmin) return;
-        if (currentIndex < categories.length) {
-            updateCloudState({ currentIndex: currentIndex + 1, ritualPhase: 'IDLE' });
+        if (isAdmin && !isFreeRoam) {
+            // Admin syncing everyone
+            if (localIndex < categories.length) {
+                updateCloudState({ currentIndex: localIndex + 1, ritualPhase: 'IDLE' });
+            }
+        } else if (isFreeRoam || isAdmin) {
+            // Local navigation (Free Roam OR Admin previewing)
+            if (localIndex < categories.length) {
+                setLocalIndex(prev => prev + 1);
+            }
         }
     };
 
     const prevSlide = () => {
-        if (!isAdmin) return;
-        if (currentIndex > -1) {
-            updateCloudState({ currentIndex: currentIndex - 1, ritualPhase: 'IDLE' });
+        if (isAdmin && !isFreeRoam) {
+            if (localIndex > -1) {
+                updateCloudState({ currentIndex: localIndex - 1, ritualPhase: 'IDLE' });
+            }
+        } else if (isFreeRoam || isAdmin) {
+            if (localIndex > -1) {
+                setLocalIndex(prev => prev - 1);
+            }
         }
     };
 
-    // Keyboard (Admin Only)
+    // Keyboard controls
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
-            if (!isAdmin) return;
-            if (e.key === "ArrowRight") nextSlide();
-            if (e.key === "ArrowLeft") prevSlide();
+            if (isAdmin || isFreeRoam) {
+                if (e.key === "ArrowRight") nextSlide();
+                if (e.key === "ArrowLeft") prevSlide();
+            }
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-    }, [isAdmin, currentIndex, categories.length]);
+    }, [isAdmin, isFreeRoam, localIndex, categories.length]);
 
 
     if (loading) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500"><MonitorPlay className="animate-bounce" /></div>;
 
-    // WAITING ROOM (Viewer Only)
-    // If not admin AND live is not active, show waiting room.
-    // NOTE: We render the login button ON TOP of this so admins can login even here.
-    const showWaitingRoom = !isAdmin && !isLiveActive;
+    // Waiting Room logic:
+    // If Admin: Never wait.
+    // If Viewer: Wait if NOT Admin AND (NOT Live Active AND NOT Free Roam).
+    // If Free Roam is on, viewers can enter even if "Live Active" is false, hypothetically?
+    // Let's say Free Roam overrides Waiting Room.
+    const showWaitingRoom = !isAdmin && !isLiveActive && !isFreeRoam;
+
+    // Shake Effect for Absorb Phase
+    const isShaking = ritualPhase === 'ABSORBING' && (!isFreeRoam || isAdmin); // Only shake if following the ritual
 
     return (
         <div className="bg-black min-h-screen text-white overflow-hidden relative font-sans">
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(50,50,50,1)_0%,rgba(0,0,0,1)_100%)] -z-10" />
+
+            {/* Dynamic Background */}
+            <motion.div
+                className="absolute inset-0 z-[-10]"
+                animate={{
+                    background: ritualPhase === 'ABSORBING'
+                        ? "radial-gradient(circle at center, rgba(100,50,0,1) 0%, rgba(0,0,0,1) 100%)"
+                        : "radial-gradient(circle at center, rgba(50,50,50,1) 0%, rgba(0,0,0,1) 100%)"
+                }}
+                transition={{ duration: 1 }}
+            />
 
             {/* --- TOP RIGHT LOGIN / ADMIN UI --- */}
             <div className="fixed top-6 right-6 z-[60] flex items-center gap-3">
+                {/* Free Roam Toggle for Admin */}
+                {isAdmin && (
+                    <button
+                        onClick={toggleFreeRoam}
+                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${isFreeRoam ? 'bg-green-500/20 border-green-500 text-green-500' : 'bg-white/10 border-white/20 text-white/50 hover:bg-white/20'}`}
+                    >
+                        {isFreeRoam ? "Free Roam ON" : "Sync Mode"}
+                    </button>
+                )}
+
                 {authLoading ? (
                     <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
                 ) : user ? (
                     <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/50 pr-4 pl-2 py-1.5 rounded-full backdrop-blur-md animate-in fade-in slide-in-from-top-4">
                         <img src={user.photoURL || ""} alt="Admin" className="w-6 h-6 rounded-full border border-red-500" />
-                        <span className="text-xs font-bold text-red-500 uppercase tracking-widest">Admin Active</span>
+                        <span className="text-xs font-bold text-red-500 uppercase tracking-widest hidden md:inline">Admin</span>
                         <button onClick={() => signOut(auth)} className="ml-2 hover:bg-red-500/20 p-1 rounded-full text-red-500/50 hover:text-red-500 transition-colors">
                             <Lock className="w-3 h-3" />
                         </button>
@@ -660,45 +724,69 @@ export default function LiveAwardsPage() {
                 <WaitingRoom />
             ) : (
                 <>
-                    <AnimatePresence mode="wait">
-                        {currentIndex === -1 ? (
-                            <motion.div key="intro" exit={{ opacity: 0, y: -100 }} className="absolute inset-0">
-                                {/* Intro Slide Start Button -> Admin Only */}
-                                <IntroSlide onStart={() => isAdmin && updateCloudState({ currentIndex: 0 })} />
-                                {/* Mask button if not admin? IntroSlide has button. Viewers shouldn't click it. */}
-                                {!isAdmin && <div className="absolute inset-0 z-40 cursor-default" />}
-                            </motion.div>
-                        ) : currentIndex < categories.length ? (
-                            <motion.div
-                                key={categories[currentIndex].title}
-                                initial={{ opacity: 0, x: 100 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -100 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                className="absolute inset-0"
-                            >
-                                <CategorySlide
-                                    category={categories[currentIndex]}
-                                    phase={ritualPhase}
-                                    isAdmin={isAdmin}
-                                    onStartRitual={handleStartRitual}
-                                    onNext={nextSlide}
-                                />
-                            </motion.div>
-                        ) : (
-                            <motion.div key="outro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
-                                <OutroSlide />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {/* Screen Shake Wrapper */}
+                    <motion.div
+                        className="absolute inset-0"
+                        animate={isShaking ? { x: [-5, 5, -5, 5, 0], y: [-5, 5, -5, 5, 0] } : {}}
+                        transition={{ duration: 0.2, repeat: isShaking ? Infinity : 0 }}
+                    >
+                        <AnimatePresence mode="wait">
+                            {localIndex === -1 ? (
+                                <motion.div key="intro" exit={{ opacity: 0, y: -100 }} className="absolute inset-0">
+                                    {/* Intro Slide Start Button -> Admin Only */}
+                                    <IntroSlide onStart={() => isAdmin && updateCloudState({ currentIndex: 0 })} />
+                                    {/* Mask button if not admin? IntroSlide has button. Viewers shouldn't click it. */}
+                                    {!isAdmin && !isFreeRoam && <div className="absolute inset-0 z-40 cursor-default" />}
+                                </motion.div>
+                            ) : localIndex < categories.length ? (
+                                <motion.div
+                                    key={categories[localIndex].title}
+                                    initial={{ opacity: 0, x: 100 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -100 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    className="absolute inset-0"
+                                >
+                                    <CategorySlide
+                                        category={categories[localIndex]}
+                                        // If Free Roam, force IDLE phase so cards usually show immediately or simpler? 
+                                        // Or keep existing state? If free roam, we probably want them to just see the result or default state.
+                                        // Let's force 'REVEALED' or 'IDLE' in Free Roam? 
+                                        // Ideally in Free Roam they can just browse. Let's pass 'REVEALED' if Free Roam so they see the winner immediately?
+                                        // User asked to "flip freely". usually implies seeing the list. 
+                                        // Let's pass 'IDLE' default, but maybe allow clicking?
+                                        // For now, if Free Roam, we preserve 'IDLE' locally (since phase sync is off), 
+                                        // BUT we might want to auto-reveal?
+                                        // Let's keep it simple: Free Roam = IDLE phase usually, but they can click next.
+                                        // If they want to see winner, they currently need "Reveal" ritual.
+                                        // Let's auto-reveal in Free Roam? 
+                                        // Actually, let's just pass 'IDLE' and allow them to click cards? Assuming cards are clickable?
+                                        // Cards are NOT clickable in current code (only ritual reveals them).
+                                        // MODIFICATION: If isFreeRoam, assume 'REVEALED' state? Or add a "Reveal" button for them?
+                                        // Let's pass 'REVEALED' if isFreeRoam is true, so they can see everything.
+                                        phase={isFreeRoam ? 'REVEALED' : ritualPhase}
+                                        isAdmin={isAdmin}
+                                        onStartRitual={handleStartRitual}
+                                        onNext={nextSlide}
+                                    />
+                                    {/* Trigger Confetti on Reveal if NOT free roam (live moment) */}
+                                    <Confetti isActive={ritualPhase === 'REVEALED' && !isFreeRoam} />
+                                </motion.div>
+                            ) : (
+                                <motion.div key="outro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
+                                    <OutroSlide />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
 
-                    {/* Admin Controls Overlay */}
-                    {isAdmin && (
+                    {/* Navigation Controls (Admin OR Free Roam) */}
+                    {(isAdmin || isFreeRoam) && (
                         <>
                             <div className="fixed bottom-8 left-8 z-50">
                                 <button
                                     onClick={prevSlide}
-                                    className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/50 hover:text-white transition-all border border-white/5 hover:border-white/20 hover:scale-110"
+                                    className={`p-4 backdrop-blur-md rounded-full transition-all border hover:scale-110 ${isFreeRoam ? 'bg-green-500/20 text-green-500 border-green-500/50' : 'bg-white/10 text-white/50 border-white/5 hover:bg-white/20 hover:text-white'}`}
                                 >
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
@@ -707,7 +795,7 @@ export default function LiveAwardsPage() {
                             <div className="fixed bottom-8 right-8 z-50">
                                 <button
                                     onClick={nextSlide}
-                                    className="p-4 bg-yellow-500/20 hover:bg-yellow-500/40 backdrop-blur-md rounded-full text-yellow-500 hover:text-yellow-200 transition-all border border-yellow-500/20 hover:border-yellow-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+                                    className={`p-4 backdrop-blur-md rounded-full transition-all border hover:scale-110 ${!isFreeRoam ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/20 hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'bg-green-500/20 text-green-500 border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]'}`}
                                 >
                                     <ChevronRight className="w-6 h-6" />
                                 </button>
