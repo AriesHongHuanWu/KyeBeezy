@@ -206,13 +206,17 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                 </>
             )}
 
-            {/* Glow Effect */}
+            {/* Glow Effect (Breathing Light - Slower) */}
             <motion.div
                 animate={{
-                    scale: isCharging ? [1, 1.5, 1] : (isRevealed ? 1.2 : 1),
-                    opacity: isCharging ? 0.8 : (isRevealed ? 0.8 : 0)
+                    scale: isCharging ? [1, 1.5, 1] : (isRevealed ? 1.2 : [1, 1.2, 1]),
+                    opacity: isCharging ? 0.8 : (isRevealed ? 0.8 : [0.3, 0.5, 0.3])
                 }}
-                transition={{ duration: isCharging ? 0.5 : 1, repeat: isCharging ? Infinity : 0 }}
+                transition={{
+                    duration: isCharging ? 0.5 : 4, // 4s for slow breathing
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                }}
                 className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[100px] rounded-full transition-opacity duration-1000`}
             />
 
@@ -342,11 +346,11 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
         <div className="flex flex-col h-screen bg-black relative overflow-hidden font-sans">
             <GoldDust />
 
-            <div className="z-10 flex-1 flex flex-col p-10">
+            <div className="z-10 flex-1 flex flex-col p-10 mt-10">
                 {/* Header (Fades out during ritual to focus attention) */}
-                <div className={`mb-12 transition-all duration-1000 ${phase !== 'IDLE' ? 'opacity-0 scale-90' : 'opacity-100'}`}>
-                    <h2 className="text-yellow-500 font-bold tracking-[0.5em] uppercase mb-4 text-center">Current Category</h2>
-                    <h1 className="text-5xl md:text-7xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                <div className={`mb-24 transition-all duration-1000 ${phase !== 'IDLE' ? 'opacity-0 scale-90' : 'opacity-100'}`}>
+                    <h2 className="text-yellow-500 font-bold tracking-[0.5em] uppercase mb-6 text-center">Current Category</h2>
+                    <h1 className="text-6xl md:text-8xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tighter">
                         {category.title}
                     </h1>
                 </div>
@@ -358,14 +362,21 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                     <LayoutGroup>
                         {phase === 'IDLE' ? (
                             // GRID LAYOUT (Circular Avatars - Restored)
-                            <motion.div className="flex flex-wrap justify-center items-center gap-12 md:gap-16 w-full max-w-7xl relative z-10 px-4">
-                                {category.nominees.map((nominee) => (
-                                    <div key={nominee.name} className="flex flex-col items-center gap-4 group">
+                            <motion.div className="flex flex-wrap justify-center items-start gap-10 w-full max-w-[90vw] relative z-10 px-4">
+                                {category.nominees.map((nominee, idx) => (
+                                    <div key={nominee.name} className="flex flex-col items-center gap-6 group">
                                         {/* The Flying Element (Head) - Matches Vortex layoutId */}
                                         <motion.div
                                             layoutId={`nominee-${nominee.name}`}
-                                            className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300"
-                                            whileHover={{ scale: 1.1, boxShadow: "0 0 30px rgba(234,179,8,0.4)" }}
+                                            className="relative w-36 h-36 md:w-48 md:h-48 rounded-full border-2 border-white/20 group-hover:border-yellow-500 overflow-hidden shadow-2xl bg-black transition-colors duration-300 cursor-pointer"
+                                            whileHover={{ scale: 1.2, boxShadow: "0 0 40px rgba(234,179,8,0.6)" }}
+                                            animate={{
+                                                y: [0, -15, 0] // Floating Effect
+                                            }}
+                                            transition={{
+                                                y: { duration: 3 + ((idx % 3) * 0.5), repeat: Infinity, ease: "easeInOut", delay: idx * 0.2 },
+                                                layout: { duration: 0.8 } // Smooth morph
+                                            }}
                                         >
                                             {nominee.image ? (
                                                 <img src={nominee.image} alt={nominee.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
@@ -385,8 +396,8 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                             transition={{ delay: 0.1 }}
                                             className="text-center"
                                         >
-                                            <p className="font-bold text-white text-lg md:text-xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
-                                            <p className="text-white/30 text-xs font-mono mt-1">{nominee.voteCount} Votes</p>
+                                            <p className="font-bold text-white text-xl md:text-2xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
+                                            <p className="text-white/30 text-sm font-mono mt-1">{nominee.voteCount} Votes</p>
                                         </motion.div>
                                     </div>
                                 ))}
