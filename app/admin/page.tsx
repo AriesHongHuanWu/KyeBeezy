@@ -300,11 +300,9 @@ function VideosManager() {
                 subtitle="Manage YouTube and Twitch content."
                 action={
                     <div className="flex gap-2">
-                        {videos.length === 0 && (
-                            <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
-                                <Database size={18} /> Seed Defaults
-                            </button>
-                        )}
+                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
+                            <Database size={18} /> Seed Defaults
+                        </button>
                         <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
                             <Plus size={20} /> Add New
                         </button>
@@ -489,11 +487,9 @@ function ProductsManager() {
                 subtitle="Manage your affiliate product showcase."
                 action={
                     <div className="flex gap-2">
-                        {products.length === 0 && (
-                            <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
-                                <Database size={18} /> Seed Defaults
-                            </button>
-                        )}
+                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
+                            <Database size={18} /> Seed Defaults
+                        </button>
                         {!isAdding && (
                             <button onClick={() => { reset(); setEditingId(null); setIsAdding(true); }} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
                                 <Plus size={20} /> Add Product
