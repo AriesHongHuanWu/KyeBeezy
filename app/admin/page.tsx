@@ -3,84 +3,104 @@
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, updateDoc } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { LogOut, Plus, Trash2, Video, Music, Settings, Save, ExternalLink, GripVertical } from "lucide-react";
+import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useAuth } from "@/context/AuthContext";
 
-// Types
-interface VideoItem {
-    id: string;
-    title: string;
-    url: string;
-    platform: "youtube" | "twitch";
-    order: number;
-}
+// --- Types ---
+interface VideoItem { id: string; title: string; url: string; platform: "youtube" | "twitch"; order: number; }
+interface MusicItem { id: string; title: string; embedCode: string; order: number; }
+interface AdminUser { email: string; createdAt: any; }
 
-interface MusicItem {
-    id: string;
-    title: string;
-    embedCode: string; // iframe html
-    order: number;
-}
+const SUPER_ADMIN = "arieswu001@gmail.com";
 
+// --- Main Dashboard Component ---
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "settings">("videos");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "admins">("videos");
+    const { user } = useAuth();
 
-    const handleLogout = () => {
-        signOut(auth);
-    };
+    const handleLogout = () => { signOut(auth); };
 
     return (
-        <div className="min-h-screen bg-black text-foreground font-sans">
-            {/* Navbar */}
-            <nav className="border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
-                        KYEBEEZY<span className="text-white ml-2 opacity-50 font-light">ADMIN</span>
+        <div className="min-h-screen bg-black text-foreground font-sans selection:bg-purple-500/30">
+            {/* Top Navigation Bar */}
+            <nav className="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                            <ShieldCheck className="text-white w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
+                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.0.0 • SUPERUSER</p>
+                        </div>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 transition-colors bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20"
-                    >
-                        <LogOut size={16} /> Logout
-                    </button>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex items-center gap-3 bg-white/5 py-2 px-4 rounded-full border border-white/5">
+                            {user?.photoURL ? (
+                                <img src={user.photoURL} alt="Avatar" className="w-6 h-6 rounded-full" />
+                            ) : (
+                                <UserIcon className="w-5 h-5 text-neutral-400" />
+                            )}
+                            <span className="text-sm font-medium text-neutral-300">{user?.displayName || user?.email}</span>
+                        </div>
+
+                        <button
+                            onClick={handleLogout}
+                            className="group relative px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:text-white hover:bg-red-500 transition-all duration-300 overflow-hidden"
+                        >
+                            <div className="relative z-10 flex items-center gap-2 text-sm font-bold">
+                                <LogOut size={16} /> <span className="hidden sm:inline">Logout</span>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </nav>
 
-            <div className="container mx-auto px-6 py-8">
+            <div className="container mx-auto px-4 sm:px-6 py-8">
                 <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Sidebar Navigation */}
-                    <aside className="lg:w-64 flex-shrink-0">
-                        <div className="bg-neutral-900/50 rounded-2xl p-2 border border-white/5 space-y-1">
-                            <TabButton
-                                active={activeTab === 'videos'}
-                                onClick={() => setActiveTab('videos')}
-                                icon={<Video size={18} />}
-                                label="Stream Highlights"
-                            />
-                            <TabButton
-                                active={activeTab === 'music'}
-                                onClick={() => setActiveTab('music')}
-                                icon={<Music size={18} />}
-                                label="Music Embeds"
-                            />
-                            <TabButton
-                                active={activeTab === 'settings'}
-                                onClick={() => setActiveTab('settings')}
-                                icon={<Settings size={18} />}
-                                label="Global Settings"
-                            />
+                    {/* Sidebar */}
+                    <aside className="lg:w-72 flex-shrink-0">
+                        <div className="sticky top-28 space-y-8">
+                            <div className="bg-neutral-900/40 backdrop-blur-md rounded-3xl p-4 border border-white/5 shadow-2xl">
+                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">Content</p>
+                                <div className="space-y-1">
+                                    <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={<Video size={20} />} label="Stream Highlights" />
+                                    <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} icon={<Music size={20} />} label="Music Embeds" />
+                                </div>
+
+                                <div className="my-4 h-px bg-white/5 mx-4" />
+
+                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">System</p>
+                                <div className="space-y-1">
+                                    <TabButton active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} icon={<Users size={20} />} label="Manage Admins" />
+                                </div>
+                            </div>
+
+                            {/* Status Card */}
+                            <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-3xl p-6 border border-white/5">
+                                <h3 className="text-white font-bold mb-1">System Status</h3>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-xs text-green-400 font-mono">ONLINE</span>
+                                </div>
+                                <p className="text-xs text-neutral-400 leading-relaxed">
+                                    Database connection is active. All systems operational.
+                                </p>
+                            </div>
                         </div>
                     </aside>
 
-                    {/* Main Content Area */}
-                    <main className="flex-1">
+                    {/* Main Content */}
+                    <main className="flex-1 min-w-0">
                         <AnimatePresence mode="wait">
                             {activeTab === 'videos' && <VideosManager key="videos" />}
                             {activeTab === 'music' && <MusicManager key="music" />}
-                            {activeTab === 'settings' && <SettingsManager key="settings" />}
+                            {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
                         </AnimatePresence>
                     </main>
                 </div>
@@ -89,20 +109,32 @@ export default function AdminDashboard() {
     );
 }
 
-// --- Components ---
+// --- Helper Components ---
 
 function TabButton({ active, onClick, icon, label }: any) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${active
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
+            className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-300 font-medium group relative overflow-hidden ${active
+                    ? 'bg-white text-black shadow-lg shadow-white/10 scale-[1.02]'
                     : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
         >
-            {icon}
-            {label}
+            <span className={`relative z-10 ${active ? 'text-black' : 'group-hover:scale-110 transition-transform duration-300'}`}>{icon}</span>
+            <span className="relative z-10">{label}</span>
         </button>
+    )
+}
+
+function SectionHeader({ title, subtitle, action }: any) {
+    return (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+                <h2 className="text-3xl font-black font-outfit text-white mb-1">{title}</h2>
+                <p className="text-neutral-500">{subtitle}</p>
+            </div>
+            {action}
+        </div>
     )
 }
 
@@ -114,81 +146,60 @@ function VideosManager() {
     useEffect(() => {
         const q = query(collection(db, "videos"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VideoItem));
-            setVideos(data);
+            setVideos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VideoItem)));
         });
         return () => unsubscribe();
     }, []);
 
     const onSubmit = async (data: any) => {
         try {
-            await addDoc(collection(db, "videos"), {
-                ...data,
-                createdAt: new Date(),
-                platform: data.url.includes('twitch') ? 'twitch' : 'youtube' // Simple detection
-            });
+            await addDoc(collection(db, "videos"), { ...data, createdAt: new Date() });
             toast.success("Video added successfully");
-            reset();
-            setIsAdding(false);
-        } catch (e) {
-            toast.error("Failed to add video");
-        }
+            reset(); setIsAdding(false);
+        } catch (e) { toast.error("Failed to add video"); }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return;
-        try {
-            await deleteDoc(doc(db, "videos", id));
-            toast.success("Video deleted");
-        } catch (e) {
-            toast.error("Delete failed");
-        }
-    }
-
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold font-outfit">Stream Highlights</h2>
-                <button
-                    onClick={() => setIsAdding(!isAdding)}
-                    className="bg-white text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-neutral-200 transition-colors"
-                >
-                    <Plus size={18} /> Add New
-                </button>
-            </div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Stream Highlights"
+                subtitle="Manage YouTube and Twitch content."
+                action={
+                    <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                        <Plus size={20} /> Add New
+                    </button>
+                }
+            />
 
             {isAdding && (
-                <div className="bg-neutral-900 border border-white/10 rounded-xl p-6 mb-8 animate-in fade-in slide-in-from-top-4">
-                    <h3 className="text-lg font-bold mb-4">Add New Video</h3>
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input {...register("title", { required: true })} placeholder="Video Title" className="input-field" />
-                            <input {...register("url", { required: true })} placeholder="YouTube/Twitch URL" className="input-field" />
+                            <input {...register("title")} placeholder="Video Title" className="input-field" required />
+                            <input {...register("url")} placeholder="Video URL" className="input-field" required />
                         </div>
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-3 pt-2">
                             <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-400 hover:text-white">Cancel</button>
-                            <button type="submit" className="bg-purple-600 px-6 py-2 rounded-lg text-white font-bold hover:bg-purple-500">Save Video</button>
+                            <button type="submit" className="bg-purple-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-purple-500">Save</button>
                         </div>
                     </form>
-                </div>
+                </motion.div>
             )}
 
             <div className="grid gap-4">
                 {videos.map((video) => (
-                    <div key={video.id} className="bg-neutral-900/50 border border-white/5 p-4 rounded-xl flex items-center justify-between group hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-neutral-500">
-                                <Video size={20} />
+                    <div key={video.id} className="bg-neutral-900/30 border border-white/5 p-5 rounded-2xl flex items-center justify-between group hover:border-purple-500/30 hover:bg-neutral-900/50 transition-all duration-300">
+                        <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-neutral-400 group-hover:text-purple-400 group-hover:scale-110 transition-all">
+                                <Video size={24} />
                             </div>
                             <div>
-                                <h4 className="font-bold text-white">{video.title}</h4>
-                                <a href={video.url} target="_blank" className="text-sm text-purple-400 hover:underline flex items-center gap-1">
-                                    {video.url} <ExternalLink size={10} />
-                                </a>
+                                <h4 className="font-bold text-white text-lg">{video.title}</h4>
+                                <p className="text-sm text-neutral-500 truncate max-w-md">{video.url}</p>
                             </div>
                         </div>
-                        <button onClick={() => handleDelete(video.id)} className="p-2 text-neutral-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                            <Trash2 size={18} />
+                        <button onClick={() => deleteDoc(doc(db, "videos", video.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                            <Trash2 size={20} />
                         </button>
                     </div>
                 ))}
@@ -205,73 +216,58 @@ function MusicManager() {
     useEffect(() => {
         const q = query(collection(db, "music"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MusicItem));
-            setTracks(data);
+            setTracks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MusicItem)));
         });
         return () => unsubscribe();
     }, []);
 
     const onSubmit = async (data: any) => {
         try {
-            await addDoc(collection(db, "music"), {
-                ...data,
-                createdAt: new Date(),
-            });
+            await addDoc(collection(db, "music"), { ...data, createdAt: new Date() });
             toast.success("Track added");
-            reset();
-            setIsAdding(false);
-        } catch (e) {
-            toast.error("Failed to add track");
-        }
+            reset(); setIsAdding(false);
+        } catch (e) { toast.error("Error adding track"); }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return;
-        try {
-            await deleteDoc(doc(db, "music", id));
-            toast.success("Track deleted");
-        } catch (e) {
-            toast.error("Delete failed");
-        }
-    }
-
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold font-outfit">Music Embeds</h2>
-                <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-neutral-200">
-                    <Plus size={18} /> Add Track
-                </button>
-            </div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Music Embeds"
+                subtitle="Manage BandLab & SoundCloud players."
+                action={
+                    <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                        <Plus size={20} /> Add New
+                    </button>
+                }
+            />
 
             {isAdding && (
-                <div className="bg-neutral-900 border border-white/10 rounded-xl p-6 mb-8 animate-in fade-in slide-in-from-top-4">
-                    <h3 className="text-lg font-bold mb-4">Add Bandlab/Soundcloud</h3>
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <input {...register("title", { required: true })} placeholder="Track Title" className="input-field w-full" />
-                        <textarea {...register("embedCode", { required: true })} rows={4} placeholder="<iframe> Embed Code" className="input-field w-full font-mono text-xs" />
-                        <div className="flex justify-end gap-2">
+                        <input {...register("title")} placeholder="Track Title" className="input-field" required />
+                        <textarea {...register("embedCode")} rows={4} placeholder="<iframe> code here..." className="input-field font-mono text-xs" required />
+                        <div className="flex justify-end gap-3 pt-2">
                             <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-400 hover:text-white">Cancel</button>
-                            <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold hover:bg-blue-500">Save Track</button>
+                            <button type="submit" className="bg-blue-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-blue-500">Save</button>
                         </div>
                     </form>
-                </div>
+                </motion.div>
             )}
 
             <div className="grid gap-4">
                 {tracks.map((track) => (
-                    <div key={track.id} className="bg-neutral-900/50 border border-white/5 p-4 rounded-xl flex items-center justify-between group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-neutral-500">
-                                <Music size={20} />
+                    <div key={track.id} className="bg-neutral-900/30 border border-white/5 p-5 rounded-2xl flex items-center justify-between group hover:border-blue-500/30 hover:bg-neutral-900/50 transition-all duration-300">
+                        <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-neutral-400 group-hover:text-blue-400 group-hover:scale-110 transition-all">
+                                <Music size={24} />
                             </div>
                             <div>
-                                <h4 className="font-bold text-white">{track.title}</h4>
-                                <p className="text-xs text-neutral-500 font-mono truncate max-w-xs">{track.embedCode}</p>
+                                <h4 className="font-bold text-white text-lg">{track.title}</h4>
+                                <p className="text-xs text-neutral-500 font-mono truncate max-w-xs">{track.embedCode.substring(0, 50)}...</p>
                             </div>
                         </div>
-                        <button onClick={() => handleDelete(track.id)} className="p-2 text-neutral-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                            <Trash2 size={18} />
+                        <button onClick={() => deleteDoc(doc(db, "music", track.id))} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                            <Trash2 size={20} />
                         </button>
                     </div>
                 ))}
@@ -280,12 +276,92 @@ function MusicManager() {
     );
 }
 
-function SettingsManager() {
+function AdminsManager({ currentUser }: { currentUser: string }) {
+    const [admins, setAdmins] = useState<AdminUser[]>([]);
+    const { register, handleSubmit, reset } = useForm();
+    const [isAdding, setIsAdding] = useState(false);
+
+    useEffect(() => {
+        const q = query(collection(db, "admins"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const adminList = snapshot.docs.map(doc => ({ email: doc.id, ...doc.data() } as AdminUser));
+            // Always ensure Super Admin is in the list for display, even if not in DB
+            if (!adminList.find(a => a.email === SUPER_ADMIN)) {
+                adminList.unshift({ email: SUPER_ADMIN, createdAt: null });
+            }
+            setAdmins(adminList);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const onSubmit = async (data: any) => {
+        try {
+            await setDoc(doc(db, "admins", data.email), { createdAt: new Date(), addedBy: currentUser });
+            toast.success(`Admin ${data.email} added`);
+            reset(); setIsAdding(false);
+        } catch (e) { toast.error("Failed to add admin"); }
+    };
+
+    const handleDelete = async (email: string) => {
+        if (email === SUPER_ADMIN) {
+            toast.error("Cannot delete Super Admin");
+            return;
+        }
+        if (!confirm(`Remove admin access for ${email}?`)) return;
+        try {
+            await deleteDoc(doc(db, "admins", email));
+            toast.success("Admin removed");
+        } catch (e) { toast.error("Failed to remove admin"); }
+    }
+
     return (
-        <div className="text-center py-20 text-neutral-500">
-            <Settings size={48} className="mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-bold mb-2">Global Settings</h3>
-            <p>Coming soon: Toggle sections, update bio, and more.</p>
-        </div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Manage Team"
+                subtitle="Control who has access to this dashboard."
+                action={
+                    <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                        <Plus size={20} /> Add Admin
+                    </button>
+                }
+            />
+
+            {isAdding && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8 overflow-hidden">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="flex gap-4">
+                            <input {...register("email")} placeholder="New Admin Email (Gmail)" className="input-field flex-1" required type="email" />
+                            <button type="submit" className="bg-green-600 px-8 py-2 rounded-xl text-white font-bold hover:bg-green-500">Grant Access</button>
+                        </div>
+                    </form>
+                </motion.div>
+            )}
+
+            <div className="grid gap-4">
+                {admins.map((admin) => (
+                    <div key={admin.email} className="bg-neutral-900/30 border border-white/5 p-5 rounded-2xl flex items-center justify-between group hover:border-white/10 transition-all duration-300">
+                        <div className="flex items-center gap-5">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${admin.email === SUPER_ADMIN ? 'bg-gradient-to-br from-yellow-500 to-orange-600 shadow-lg shadow-orange-500/20' : 'bg-neutral-800'}`}>
+                                {admin.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white text-lg flex items-center gap-2">
+                                    {admin.email}
+                                    {admin.email === SUPER_ADMIN && <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/20 uppercase tracking-wider">Super Admin</span>}
+                                    {admin.email === currentUser && <span className="text-[10px] bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded-full border border-blue-500/20 uppercase tracking-wider">You</span>}
+                                </h4>
+                                <p className="text-sm text-neutral-500">{admin.email === SUPER_ADMIN ? "System Owner" : "Content Moderator"}</p>
+                            </div>
+                        </div>
+                        {admin.email !== SUPER_ADMIN && (
+                            <button onClick={() => handleDelete(admin.email)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                                <Trash2 size={20} />
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+        </motion.div>
     )
 }
