@@ -113,7 +113,7 @@ export default function StreamingSection() {
                             <div className="absolute inset-0 border border-white/5 pointer-events-none rounded-2xl" />
                         </div>
 
-                        <Link href="https://www.youtube.com/@kyebeezy" target="_blank" className="relative overflow-hidden group/btn w-full p-5 rounded-xl bg-red-600/10 border border-red-500/20 hover:bg-red-600/20 hover:border-red-500/50 transition-all flex items-center justify-between">
+                        <Link href="https://www.youtube.com/@KyeBeezyLiveOnTwitch" target="_blank" className="relative overflow-hidden group/btn w-full p-5 rounded-xl bg-red-600/10 border border-red-500/20 hover:bg-red-600/20 hover:border-red-500/50 transition-all flex items-center justify-between">
                             <div className="relative z-10">
                                 <h3 className="text-foreground font-bold text-lg font-outfit group-hover/btn:text-red-400 transition-colors">Subscribe on YouTube</h3>
                                 <p className="text-muted-foreground text-sm">Watch highlights & clips</p>
@@ -131,7 +131,7 @@ export default function StreamingSection() {
                     whileInView={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                    <Link href="https://discord.gg/JU3MNRGWXq" target="_blank" className="block group relative overflow-hidden rounded-3xl bg-[#5865F2] hover:bg-[#4752C4] transition-colors shadow-2xl shadow-[#5865F2]/20">
+                    <Link href="https://discord.com/invite/JU3MNRGWXq" target="_blank" className="block group relative overflow-hidden rounded-3xl bg-[#5865F2] hover:bg-[#4752C4] transition-colors shadow-2xl shadow-[#5865F2]/20">
                         <div className="absolute inset-0 bg-[url('https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png')] bg-center bg-cover opacity-10 group-hover:opacity-20 transition-opacity bg-blend-overlay" />
 
                         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8">

@@ -65,16 +65,16 @@ export default function Home() {
                             transition={{ delay: 1.2, duration: 0.8 }}
                             className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all"
                         >
-                            <Link href="https://twitch.tv/" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://www.twitch.tv/realkyebeezylive" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Twitch className="w-8 h-8" />
                             </Link>
-                            <Link href="https://www.bandlab.com/" target="_blank" className="hover:text-red-400 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="hover:text-red-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Music className="w-8 h-8" />
                             </Link>
-                            <Link href="https://youtube.com/" target="_blank" className="hover:text-red-600 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://www.youtube.com/@KyeBeezyLiveOnTwitch" target="_blank" className="hover:text-red-600 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Youtube className="w-8 h-8" />
                             </Link>
-                            <Link href="https://discord.gg/JU3MNRGWXq" target="_blank" className="hover:text-indigo-500 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://discord.com/invite/JU3MNRGWXq" target="_blank" className="hover:text-indigo-500 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Gamepad2 className="w-8 h-8" />
                             </Link>
                         </motion.div>

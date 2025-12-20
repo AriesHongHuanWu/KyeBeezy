@@ -82,8 +82,10 @@ export default function RootLayout({
               "url": "https://kyebeezy.com",
               "jobTitle": "Artist & Streamer",
               "sameAs": [
-                "https://twitch.tv/realkyebeezylive",
-                "https://discord.gg/JU3MNRGWXq"
+                "https://www.twitch.tv/realkyebeezylive",
+                "https://www.youtube.com/@KyeBeezyLiveOnTwitch",
+                "https://www.bandlab.com/kyebeezy",
+                "https://discord.com/invite/JU3MNRGWXq"
               ]
             })
           }}
