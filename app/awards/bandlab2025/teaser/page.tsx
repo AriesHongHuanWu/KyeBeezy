@@ -100,8 +100,8 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
     const entries = Object.entries(NOMINEE_IMAGES);
     const total = entries.length;
 
-    // Cycle linearly
-    const idx = tick % total;
+    // Cycle linearly (Slower speed: 4 ticks per card ~0.8s)
+    const idx = Math.floor(tick / 4) % total;
     const [rawName, imgSrc] = entries[idx];
     const name = rawName.replace('@', '').split('(')[0].trim().toUpperCase();
 
