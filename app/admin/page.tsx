@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, setDoc, writeBatch } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, setDoc, writeBatch, getDocs } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X } from "lucide-react";
@@ -405,9 +405,10 @@ function MusicManager() {
         if (!confirm("⚠️ WARNING: This will DELETE ALL current music and restore the defaults. Continue?")) return;
         try {
             // Delete current
+            const snapshot = await getDocs(collection(db, "music"));
             const batch = writeBatch(db);
-            tracks.forEach(t => {
-                batch.delete(doc(db, "music", t.id));
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
             });
             await batch.commit();
 
@@ -538,9 +539,10 @@ function ProductsManager() {
         if (!confirm("⚠️ WARNING: This will DELETE ALL current products and restore the defaults. Continue?")) return;
         try {
             // Delete current
+            const snapshot = await getDocs(collection(db, "products"));
             const batch = writeBatch(db);
-            products.forEach(p => {
-                batch.delete(doc(db, "products", p.id));
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
             });
             await batch.commit();
 
