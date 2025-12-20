@@ -3,16 +3,20 @@
 import { motion } from "framer-motion";
 import { Music, Play } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function MusicSection() {
-    const tracks = [
+    const [tracks, setTracks] = useState<any[]>([
         {
             id: "7d44e991-08cf-f011-8196-000d3a96100f",
             title: "Latest Heat",
             genre: "Hip Hop • Trap",
             gradient: "from-purple-500/20 to-blue-500/20",
             border: "hover:border-purple-500/50",
-            shadow: "hover:shadow-purple-500/20"
+            shadow: "hover:shadow-purple-500/20",
+            isLegacy: true
         },
         {
             id: "2f1287da-399e-f011-8e64-6045bd354e91",
@@ -20,7 +24,8 @@ export default function MusicSection() {
             genre: "Lo-Fi • Chill",
             gradient: "from-pink-500/20 to-red-500/20",
             border: "hover:border-pink-500/50",
-            shadow: "hover:shadow-pink-500/20"
+            shadow: "hover:shadow-pink-500/20",
+            isLegacy: true
         },
         {
             id: "bcdc5788-3f63-f011-8dc9-000d3a960be3",
@@ -28,9 +33,43 @@ export default function MusicSection() {
             genre: "Experimental • Vibe",
             gradient: "from-blue-500/20 to-indigo-500/20",
             border: "hover:border-blue-500/50",
-            shadow: "hover:shadow-blue-500/20"
+            shadow: "hover:shadow-blue-500/20",
+            isLegacy: true
         },
-    ];
+    ]);
+
+    useEffect(() => {
+        try {
+            const q = query(collection(db, "music"), orderBy("createdAt", "desc"));
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    const fetchedTracks = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        // Extract src from iframe if provided
+                        let src = "";
+                        if (data.embedCode && data.embedCode.includes("src=\"")) {
+                            const match = data.embedCode.match(/src="([^"]+)"/);
+                            if (match) src = match[1];
+                        } else {
+                            src = data.embedCode; // Assume it's a raw URL or ID if no iframe tag
+                        }
+
+                        return {
+                            id: doc.id,
+                            title: data.title,
+                            genre: "Exclusive", // Default genre for dynamic tracks
+                            gradient: "from-indigo-500/20 to-purple-500/20",
+                            border: "hover:border-indigo-500/50",
+                            shadow: "hover:shadow-indigo-500/20",
+                            src: src
+                        };
+                    });
+                    setTracks(fetchedTracks);
+                }
+            }, (error) => { });
+            return () => unsubscribe();
+        } catch (e) { }
+    }, []);
 
     return (
         <section id="music" className="min-h-screen flex items-center justify-center relative py-20 overflow-hidden">
@@ -76,7 +115,7 @@ export default function MusicSection() {
                             <div className={`bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-3xl p-4 border border-white/20 dark:border-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl ${track.border} ${track.shadow}`}>
                                 <div className={`relative aspect-square rounded-2xl overflow-hidden mb-4 bg-gradient-to-br ${track.gradient}`}>
                                     <iframe
-                                        src={`https://www.bandlab.com/embed/?id=${track.id}`}
+                                        src={track.src || `https://www.bandlab.com/embed/?id=${track.id}`}
                                         className="absolute inset-0 w-full h-full opacity-90 hover:opacity-100 transition-opacity"
                                         frameBorder="0"
                                         allow="autoplay"

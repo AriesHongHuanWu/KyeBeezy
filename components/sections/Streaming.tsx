@@ -3,10 +3,36 @@
 import { motion } from "framer-motion";
 import { Youtube, Twitch, ExternalLink, PlayCircle, Gamepad2, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function StreamingSection() {
     const [hovered, setHovered] = useState<string | null>(null);
+    const [latestVideo, setLatestVideo] = useState("https://www.youtube.com/embed/7UN_eYHLssE");
+
+    useEffect(() => {
+        try {
+            const q = query(collection(db, "videos"), orderBy("createdAt", "desc"), limit(1));
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    const data = snapshot.docs[0].data();
+                    let url = data.url;
+                    if (url.includes("watch?v=")) {
+                        url = url.replace("watch?v=", "embed/");
+                    } else if (url.includes("youtu.be/")) {
+                        url = url.replace("youtu.be/", "www.youtube.com/embed/");
+                    }
+                    setLatestVideo(url);
+                }
+            }, (error) => {
+                // Silently fail if keys are missing
+            });
+            return () => unsubscribe();
+        } catch (e) {
+            // Firebase not init
+        }
+    }, []);
 
     return (
         <section id="stream" className="min-h-screen py-20 relative flex flex-col justify-center">
@@ -79,7 +105,7 @@ export default function StreamingSection() {
                         <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/50 group-hover:shadow-red-500/40 transition-all duration-300 transform group-hover:scale-[1.01]">
                             <iframe
                                 className="absolute inset-0 w-full h-full"
-                                src="https://www.youtube.com/embed/7UN_eYHLssE"
+                                src={latestVideo}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
                             ></iframe>

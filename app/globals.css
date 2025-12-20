@@ -160,3 +160,9 @@
 .dark::view-transition-new(root) {
   z-index: 9999;
 }
+
+@layer components {
+  .input-field {
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all;
+  }
+}
