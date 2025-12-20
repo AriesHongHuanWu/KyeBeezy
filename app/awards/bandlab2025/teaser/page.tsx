@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, Volume2, VolumeX, SkipForward, Zap, User } from "lucide-react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { Play, Volume2, VolumeX, SkipForward, Zap, User, Terminal, Activity, globe } from "lucide-react";
 import Link from "next/link";
 import { getAwardsData, CategoryData } from "../../data-fetcher";
 import { NOMINEE_IMAGES } from "../../nominee-images";
@@ -10,295 +10,301 @@ import { Confetti } from "@/components/ui/confetti";
 import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 
 // --- CONFIG ---
+const BPM = 120;
+const BEAT_MS = (60 / BPM) * 1000; // 500ms
 const AUDIO_URL = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-
-// --- 3D MATH UTILS ---
-const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
 // --- SUB-COMPONENTS ---
 
-// 1. DATA GLOBE (Scene 1 - The World)
-const DataGlobe = () => {
-    // Generate points on a sphere
-    const points = useMemo(() => {
-        const p = [];
-        const count = 100;
-        const offset = 2 / count;
-        const increment = Math.PI * (3 - Math.sqrt(5));
-        for (let i = 0; i < count; i++) {
-            const y = ((i * offset) - 1) + (offset / 2);
-            const r = Math.sqrt(1 - Math.pow(y, 2));
-            const phi = ((i + 1) % count) * increment;
-            const x = Math.cos(phi) * r;
-            const z = Math.sin(phi) * r;
-            p.push({ x: x * 300, y: y * 300, z: z * 300 });
-        }
-        return p;
-    }, []);
-
-    return (
-        <div className="absolute inset-0 flex items-center justify-center perspective-1000">
-            {/* Rotating Container */}
-            <motion.div
-                className="relative w-0 h-0 transform-3d"
-                animate={{ rotateY: 360, rotateZ: 10 }}
-                transition={{ duration: 20, ease: "linear", repeat: Infinity }}
-                style={{ transformStyle: "preserve-3d" }}
-            >
-                {points.map((pt, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-1 h-1 bg-yellow-500 rounded-full"
-                        style={{ transform: `translate3d(${pt.x}px, ${pt.y}px, ${pt.z}px)` }}
-                    />
-                ))}
-                {/* Floating Data Text */}
-                {[...Array(20)].map((_, i) => (
-                    <motion.div
-                        key={`txt-${i}`}
-                        className="absolute text-[8px] text-yellow-500/50 font-mono whitespace-nowrap"
-                        style={{ transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px)` }}
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: Math.random() * 2 }}
-                    >
-                        {Math.floor(Math.random() * 9999)}
-                    </motion.div>
-                ))}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-yellow-500/10 rounded-full blur-xl" />
-            </motion.div>
-
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <motion.h1
-                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}
-                    className="text-6xl md:text-8xl font-black text-white tracking-tighter text-center leading-none mix-blend-difference"
-                >
-                    GLOBAL<br />SCALE
-                </motion.h1>
-            </div>
-        </div>
-    );
-};
-
-// 2. CATEGORY TUNNEL (Scene 2 - The Candidates)
-const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
-    const images = useMemo(() => {
-        const raw = Object.values(NOMINEE_IMAGES);
-        return [...raw, ...raw, ...raw, ...raw].sort(() => 0.5 - Math.random()).slice(0, 80);
-    }, []);
-
-    return (
-        <div className="absolute inset-0 bg-black perspective-500 overflow-hidden">
-            {/* Warp Images */}
-            <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
-                {images.map((img, i) => (
-                    <motion.div
-                        key={`img-${i}`}
-                        className="absolute top-1/2 left-1/2 w-32 h-32 md:w-48 md:h-48 rounded-lg bg-neutral-900 border border-white/20 opacity-60"
-                        style={{
-                            backgroundImage: `url(${img})`, backgroundSize: "cover",
-                            x: Math.cos(i) * (300 + Math.random() * 500),
-                            y: Math.sin(i) * (300 + Math.random() * 500),
-                        }}
-                        initial={{ z: -2000, scale: 0, opacity: 0 }}
-                        animate={{ z: 500, scale: 1, opacity: [0, 1, 0] }}
-                        transition={{ duration: 3, delay: Math.random() * 4, ease: "linear", repeat: Infinity }}
-                    />
-                ))}
-            </div>
-
-            {/* Category Names */}
-            {categories.slice(0, 10).map((cat, i) => (
-                <motion.div
-                    key={cat.id}
-                    className="absolute top-1/2 left-1/2 flex items-center justify-center w-[80vw]"
-                    initial={{ z: -2000, opacity: 0 }}
-                    animate={{ z: 800, opacity: [0, 1, 0] }}
-                    transition={{ duration: 3, delay: i * 0.8, ease: "linear" }}
-                    style={{ x: "-50%", y: "-50%", rotateZ: i % 2 === 0 ? -5 : 5 }}
-                >
-                    <h2 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400 uppercase italic tracking-tighter whitespace-nowrap drop-shadow-lg">
-                        {cat.title}
-                    </h2>
-                </motion.div>
-            ))}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay animate-pulse" />
-        </div>
-    );
-};
-
-// 3. VOTING BATTLE (Scene 3 - The Fight)
-const VotingBattleScene = () => {
-    // Simulate count up
-    const [countA, setCountA] = useState(1240);
-    const [countB, setCountB] = useState(1190);
+// ACT 1: TERMINAL BOOT (0-10s)
+const TerminalBoot = () => {
+    const [lines, setLines] = useState<string[]>([]);
 
     useEffect(() => {
+        const bootText = [
+            "INITIALIZING KERNEL...",
+            "LOADING ASSETS...",
+            "CONNECTING TO BANDLAB SECURE SERVER...",
+            "FETCHING NOMINEE DATA...",
+            "VERIFYING INTEGRITY...",
+            "SYSTEM READY.",
+            "EXECUTING SEQUENCE..."
+        ];
+        let i = 0;
         const interval = setInterval(() => {
-            setCountA(prev => prev + Math.floor(Math.random() * 50));
-            setCountB(prev => prev + Math.floor(Math.random() * 60)); // B catches up
-        }, 100);
+            if (i < bootText.length) {
+                setLines(prev => [...prev, bootText[i]]);
+                i++;
+            }
+        }, 300); // Fast text
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="absolute inset-0 flex bg-black">
-            {/* Split Screen */}
-            <div className="flex-1 border-r border-white/20 relative overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 bg-blue-900/20" />
-                <motion.div
-                    animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}
-                    className="text-8xl md:text-[10rem] font-black text-white mix-blend-overlay"
-                >
-                    {countA}
-                </motion.div>
-                <div className="absolute bottom-10 left-10 text-xl font-bold text-blue-500 tracking-[0.5em]">NOMINEE 01</div>
-            </div>
+        <div className="absolute inset-0 bg-black p-10 font-mono text-green-500 text-xs md:text-sm overflow-hidden flex flex-col justify-end pb-20">
+            <div className="absolute top-0 left-0 w-full h-1 bg-green-500 animate-[scan_2s_linear_infinite]" />
+            {lines.map((line, i) => (
+                <div key={i} className="mb-1 opacity-80">> {line}</div>
+            ))}
+            <div className="animate-pulse">_</div>
 
-            <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 bg-red-900/20" />
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }}
-                    className="text-8xl md:text-[10rem] font-black text-white mix-blend-overlay"
-                >
-                    {countB}
-                </motion.div>
-                <div className="absolute top-10 right-10 text-xl font-bold text-red-500 tracking-[0.5em]">NOMINEE 02</div>
-            </div>
+            {/* Glitch Overlay */}
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
+        </div>
+    );
+};
 
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="bg-black/80 px-8 py-4 border border-white/20 backdrop-blur-md">
-                    <h1 className="text-4xl font-black text-white italic tracking-tighter">VS</h1>
+// ACT 2: RAPID FIRE ROSTER (10-30s)
+const RapidFireRoster = ({ beat }: { beat: number }) => {
+    const images = useMemo(() => Object.values(NOMINEE_IMAGES), []);
+    // Change image every beat (500ms) or half beat? Let's do Fast: Every beat is 2 switch
+    const currentImgIndex = Math.floor((Date.now() / 200) % images.length);
+    const currentImg = images[currentImgIndex];
+
+    return (
+        <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
+            {/* Background Echo */}
+            <motion.div
+                key={currentImgIndex + "_bg"}
+                className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl scale-110"
+                style={{ backgroundImage: `url(${currentImg})` }}
+            />
+
+            {/* Main Cut */}
+            <div className="relative z-10 w-[80vw] h-[60vh] md:w-[500px] md:h-[500px]">
+                <img
+                    src={currentImg}
+                    className="w-full h-full object-cover border-4 border-white/50 shadow-[0_0_50px_rgba(255,255,255,0.2)]"
+                />
+                <div className="absolute bottom-0 left-0 bg-yellow-500 text-black font-black px-4 py-1 text-xl tracking-tighter">
+                    NOMINEE #{currentImgIndex + 1}
                 </div>
             </div>
 
-            <div className="absolute bottom-20 w-full text-center">
-                <h2 className="text-3xl font-black text-yellow-500 uppercase tracking-widest animate-pulse">Every Vote Counts</h2>
-            </div>
+            {/* Flash Overlay on Beat */}
+            <motion.div
+                animate={{ opacity: [0.5, 0] }}
+                transition={{ duration: 0.2 }}
+                key={beat} // Trigger on beat
+                className="absolute inset-0 bg-white mix-blend-overlay pointer-events-none"
+            />
+
+            <h1 className="absolute top-10 w-full text-center text-8xl font-black text-white/10 tracking-[0.2em] scale-150">
+                THE ROSTER
+            </h1>
         </div>
     );
 };
 
-// 4. THE RITUAL (Scene 4 - The Mechanic)
-const RitualScene = () => {
-    const [isRevealed, setIsRevealed] = useState(false);
+// ACT 3: KINETIC TYPOGRAPHY (30-50s)
+const KineticType = ({ categories, beat }: { categories: CategoryData[], beat: number }) => {
+    const catIndex = beat % categories.length;
+    const cat = categories[catIndex] || { title: "LEGENDS" };
 
-    useEffect(() => {
-        // Auto reveal after 3s
-        setTimeout(() => setIsRevealed(true), 3000);
-    }, []);
+    return (
+        <div className="absolute inset-0 bg-yellow-500 flex items-center justify-center overflow-hidden">
+            <motion.div
+                key={cat.title}
+                initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                animate={{ scale: 1.5, opacity: 1, rotate: 0 }}
+                exit={{ scale: 2, opacity: 0 }}
+                transition={{ duration: 0.4, type: "spring", bounce: 0.5 }}
+                className="text-center"
+            >
+                <h1 className="text-black font-black text-6xl md:text-9xl tracking-tighter leading-none uppercase stroke-black stroke-2">
+                    {cat.title}
+                </h1>
+            </motion.div>
 
+            {/* Strobe Black */}
+            <motion.div
+                animate={{ opacity: [1, 0] }}
+                transition={{ duration: 0.1 }}
+                key={beat}
+                className="absolute inset-0 bg-black pointer-events-none mix-blend-multiply"
+            />
+        </div>
+    );
+};
+
+// ACT 4: VOTING WAR (50-70s)
+const VotingWar = ({ beat }: { beat: number }) => {
+    // Hyper fast numbers
+    return (
+        <div className="absolute inset-0 bg-neutral-900 grid grid-cols-2">
+            <div className="flex items-center justify-center bg-blue-600 relative overflow-hidden">
+                <h1 className="text-[10rem] font-black text-white mix-blend-overlay italic">
+                    {Math.floor(Date.now() / 10 % 1000)}
+                </h1>
+                <div className="absolute inset-0 bg-black/20 animate-pulse" />
+            </div>
+            <div className="flex items-center justify-center bg-red-600 relative overflow-hidden">
+                <h1 className="text-[10rem] font-black text-white mix-blend-overlay italic">
+                    {Math.floor((Date.now() + 500) / 13 % 1000)}
+                </h1>
+                <div className="absolute inset-0 bg-black/20 animate-pulse" style={{ animationDelay: "0.1s" }} />
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ duration: 0.4, repeat: Infinity }}
+                    className="bg-black text-white font-black text-4xl px-8 py-4 border-4 border-yellow-500 rotate-3"
+                >
+                    VS
+                </motion.div>
+            </div>
+
+            <h2 className="absolute bottom-10 w-full text-center text-4xl font-black text-white uppercase tracking-widest drop-shadow-xl">
+                EVERY VOTE COUNTS
+            </h2>
+        </div>
+    );
+};
+
+// ACT 5: RITUAL (70-85s)
+const FinalRitual = ({ isRevealed }: { isRevealed: boolean }) => {
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <TeaserHeroCard
-                isRevealed={isRevealed}
-                onRevealComplete={() => { }}
-            />
-            {/* Lightning */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50">
-                {[...Array(3)].map((_, i) => (
-                    <motion.path
-                        key={i} d={`M50,50 L${Math.random() * 100},${Math.random() * 100}`}
-                        stroke="yellow" strokeWidth="1"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: [0, 1, 0], opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.1, repeat: Infinity, repeatDelay: Math.random() }}
-                    />
-                ))}
-            </svg>
-        </div>
-    );
-};
-
-// 5. THE REVEAL (Scene 5 - Final)
-const RevealScene = () => {
-    return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white animate-in fade-in duration-300">
-            <Confetti isActive={true} />
-            <div className="relative z-10 flex flex-col items-center mix-blend-difference scale-150">
-                <img src="/bandlab-logo.png" className="w-48 h-48 object-contain mb-6 invert" />
-                <h1 className="text-9xl font-black text-white tracking-tighter">KYEBEEZY</h1>
-                <p className="text-3xl font-bold text-white/50 tracking-[1em]">X BANDLAB</p>
-
-                <Link href="/awards/bandlab2025/live" className="mt-12">
-                    <button className="px-12 py-6 bg-yellow-500 text-black font-black uppercase text-2xl hover:scale-110 transition-transform">
-                        ENTER LIVE
-                    </button>
-                </Link>
+            <div className="scale-150">
+                <TeaserHeroCard isRevealed={isRevealed} onRevealComplete={() => { }} />
             </div>
+            {/* Particles */}
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 animate-pulse mix-blend-overlay" />
         </div>
     );
 };
 
+// ACT 6: FINAL SHOWCASE (85s+)
+const FinalShowcase = () => {
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
+            <Confetti isActive={true} />
+            <motion.div
+                initial={{ scale: 3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                className="relative z-10 flex flex-col items-center mix-blend-difference"
+            >
+                <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter">
+                    KYEBEEZY
+                </h1>
+                <h1 className="text-[8vw] font-black text-neutral-400 leading-none tracking-tighter">
+                    AWARDS 2025
+                </h1>
+
+                <div className="mt-12 flex gap-4">
+                    <Link href="/awards/bandlab2025/live">
+                        <button className="px-12 py-6 bg-yellow-500 text-black font-black text-2xl uppercase hover:bg-yellow-400 transition-colors">
+                            ENTER EVENT
+                        </button>
+                    </Link>
+                </div>
+            </motion.div>
+        </div>
+    )
+}
 
 // --- CONTROLLER ---
 
-export default function TeaserPageV7() {
+export default function TeaserPageV8() {
     const [started, setStarted] = useState(false);
-    const [scene, setScene] = useState(-1);
+    const [beat, setBeat] = useState(0); // The Heartbeat (0, 1, 2, 3...)
+    const [act, setAct] = useState(0);
+
+    // Data
     const [categories, setCategories] = useState<CategoryData[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // Fetch Data
     useEffect(() => {
         getAwardsData().then(data => setCategories(data));
     }, []);
 
+    // ENGINE
     useEffect(() => {
         if (!started) return;
 
+        // Start Audio
         if (audioRef.current) {
             audioRef.current.currentTime = 0;
             audioRef.current.play();
         }
 
-        // 45s TIMELINE
+        // Beat Loop (Every 500ms)
+        const beatInterval = setInterval(() => {
+            setBeat(b => b + 1);
+        }, BEAT_MS);
+
+        // Timeline (Seconds)
         const timeline = [
-            { time: 0, scene: 0 },       // 0s: Globe (5s)
-            { time: 5000, scene: 1 },    // 5s: Tunnel (10s)
-            { time: 15000, scene: 2 },   // 15s: Voting Battle (10s)
-            { time: 25000, scene: 3 },   // 25s: Ritual (10s)
-            { time: 35000, scene: 4 },   // 35s: Reveal (Loop)
+            { t: 0, act: 1 },  // Boot
+            { t: 10, act: 2 }, // Roster
+            { t: 30, act: 3 }, // Text
+            { t: 50, act: 4 }, // War
+            { t: 70, act: 5 }, // Ritual
+            { t: 85, act: 6 }, // Show
         ];
 
-        let timers: NodeJS.Timeout[] = [];
-        timeline.forEach(item => {
-            timers.push(setTimeout(() => setScene(item.scene), item.time));
-        });
+        const timers = timeline.map(item =>
+            setTimeout(() => setAct(item.act), item.t * 1000)
+        );
 
-        return () => timers.forEach(clearTimeout);
+        return () => {
+            clearInterval(beatInterval);
+            timers.forEach(clearTimeout);
+        };
     }, [started]);
 
     if (!started) {
         return (
-            <div onClick={() => setStarted(true)} className="h-screen w-screen bg-black flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-900 transition-colors">
-                <div className="w-24 h-24 rounded-full border-2 border-white/20 flex items-center justify-center animate-pulse mb-6">
-                    <Play className="w-10 h-10 text-white fill-white ml-2" />
+            <div onClick={() => setStarted(true)} className="h-screen w-screen bg-black flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-900 transition-colors group">
+                <div className="w-32 h-32 rounded-full border-4 border-white/20 flex items-center justify-center relative">
+                    <div className="absolute inset-0 border-4 border-transparent border-t-yellow-500 rounded-full animate-spin" />
+                    <Play className="w-12 h-12 text-white fill-white ml-2 transition-transform group-hover:scale-125" />
                 </div>
-                <h1 className="text-white font-black tracking-[0.5em] text-xl uppercase">Initiate Sequence</h1>
-                <p className="text-neutral-500 text-sm mt-2 uppercase tracking-widest">Duration: 45s • Audio: ON</p>
+                <h1 className="text-white font-black tracking-[0.5em] text-2xl uppercase mt-8">Initialize V8</h1>
+                <p className="text-neutral-500 text-sm mt-2 uppercase tracking-widest">Duration: 90s • High Intensity</p>
                 <audio ref={audioRef} src={AUDIO_URL} preload="auto" loop />
             </div>
         );
     }
 
     return (
-        <div className="h-screen w-screen bg-black overflow-hidden relative font-sans">
-            <div className="absolute top-6 right-6 z-[100] flex gap-4">
-                <button onClick={() => { setStarted(false); setScene(-1); }} className="text-white/50 hover:text-white font-bold text-xs uppercase tracking-widest">
-                    Restart
+        <div className="h-screen w-screen bg-black overflow-hidden relative font-sans cursor-none">
+            {/* Progress Bar */}
+            <motion.div
+                className="absolute top-0 left-0 h-1 bg-yellow-500 z-[100]"
+                initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 90, ease: "linear" }}
+            />
+
+            {/* Controls (Hidden UI) */}
+            <div className="absolute top-6 right-6 z-[100] opacity-50 hover:opacity-100 transition-opacity">
+                <button onClick={() => { setStarted(false); setAct(0); }} className="text-white font-bold text-xs uppercase tracking-widest border border-white/50 px-2 py-1">
+                    RESTART
                 </button>
             </div>
 
-            <AnimatePresence mode="wait">
-                {scene === 0 && <motion.div key="s0" className="absolute inset-0" exit={{ opacity: 0 }}><DataGlobe /></motion.div>}
-                {scene === 1 && <motion.div key="s1" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><CategoryTunnel categories={categories} /></motion.div>}
-                {scene === 2 && <motion.div key="s2" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><VotingBattleScene /></motion.div>}
-                {scene === 3 && <motion.div key="s3" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><RitualScene /></motion.div>}
-                {scene === 4 && <motion.div key="s4" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><RevealScene /></motion.div>}
-            </AnimatePresence>
+            {/* STAGE MANAGER */}
+            <div className="absolute inset-0">
+                {act === 1 && <TerminalBoot />}
+                {act === 2 && <RapidFireRoster beat={beat} />}
+                {act === 3 && <KineticType categories={categories} beat={beat} />}
+                {act === 4 && <VotingWar beat={beat} />}
+                {act === 5 && <FinalRitual isRevealed={true} />} {/* Auto-reveal immediately for Montage */}
+                {act === 6 && <FinalShowcase />}
+            </div>
 
-            {/* Cinematic Overlay */}
-            <div className="absolute top-0 w-full h-[12vh] bg-black z-50 pointer-events-none" />
-            <div className="absolute bottom-0 w-full h-[12vh] bg-black z-50 pointer-events-none" />
+            {/* GLOBAL OVERLAYS */}
+            {/* Film Grain */}
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 pointer-events-none z-[60] mix-blend-overlay animate-pulse" />
+
+            {/* Vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_50%,black_100%)] z-[50] pointer-events-none" />
+
+            {/* Timecode */}
+            <div className="absolute bottom-6 right-6 font-mono text-xs text-white/30 z-[70]">
+                T-{90 - (beat * 0.5)}s :: ACT {act}
+            </div>
+
         </div>
     );
 }
