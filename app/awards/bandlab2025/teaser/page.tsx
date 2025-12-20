@@ -10,7 +10,7 @@ import { Confetti } from "@/components/ui/confetti";
 import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 
 // --- CONFIG ---
-const VISUAL_BPM = 400; // HYPER SPEED for 20s
+const VISUAL_BPM = 140; // STANDARD SPEED (Readable, ~0.4s per beat)
 const TICK_MS = (60 / VISUAL_BPM) * 1000;
 const AUDIO_URL = "/Memories_Take_Time.mp3";
 
@@ -26,19 +26,13 @@ interface SequenceStep {
 
 // --- PERSISTENT OVERLAYS ---
 const PersistentCredits = () => (
-    <>
-        <div className="absolute top-4 right-4 z-[999] flex flex-col items-end">
-            <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">Sponsored By</span>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-lg border border-white/20">
-                <img src="https://player.awbest.tech/image/icon/icon.svg" className="w-6 h-6" />
-                <span className="text-sm font-black text-white tracking-tighter">AWBEST</span>
-            </div>
+    <div className="absolute bottom-6 right-6 z-[999] flex items-center bg-black/50 backdrop-blur-md px-6 py-3 border border-white/10 rounded-full hover:bg-black/80 transition-colors">
+        <div className="flex items-center gap-3 border-r border-white/20 pr-4 mr-4">
+            <img src="https://player.awbest.tech/image/icon/icon.svg" className="w-6 h-6 invert" />
+            <span className="text-xs font-black text-white tracking-widest uppercase">AWBEST</span>
         </div>
-        <div className="absolute bottom-4 right-4 z-[999] text-right">
-            <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold block mb-1">Produced By</span>
-            <h1 className="text-xl font-black text-white tracking-normal uppercase border-b-2 border-yellow-500 inline-block">ARIES WU</h1>
-        </div>
-    </>
+        <span className="text-xs font-black text-yellow-500 tracking-widest uppercase">ARIES WU</span>
+    </div>
 );
 
 // --- SUB-COMPONENTS ---
@@ -50,14 +44,14 @@ const NarrativeOverlay = ({ text, subtext }: { text: string, subtext?: string })
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 0.2, type: "spring", bounce: 0.5 }}
+                transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
                 className="text-center"
             >
                 <h1 className="text-6xl md:text-[8rem] font-black text-white tracking-tighter uppercase drop-shadow-[0_0_20px_white] leading-none mb-4">
                     {text}
                 </h1>
                 {subtext && (
-                    <div className="bg-yellow-500 text-black font-black text-xl md:text-3xl px-4 py-1 uppercase tracking-widest inline-block skew-x-[-10deg]">
+                    <div className="bg-yellow-500 text-black font-black text-xl md:text-3xl px-6 py-2 uppercase tracking-widest inline-block skew-x-[-10deg]">
                         {subtext}
                     </div>
                 )}
@@ -74,7 +68,7 @@ const ManifestoVisuals = ({ tick }: { tick: number }) => (
                 className={`absolute rounded-full border-[10px] md:border-[30px] border-white/10`}
                 style={{
                     width: `${25 * i}vw`, height: `${25 * i}vw`,
-                    transform: `scale(${1 + (tick % 4) * 0.2}) rotate(${tick * 20 * (i % 2 === 0 ? 1 : -1)}deg)`
+                    transform: `scale(${1 + (tick % 4) * 0.2}) rotate(${tick * 10 * (i % 2 === 0 ? 1 : -1)}deg)`
                 }}
             />
         ))}
@@ -85,30 +79,38 @@ const ManifestoVisuals = ({ tick }: { tick: number }) => (
 // SCENE 2: ROSTER
 const RosterVisuals = ({ tick }: { tick: number }) => {
     const images = Object.values(NOMINEE_IMAGES);
-    const mockNames = ["ALEX", "SARAH", "BEATZ", "K-OS", "PRO-X", "MEL", "RHYTHM", "BASS", "VIBE", "WAVE", "FLOW", "DRIP"];
-    const idx = tick % images.length;
+    // Mock Names mapped to ensure variety
+    const mockNames = ["ALEX R.", "SARAH J.", "BEATZ", "K-OS", "PRO-X", "MELODY", "RHYTHM", "BASS", "VIBE", "WAVE", "FLOW", "DRIP", "LUNA", "SOLAR", "ECHO"];
+
+    // Cycle through ALL images using a large prime multiplier to avoid repeating patterns
+    const idx = (tick * 1) % images.length;
+    const nameIdx = idx % mockNames.length;
 
     return (
         <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden">
             {/* Background Grid */}
-            <div className="absolute inset-0 grid grid-cols-6 opacity-40 grayscale">
+            <div className="absolute inset-0 grid grid-cols-6 opacity-30 grayscale">
                 {images.slice(0, 24).map((src, i) => (
                     <div key={i} className={`bg-cover bg-center ${Math.random() > 0.5 ? 'invert' : ''}`} style={{ backgroundImage: `url(${src})`, opacity: Math.random() }} />
                 ))}
             </div>
 
             {/* Foreground Card */}
-            <div className="relative z-10 w-[80vw] h-[60vh] md:w-[500px] md:h-[600px] bg-black border-8 border-white shadow-[0_0_50px_rgba(255,255,255,0.5)] rotate-[-2deg]">
-                <img src={images[idx]} className="w-full h-full object-cover contrast-125" />
-                <div className="absolute bottom-8 left-0 bg-yellow-500 text-black text-6xl font-black px-4 uppercase tracking-tighter shadow-lg">
-                    {mockNames[idx % mockNames.length]}
+            <div className="relative z-10 w-[80vw] h-[60vh] md:w-[500px] md:h-[600px] bg-black border-4 border-white shadow-[0_0_50px_rgba(255,255,255,0.3)] rotate-[-2deg]">
+                <img src={images[idx]} className="w-full h-full object-cover contrast-125 saturate-0" />
+
+                {/* NAME LABEL (BOTTOM LEFT) */}
+                <div className="absolute bottom-4 left-[-20px] bg-yellow-500 text-black px-6 py-2 shadow-[10px_10px_0px_black] transform -rotate-1">
+                    <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none">
+                        {mockNames[nameIdx]}
+                    </h1>
                 </div>
             </div>
 
             {/* Subliminal Flash */}
-            {tick % 4 === 0 && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white mix-blend-hard-light">
-                    <h1 className="text-[20vw] font-black text-black leading-none">VOTE</h1>
+            {tick % 8 === 0 && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white mix-blend-overlay">
+                    <h1 className="text-[20vw] font-black text-black leading-none opacity-50">VOTE</h1>
                 </div>
             )}
         </div>
@@ -117,7 +119,7 @@ const RosterVisuals = ({ tick }: { tick: number }) => {
 
 // SCENE 3: KINETIC TYPE
 const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tick: number }) => {
-    const idx = Math.floor(tick) % (categories.length || 1);
+    const idx = Math.floor(tick / 2) % (categories.length || 1);
     const cat = categories[idx] || { title: "MUSIC" };
     return (
         <div className="absolute inset-0 bg-yellow-400 flex items-center justify-center overflow-hidden">
@@ -130,12 +132,12 @@ const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tic
             </div>
             <motion.div
                 key={cat.title + tick}
-                initial={{ scale: 0.5, rotate: 10, filter: "blur(20px)" }}
-                animate={{ scale: 1.2, rotate: -5, filter: "blur(0px)" }}
-                transition={{ duration: 0.2 }}
+                initial={{ scale: 0.8, rotate: 5, opacity: 0 }}
+                animate={{ scale: 1, rotate: -2, opacity: 1 }}
+                transition={{ duration: 0.4, ease: "backOut" }} // Removed Blur, clearer animation
                 className="bg-black px-12 py-8 shadow-[20px_20px_0px_white]"
             >
-                <h1 className="text-4xl md:text-9xl font-black text-white tracking-tighter uppercase whitespace-nowrap">
+                <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter uppercase whitespace-nowrap">
                     {cat.title}
                 </h1>
             </motion.div>
@@ -147,7 +149,7 @@ const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tic
 const VotingVisuals = ({ tick }: { tick: number }) => {
     const [a, setA] = useState(50);
     useEffect(() => {
-        const diff = (Math.random() - 0.5) * 30; // Faster Jumps
+        const diff = (Math.random() - 0.5) * 15;
         setA(prev => Math.min(90, Math.max(10, prev + diff)));
     }, [tick]);
 
@@ -165,7 +167,7 @@ const VotingVisuals = ({ tick }: { tick: number }) => {
             </div>
 
             {/* Glitch Overlay */}
-            {tick % 4 === 0 && (
+            {tick % 8 === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center z-10 bg-white mix-blend-exclusion">
                     <h1 className="text-[10vw] font-black text-black">LEADER CHANGE</h1>
                 </div>
@@ -183,31 +185,64 @@ const RitualVisuals = () => (
     </div>
 );
 
-// SCENE 6: BRANDING (Finale w/ Bandlab)
+// SCENE 6: BRANDING (Finale w/ Grand Entrance)
 const FinaleVisuals = () => (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-500">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-500 overflow-hidden">
         <Confetti isActive={true} />
-        <div className="z-10 flex flex-col items-center animate-[zoomIn_0.5s_ease-out]">
-            <h1 className="text-[12vw] font-black text-black leading-none tracking-tighter drop-shadow-xl">KYEBEEZY</h1>
-            <div className="flex items-center gap-4 mt-4 bg-black p-4 md:p-8 skew-x-[-10deg] shadow-[20px_20px_0px_white]">
+
+        {/* God Rays Background */}
+        <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,#ffd700_0deg_10deg,#e5c100_10deg_20deg)] animate-[spin_20s_linear_infinite] opacity-20" />
+
+        <div className="z-10 flex flex-col items-center">
+            {/* KYEBEEZY SLAM */}
+            <motion.h1
+                initial={{ scale: 10, opacity: 0, y: -100 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, type: "spring", bounce: 0.5 }}
+                className="text-[15vw] md:text-[12vw] font-black text-black leading-none tracking-tighter drop-shadow-2xl"
+            >
+                KYEBEEZY
+            </motion.h1>
+
+            {/* BANDLAB BADGE REVEAL */}
+            <motion.div
+                initial={{ rotateX: 90, opacity: 0 }}
+                animate={{ rotateX: 0, opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.6, type: "spring" }}
+                className="flex items-center gap-4 mt-8 bg-black p-4 md:p-8 skew-x-[-10deg] shadow-[20px_20px_0px_white] hover:scale-105 transition-transform"
+            >
                 <h2 className="text-[4vw] font-bold text-white tracking-widest uppercase">X</h2>
                 <img src="/bandlab-logo.png" className="h-[6vw] filter invert brightness-0 saturate-100 invert" />
                 <span className="text-[4vw] font-bold text-white tracking-tighter uppercase">BANDLAB</span>
-            </div>
+            </motion.div>
 
-            <Link href="/awards/bandlab2025/live" className="mt-16 z-20 hover:scale-110 transition-transform duration-100">
-                <button className="px-16 py-6 bg-black text-white font-black text-4xl uppercase border-4 border-white shadow-[10px_10px_0px_white] hover:shadow-[0_0_20px_white] hover:bg-white hover:text-black hover:border-black">
-                    ENTER EXPERIENCE
-                </button>
-            </Link>
+            {/* BUTTON POP */}
+            <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.5, type: "spring" }}
+                className="mt-16 z-20"
+            >
+                <Link href="/awards/bandlab2025/live">
+                    <button className="px-16 py-6 bg-black text-white font-black text-4xl uppercase border-4 border-white shadow-[10px_10px_0px_white] hover:shadow-[0_0_20px_white] hover:bg-white hover:text-black hover:border-black transition-all">
+                        ENTER EXPERIENCE
+                    </button>
+                </Link>
+            </motion.div>
         </div>
-        {/* Flash Overlay */}
-        <div className="absolute inset-0 bg-white animate-[pulse_0.2s_ease-in-out_infinite] opacity-20 pointer-events-none" />
+
+        {/* Initial Flash White */}
+        <motion.div
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 bg-white pointer-events-none"
+        />
     </div>
 );
 
 
-export default function TeaserPageV14() {
+export default function TeaserPageV15() {
     const [started, setStarted] = useState(false);
     const [tick, setTick] = useState(0);
     const [stepIndex, setStepIndex] = useState(0);
@@ -217,29 +252,29 @@ export default function TeaserPageV14() {
     // FETCH
     useEffect(() => { getAwardsData().then(setCategories); }, []);
 
-    // SEQUENCE DEFINITION (20 SECONDS TOTAL)
+    // SEQUENCE DEFINITION (45 SECONDS - BALANCED)
     const sequence: SequenceStep[] = [
-        // 0-2s
-        { id: 1, type: 'TEXT', sceneId: 1, duration: 1, text: { main: "100M", sub: "CREATORS" } },
-        { id: 2, type: 'ACTION', sceneId: 1, duration: 1 },
+        // 0-4s
+        { id: 1, type: 'TEXT', sceneId: 1, duration: 2, text: { main: "100M", sub: "CREATORS" } },
+        { id: 2, type: 'ACTION', sceneId: 1, duration: 2 },
 
-        // 2-6s
-        { id: 3, type: 'TEXT', sceneId: 2, duration: 1, text: { main: "ROSTER", sub: "FULL LIST" } },
-        { id: 4, type: 'ACTION', sceneId: 2, duration: 3 },
+        // 4-14s
+        { id: 3, type: 'TEXT', sceneId: 2, duration: 2, text: { main: "ROSTER", sub: "FULL LIST" } },
+        { id: 4, type: 'ACTION', sceneId: 2, duration: 8 },
 
-        // 6-10s
-        { id: 5, type: 'TEXT', sceneId: 3, duration: 1, text: { main: "12", sub: "CATEGORIES" } },
-        { id: 6, type: 'ACTION', sceneId: 3, duration: 3 },
+        // 14-24s
+        { id: 5, type: 'TEXT', sceneId: 3, duration: 2, text: { main: "12", sub: "CATEGORIES" } },
+        { id: 6, type: 'ACTION', sceneId: 3, duration: 8 },
 
-        // 10-14s
-        { id: 7, type: 'TEXT', sceneId: 4, duration: 1, text: { main: "VOTE", sub: "NOW" } },
-        { id: 8, type: 'ACTION', sceneId: 4, duration: 3 },
+        // 24-34s
+        { id: 7, type: 'TEXT', sceneId: 4, duration: 2, text: { main: "VOTE", sub: "NOW" } },
+        { id: 8, type: 'ACTION', sceneId: 4, duration: 8 },
 
-        // 14-16s
-        { id: 9, type: 'TEXT', sceneId: 5, duration: 1, text: { main: "WIN", sub: "HISTORY" } },
-        { id: 10, type: 'ACTION', sceneId: 5, duration: 1 },
+        // 34-40s
+        { id: 9, type: 'TEXT', sceneId: 5, duration: 2, text: { main: "WIN", sub: "HISTORY" } },
+        { id: 10, type: 'ACTION', sceneId: 5, duration: 4 },
 
-        // 16s+
+        // 40s+
         { id: 11, type: 'ACTION', sceneId: 6, duration: 99 }, // Finale
     ];
 
