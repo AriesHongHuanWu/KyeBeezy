@@ -10,7 +10,7 @@ import { Confetti } from "@/components/ui/confetti";
 import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 
 // --- CONFIG ---
-const VISUAL_BPM = 140; // STANDARD SPEED (Readable, ~0.4s per beat)
+const VISUAL_BPM = 280; // HIGH SPEED (Fast cycling)
 const TICK_MS = (60 / VISUAL_BPM) * 1000;
 const AUDIO_URL = "/Memories_Take_Time.mp3";
 
@@ -76,43 +76,51 @@ const ManifestoVisuals = ({ tick }: { tick: number }) => (
     </div>
 );
 
-// SCENE 2: ROSTER
+// SCENE 2: ROSTER (Synced & Negative Flash)
 const RosterVisuals = ({ tick }: { tick: number }) => {
+    const keys = Object.keys(NOMINEE_IMAGES);
     const images = Object.values(NOMINEE_IMAGES);
-    // Mock Names mapped to ensure variety
-    const mockNames = ["ALEX R.", "SARAH J.", "BEATZ", "K-OS", "PRO-X", "MELODY", "RHYTHM", "BASS", "VIBE", "WAVE", "FLOW", "DRIP", "LUNA", "SOLAR", "ECHO"];
+    const total = keys.length;
 
-    // Cycle through ALL images using a large prime multiplier to avoid repeating patterns
-    const idx = (tick * 1) % images.length;
-    const nameIdx = idx % mockNames.length;
+    // Cycle linearly to ensure everyone is shown
+    const idx = tick % total;
+    const name = keys[idx].replace('@', '').split('(')[0].trim().toUpperCase(); // Clean name
+
+    // Negative Film Flash Logic
+    const isFlash = tick % 2 === 0;
 
     return (
         <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden">
-            {/* Background Grid */}
-            <div className="absolute inset-0 grid grid-cols-6 opacity-30 grayscale">
+            {/* Background Grid (Randomized) */}
+            <div className="absolute inset-0 grid grid-cols-6 opacity-30 grayscale blur-sm">
                 {images.slice(0, 24).map((src, i) => (
-                    <div key={i} className={`bg-cover bg-center ${Math.random() > 0.5 ? 'invert' : ''}`} style={{ backgroundImage: `url(${src})`, opacity: Math.random() }} />
+                    <div key={i} className="bg-cover bg-center" style={{ backgroundImage: `url(${src})`, opacity: Math.random() * 0.5 }} />
                 ))}
             </div>
 
-            {/* Foreground Card */}
-            <div className="relative z-10 w-[80vw] h-[60vh] md:w-[500px] md:h-[600px] bg-black border-4 border-white shadow-[0_0_50px_rgba(255,255,255,0.3)] rotate-[-2deg]">
-                <img src={images[idx]} className="w-full h-full object-cover contrast-125 saturate-0" />
-
-                {/* NAME LABEL (BOTTOM LEFT) */}
-                <div className="absolute bottom-4 left-[-20px] bg-yellow-500 text-black px-6 py-2 shadow-[10px_10px_0px_black] transform -rotate-1">
-                    <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none">
-                        {mockNames[nameIdx]}
-                    </h1>
-                </div>
+            {/* Main Image Layer */}
+            <div className="relative z-10 w-[100vw] h-[100vh] md:w-[600px] md:h-[700px]">
+                <img
+                    src={images[idx]}
+                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert contrast-150' : 'contrast-125'}`}
+                />
             </div>
 
-            {/* Subliminal Flash */}
-            {tick % 8 === 0 && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white mix-blend-overlay">
-                    <h1 className="text-[20vw] font-black text-black leading-none opacity-50">VOTE</h1>
-                </div>
-            )}
+            {/* Negative Film Name Overlay */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
+                {isFlash && (
+                    <h1 className="text-[15vw] md:text-[10vw] font-black text-white leading-none tracking-tighter text-center uppercase">
+                        {name}
+                    </h1>
+                )}
+            </div>
+
+            {/* Bottom Left Name Tag (Always Visible) */}
+            <div className="absolute bottom-8 left-8 z-30 bg-yellow-500 text-black px-4 py-2 skew-x-[-10deg] border-4 border-black box-content">
+                <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">
+                    {name}
+                </h2>
+            </div>
         </div>
     );
 };
@@ -185,94 +193,110 @@ const RitualVisuals = () => (
     </div>
 );
 
-// SCENE 6: BRANDING (Finale w/ Grand Entrance)
+// SCENE 6: BRANDING (Finale Redesign)
 const FinaleVisuals = () => (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-500 overflow-hidden">
         <Confetti isActive={true} />
 
-        {/* God Rays Background */}
-        <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,#ffd700_0deg_10deg,#e5c100_10deg_20deg)] animate-[spin_20s_linear_infinite] opacity-20" />
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.1)_0px,rgba(0,0,0,0.1)_20px,transparent_20px,transparent_40px)] animate-[pulse_2s_ease-in-out_infinite]" />
 
         <div className="z-10 flex flex-col items-center">
-            {/* KYEBEEZY SLAM */}
+            {/* TOP LINE */}
+            <motion.div
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, ease: "circOut" }}
+                className="bg-black text-white px-8 py-2 mb-4 skew-x-[-10deg]"
+            >
+                <span className="text-xl md:text-3xl font-bold tracking-[0.5em] uppercase">The Official</span>
+            </motion.div>
+
+            {/* KYEBEEZY */}
             <motion.h1
-                initial={{ scale: 10, opacity: 0, y: -100 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, type: "spring", bounce: 0.5 }}
-                className="text-[15vw] md:text-[12vw] font-black text-black leading-none tracking-tighter drop-shadow-2xl"
+                initial={{ scale: 5, filter: "blur(20px)", opacity: 0 }}
+                animate={{ scale: 1, filter: "blur(0px)", opacity: 1 }}
+                transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+                className="text-[18vw] md:text-[15vw] font-black text-black leading-[0.8] tracking-tighter drop-shadow-2xl mix-blend-hard-light"
             >
                 KYEBEEZY
             </motion.h1>
 
-            {/* BANDLAB BADGE REVEAL */}
+            {/* X SEPARATOR */}
             <motion.div
-                initial={{ rotateX: 90, opacity: 0 }}
-                animate={{ rotateX: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.6, type: "spring" }}
-                className="flex items-center gap-4 mt-8 bg-black p-4 md:p-8 skew-x-[-10deg] shadow-[20px_20px_0px_white] hover:scale-105 transition-transform"
+                initial={{ scale: 0, rotate: 180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="text-[5vw] font-black text-white my-2"
             >
-                <h2 className="text-[4vw] font-bold text-white tracking-widest uppercase">X</h2>
-                <img src="/bandlab-logo.png" className="h-[6vw] filter invert brightness-0 saturate-100 invert" />
-                <span className="text-[4vw] font-bold text-white tracking-tighter uppercase">BANDLAB</span>
+                X
             </motion.div>
 
-            {/* BUTTON POP */}
+            {/* BANDLAB LOCKUP */}
             <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 1.5, type: "spring" }}
-                className="mt-16 z-20"
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.6, ease: "backOut" }}
+                className="flex items-center gap-4 bg-black px-8 py-4 border-4 border-white shadow-[10px_10px_0px_white] hover:scale-105 transition-transform"
+            >
+                <img src="/bandlab-logo.png" className="h-[5vw] md:h-16 filter invert brightness-0 saturate-100 invert" />
+                <span className="text-[5vw] md:text-6xl font-black text-white tracking-tighter uppercase">BANDLAB</span>
+            </motion.div>
+
+            {/* ENTER BUTTON */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5 }}
+                className="mt-12"
             >
                 <Link href="/awards/bandlab2025/live">
-                    <button className="px-16 py-6 bg-black text-white font-black text-4xl uppercase border-4 border-white shadow-[10px_10px_0px_white] hover:shadow-[0_0_20px_white] hover:bg-white hover:text-black hover:border-black transition-all">
+                    <button className="px-12 py-4 bg-white text-black font-black text-2xl md:text-3xl uppercase border-4 border-black hover:bg-black hover:text-white transition-colors">
                         ENTER EXPERIENCE
                     </button>
                 </Link>
             </motion.div>
         </div>
-
-        {/* Initial Flash White */}
-        <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 1 }}
-            className="absolute inset-0 bg-white pointer-events-none"
-        />
     </div>
 );
 
 
-export default function TeaserPageV15() {
+export default function TeaserPageV17() {
     const [started, setStarted] = useState(false);
     const [tick, setTick] = useState(0);
     const [stepIndex, setStepIndex] = useState(0);
     const [categories, setCategories] = useState<CategoryData[]>([]);
+    const [flash, setFlash] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // FETCH
     useEffect(() => { getAwardsData().then(setCategories); }, []);
 
-    // SEQUENCE DEFINITION (45 SECONDS - BALANCED)
+    // CONFIG: 280 BPM (High Speed)
+    const BPM = 280;
+    const TICK_MS = (60 / BPM) * 1000;
+
+    // SEQUENCE DEFINITION (Total ~40s)
     const sequence: SequenceStep[] = [
-        // 0-4s
+        // 0-2s
         { id: 1, type: 'TEXT', sceneId: 1, duration: 2, text: { main: "100M", sub: "CREATORS" } },
         { id: 2, type: 'ACTION', sceneId: 1, duration: 2 },
 
-        // 4-14s
+        // 4-19s (ROSTER - 15s to show many artists)
         { id: 3, type: 'TEXT', sceneId: 2, duration: 2, text: { main: "ROSTER", sub: "FULL LIST" } },
-        { id: 4, type: 'ACTION', sceneId: 2, duration: 8 },
+        { id: 4, type: 'ACTION', sceneId: 2, duration: 15 },
 
-        // 14-24s
+        // 19-27s
         { id: 5, type: 'TEXT', sceneId: 3, duration: 2, text: { main: "12", sub: "CATEGORIES" } },
-        { id: 6, type: 'ACTION', sceneId: 3, duration: 8 },
+        { id: 6, type: 'ACTION', sceneId: 3, duration: 6 },
 
-        // 24-34s
+        // 27-35s
         { id: 7, type: 'TEXT', sceneId: 4, duration: 2, text: { main: "VOTE", sub: "NOW" } },
-        { id: 8, type: 'ACTION', sceneId: 4, duration: 8 },
+        { id: 8, type: 'ACTION', sceneId: 4, duration: 6 },
 
-        // 34-40s
+        // 35-40s
         { id: 9, type: 'TEXT', sceneId: 5, duration: 2, text: { main: "WIN", sub: "HISTORY" } },
-        { id: 10, type: 'ACTION', sceneId: 5, duration: 4 },
+        { id: 10, type: 'ACTION', sceneId: 5, duration: 3 },
 
         // 40s+
         { id: 11, type: 'ACTION', sceneId: 6, duration: 99 }, // Finale
@@ -292,6 +316,9 @@ export default function TeaserPageV15() {
         sequence.forEach((step, index) => {
             timeouts.push(setTimeout(() => {
                 setStepIndex(index);
+                // Trigger Cinematic Flash on Step Change
+                setFlash(true);
+                setTimeout(() => setFlash(false), 300); // 300ms flash
             }, elapsed * 1000));
             elapsed += step.duration;
         });
@@ -305,7 +332,6 @@ export default function TeaserPageV15() {
     const handleStart = () => {
         if (audioRef.current) {
             audioRef.current.volume = 1.0;
-            // Play from 0 or specific intense part if desired. Currently start.
             audioRef.current.currentTime = 0;
             audioRef.current.play().then(() => setStarted(true)).catch(() => setStarted(true));
         } else {
@@ -320,30 +346,48 @@ export default function TeaserPageV15() {
             {/* PERSISTENT ELEMENTS */}
             {started && <PersistentCredits />}
 
+            {/* CINEMATIC FLASH OVERLAY (Global) */}
+            <div className={`fixed inset-0 bg-white z-[9999] pointer-events-none transition-opacity duration-300 ease-out ${flash ? 'opacity-30' : 'opacity-0'}`} />
+
             {!started ? (
                 <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group hover:bg-neutral-900 transition-colors">
                     <div className="w-40 h-40 rounded-full border-[10px] border-white flex items-center justify-center relative hover:scale-110 transition-transform">
                         <Play className="w-16 h-16 text-white fill-white ml-2" />
                     </div>
-                    <h1 className="text-white font-black tracking-tighter text-5xl uppercase mt-8">IGNITE 20S</h1>
-                    <p className="text-neutral-500 font-mono text-xs mt-4 uppercase tracking-widest">20 SECONDS SPEEDRUN</p>
+                    <h1 className="text-white font-black tracking-tighter text-5xl uppercase mt-8">IGNITE V17</h1>
+                    <p className="text-neutral-500 font-mono text-xs mt-4 uppercase tracking-widest">CINEMATIC EXPERIENCE</p>
                 </div>
             ) : (
                 <div className="absolute inset-0">
                     {/* SCREEN SHAKE */}
                     <motion.div
                         className="absolute inset-0"
-                        animate={{ x: tick % 4 === 0 ? [5, -5, 0] : 0 }}
+                        animate={{ x: tick % 4 === 0 ? [3, -3, 0] : 0 }} // Subtle Shake
                         transition={{ duration: 0.05 }}
                     >
                         <AnimatePresence mode="wait">
                             {currentStep.type === 'TEXT' ? (
-                                <motion.div key={`text-${currentStep.id}`} className="absolute inset-0 z-50">
+                                <motion.div
+                                    key={`text-${currentStep.id}`}
+                                    className="absolute inset-0 z-50"
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 1.2, filter: "blur(10px)" }}
+                                    transition={{ duration: 0.3, ease: "circOut" }}
+                                >
                                     <NarrativeOverlay text={currentStep.text?.main || ""} subtext={currentStep.text?.sub} />
                                 </motion.div>
                             ) : (
-                                <motion.div key={`scene-${currentStep.sceneId}`} className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <motion.div
+                                    key={`scene-${currentStep.sceneId}`}
+                                    className="absolute inset-0 z-10"
+                                    initial={{ opacity: 0, scale: 1.1 }} // Zoom In Entrace
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, filter: "brightness(2)" }} // Flash Out
+                                    transition={{ duration: 0.4 }}
+                                >
                                     {currentStep.sceneId === 1 && <ManifestoVisuals tick={tick} />}
+                                    {/* Pass Key prop to force re-render/animate on return if needed, but SceneId handles it */}
                                     {currentStep.sceneId === 2 && <RosterVisuals tick={tick} />}
                                     {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={tick} />}
                                     {currentStep.sceneId === 4 && <VotingVisuals tick={tick} />}
@@ -354,13 +398,18 @@ export default function TeaserPageV15() {
                         </AnimatePresence>
                     </motion.div>
 
-                    {/* GLOBAL OVERLAYS */}
+                    {/* GLOBAL VISUALS */}
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_120%)] pointer-events-none mix-blend-overlay opacity-50" />
+
+                    {/* Letterbox Bars (Cinematic Feel) */}
+                    <div className="absolute top-0 left-0 right-0 h-[5vh] bg-black z-[100]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-[5vh] bg-black z-[100]" />
+
                     <button onClick={() => window.location.reload()} className="absolute top-6 right-6 font-bold text-xs text-white/50 hover:text-white z-[100] border px-2 py-1">RESTART</button>
 
                     {/* PROGRESS BAR */}
-                    <div className="absolute bottom-0 left-0 h-2 bg-yellow-500 z-[900]" style={{ animation: `width 20s linear` }} />
+                    <div className="absolute bottom-0 left-0 h-1 bg-yellow-500 z-[900]" style={{ animation: `width 40s linear` }} />
                 </div>
             )}
         </div>
