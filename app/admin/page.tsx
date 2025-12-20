@@ -670,7 +670,7 @@ function SettingsManager() {
 
     useEffect(() => {
         const docRef = doc(db, "settings", "global");
-        const unsubscribe = onSnapshot(docRef, async (snapshot) => {
+        const unsubscribe = onSnapshot(docRef, (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.data() as GlobalSettings;
                 setValue("heroTitle", data.heroTitle.join(", "));
@@ -680,20 +680,13 @@ function SettingsManager() {
                 setValue("socials.discord", data.socials.discord);
                 setValue("socials.bandlab", data.socials.bandlab);
             } else {
-                // If no settings exist, seed defaults
-                try {
-                    await setDoc(docRef, defaultSettings);
-                    reset({
-                        heroTitle: defaultSettings.heroTitle.join(", "),
-                        heroSubtitle: defaultSettings.heroSubtitle,
-                        socials: defaultSettings.socials
-                    });
-                } catch (e) {
-                    console.error("Auto-seeding settings failed:", e);
-                }
+                // If checking for existence, we can just stop loading.
+                // Or optionally seed if empty.
             }
             setLoading(false);
         });
+
+        // Cleanup listener on unmount
         return () => unsubscribe();
     }, [setValue, reset]);
 
