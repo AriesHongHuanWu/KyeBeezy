@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play } from "lucide-react";
 import Link from "next/link";
@@ -10,351 +10,314 @@ import { Confetti } from "@/components/ui/confetti";
 import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 
 // --- CONFIG ---
-const MUSIC_BPM = 140;
 const VISUAL_BPM = 280; // DOUBLE TIME
-const TICK_MS = (60 / VISUAL_BPM) * 1000; // ~214ms
+const TICK_MS = (60 / VISUAL_BPM) * 1000;
 const AUDIO_URL = "/Memories_Take_Time.mp3";
 
-// --- NARRATIVE COMPONENT (FASTER) ---
-const NarrativeOverlay = ({ text, subtext, tick }: { text: string, subtext?: string, tick: number }) => {
-    // Jitter Effect on every tick
-    const jitter = tick % 2 === 0 ? "translate-x-1" : "-translate-x-1";
+// --- TYPES ---
+type PhaseType = 'TEXT' | 'ACTION';
+interface SequenceStep {
+    id: number;
+    type: PhaseType;
+    sceneId: number;
+    duration: number; // seconds
+    text?: { main: string, sub?: string };
+}
 
+// --- SUB-COMPONENTS ---
+
+const NarrativeOverlay = ({ text, subtext }: { text: string, subtext?: string }) => {
     return (
-        <div className={`absolute inset-0 flex flex-col items-center justify-center z-[90] pointer-events-none mix-blend-difference ${jitter}`}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-[90] bg-black/80 backdrop-blur-sm">
             <motion.div
-                key={text}
-                initial={{ scale: 0.9, opacity: 0, filter: "blur(10px)" }}
-                animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
-                exit={{ scale: 1.5, opacity: 0, filter: "blur(20px)" }}
-                transition={{ duration: 0.2 }} // Fast entry
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.5, opacity: 0 }}
+                transition={{ duration: 0.3, type: "spring", bounce: 0.5 }}
                 className="text-center"
             >
-                <h1 className="text-8xl md:text-[10rem] font-black text-white tracking-tighter uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] leading-none">
+                <h1 className="text-7xl md:text-[8rem] font-black text-white tracking-tighter uppercase drop-shadow-[0_0_20px_white] leading-none mb-4">
                     {text}
                 </h1>
                 {subtext && (
-                    <motion.p
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                        className="text-2xl md:text-4xl font-black text-black bg-yellow-500 inline-block px-4 skew-x-12 mt-2"
-                    >
+                    <div className="bg-yellow-500 text-black font-black text-2xl md:text-4xl px-6 py-2 uppercase tracking-widest inline-block skew-x-[-10deg]">
                         {subtext}
-                    </motion.p>
+                    </div>
                 )}
             </motion.div>
         </div>
     );
 };
 
-// --- SCENE 1: THE MANIFESTO (0-10s) - HYPER GLITCH ---
-const ManifestoScene = ({ tick }: { tick: number }) => {
-    return (
-        <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
-            {/* Chaos Rings */}
-            {[1, 2, 3].map(i => (
-                <div
-                    key={i}
-                    className={`absolute rounded-full border-[20px] border-white/10 ${i % 2 === 0 ? 'border-dashed' : ''}`}
-                    style={{
-                        width: `${30 * i}vw`, height: `${30 * i}vw`,
-                        transform: `rotate(${tick * 45 * (i % 2 === 0 ? 1 : -1)}deg) scale(${1 + (tick % 4) * 0.1})`
-                    }}
-                />
-            ))}
+// SCENE 1: MANIFESTO
+const ManifestoVisuals = ({ tick }: { tick: number }) => (
+    <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
+        {[1, 2, 3].map(i => (
+            <div key={i}
+                className={`absolute rounded-full border-[10px] md:border-[30px] border-white/10`}
+                style={{
+                    width: `${25 * i}vw`, height: `${25 * i}vw`,
+                    transform: `scale(${1 + (tick % 4) * 0.2}) rotate(${tick * 10 * (i % 2 === 0 ? 1 : -1)}deg)`
+                }}
+            />
+        ))}
+        {tick % 8 === 0 && <div className="absolute inset-0 bg-white mix-blend-exclusion" />}
+    </div>
+);
 
-            {/* Subliminal Flash */}
-            {tick % 4 === 0 && (
-                <div className="absolute inset-0 bg-white mix-blend-difference z-10" />
-            )}
-        </div>
-    );
-};
-
-// --- SCENE 2: THE ROSTER (10-30s) - DOUBLE TIME FLASH ---
-const RosterScene = ({ tick }: { tick: number }) => {
-    const images = useMemo(() => Object.values(NOMINEE_IMAGES), []);
-    // Mock Names
+// SCENE 2: ROSTER
+const RosterVisuals = ({ tick }: { tick: number }) => {
+    const images = Object.values(NOMINEE_IMAGES);
     const mockNames = ["ALEX", "SARAH", "BEATZ", "K-OS", "PRO-X", "MEL", "RHYTHM", "BASS", "VIBE", "WAVE", "FLOW", "DRIP"];
-
-    // Changing on EVERY TICK (2x per beat)
     const idx = tick % images.length;
-    const currentImg = images[idx];
-    const currentName = mockNames[idx % mockNames.length];
-
-    // Subliminal Text Injection
-    const showSubliminal = tick % 8 === 0;
 
     return (
         <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden">
-            {/* Background Chaos */}
-            <div className="absolute inset-0 grid grid-cols-4 md:grid-cols-8 opacity-30 grayscale blur-sm">
-                {images.slice(0, 32).map((src, i) => (
+            {/* Background Grid */}
+            <div className="absolute inset-0 grid grid-cols-6 opacity-40 grayscale">
+                {images.slice(0, 24).map((src, i) => (
                     <div key={i} className={`bg-cover bg-center ${Math.random() > 0.5 ? 'invert' : ''}`} style={{ backgroundImage: `url(${src})`, opacity: Math.random() }} />
                 ))}
             </div>
 
-            {/* Main Card */}
-            {!showSubliminal ? (
-                <div className="relative z-10 w-[400px] h-[500px] bg-black border-[10px] border-white shadow-[0_0_50px_white] flex flex-col rotate-2">
-                    <img src={currentImg} className="flex-1 object-cover contrast-125 saturate-0" />
-                    <div className="h-24 bg-yellow-500 flex items-center justify-center">
-                        <h1 className="text-6xl font-black text-black uppercase tracking-tighter">{currentName}</h1>
-                    </div>
+            {/* Foreground Card */}
+            <div className="relative z-10 w-[80vw] h-[60vh] md:w-[500px] md:h-[600px] bg-black border-8 border-white shadow-[0_0_50px_rgba(255,255,255,0.5)] rotate-[-2deg]">
+                <img src={images[idx]} className="w-full h-full object-cover contrast-125" />
+                <div className="absolute bottom-8 left-0 bg-yellow-500 text-black text-6xl font-black px-4 uppercase tracking-tighter shadow-lg">
+                    {mockNames[idx % mockNames.length]}
                 </div>
-            ) : (
-                <div className="relative z-20 w-screen h-screen bg-white flex items-center justify-center box-border border-[50px] border-black">
+            </div>
+
+            {/* Subliminal Flash */}
+            {tick % 8 === 0 && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white mix-blend-hard-light">
                     <h1 className="text-[20vw] font-black text-black leading-none">VOTE</h1>
                 </div>
             )}
-
-            {/* RGB Split Overlay */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-hard-light" />
         </div>
     );
 };
 
-// --- SCENE 3: THE SCOPE (30-50s) - KINETIC TYRO ---
-const CategoryScene = ({ categories, tick }: { categories: CategoryData[], tick: number }) => {
-    const idx = Math.floor(tick / 2) % (categories.length || 1); // Change every beat
+// SCENE 3: KINETIC TYPE
+const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tick: number }) => {
+    const idx = Math.floor(tick / 2) % (categories.length || 1);
     const cat = categories[idx] || { title: "MUSIC" };
-
-    // Background Words
-    const bgWords = ["POP", "RAP", "ROCK", "R&B", "INDIE", "METAL", "JAZZ", "SOUL"];
-
     return (
         <div className="absolute inset-0 bg-yellow-400 flex items-center justify-center overflow-hidden">
-            {/* Floating Background Words */}
-            {bgWords.map((word, i) => (
-                <motion.h1
-                    key={i}
-                    className="absolute text-9xl font-black text-black opacity-10 whitespace-nowrap"
-                    style={{
-                        left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
-                        transform: `rotate(${Math.random() * 360}deg)`
-                    }}
-                >
-                    {word}
-                </motion.h1>
-            ))}
-
-            <div className={`z-10 bg-black px-12 py-8 rotate-[-5deg] ${tick % 2 === 0 ? 'invert' : ''}`}>
-                <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter uppercase whitespace-nowrap scale-110">
+            <div className="absolute inset-0 flex flex-col justify-center gap-0 opacity-10 pointer-events-none">
+                {[...Array(5)].map((_, i) => (
+                    <h1 key={i} className="text-[20vh] leading-[0.8] font-black text-black whitespace-nowrap overflow-hidden">
+                        {cat.title} {cat.title}
+                    </h1>
+                ))}
+            </div>
+            <motion.div
+                key={cat.title}
+                initial={{ scale: 0.5, rotate: 10, filter: "blur(20px)" }}
+                animate={{ scale: 1.2, rotate: -5, filter: "blur(0px)" }}
+                className="bg-black px-12 py-8 shadow-[20px_20px_0px_white]"
+            >
+                <h1 className="text-6xl md:text-9xl font-black text-white tracking-tighter uppercase whitespace-nowrap">
                     {cat.title}
                 </h1>
-            </div>
+            </motion.div>
         </div>
     );
 };
 
-// --- SCENE 4: VOTING WAR (50-70s) - GLITCH RACE ---
-const VotingScene = ({ tick }: { tick: number }) => {
+// SCENE 4: VOTING WAR
+const VotingVisuals = ({ tick }: { tick: number }) => {
     const [a, setA] = useState(50);
-
     useEffect(() => {
-        // More chaotic changes
-        const diff = (Math.random() - 0.5) * 10;
-        setA(prev => Math.min(95, Math.max(5, prev + diff)));
+        const diff = (Math.random() - 0.5) * 15;
+        setA(prev => Math.min(90, Math.max(10, prev + diff)));
     }, [tick]);
 
     return (
-        <div className="absolute inset-0 bg-black flex flex-col relative">
-            {/* Bar A */}
-            <div className="flex-1 bg-neutral-900 relative border-b-4 border-black group">
-                <div className="absolute inset-y-0 left-0 bg-blue-600 transition-all duration-75 ease-linear" style={{ width: `${a}%` }} />
-                <h1 className="absolute right-10 top-1/2 -translate-y-1/2 text-9xl font-black text-white mix-blend-difference italic">
-                    {Math.floor(a * 1000)}
-                </h1>
+        <div className="absolute inset-0 bg-black flex items-end">
+            {/* Left Bar */}
+            <div className="relative h-full bg-blue-600 border-r-4 border-white transition-all duration-75" style={{ width: `${a}%` }}>
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-multiply" />
+                <h1 className="absolute top-10 right-10 text-8xl font-black text-white italic">{Math.floor(a * 1000)}</h1>
+            </div>
+            {/* Right Bar */}
+            <div className="relative h-full bg-red-600 border-l-4 border-white transition-all duration-75" style={{ width: `${100 - a}%` }}>
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-multiply" />
+                <h1 className="absolute bottom-10 left-10 text-8xl font-black text-white italic">{Math.floor((100 - a) * 1000)}</h1>
             </div>
 
-            {/* Bar B */}
-            <div className="flex-1 bg-neutral-900 relative group">
-                <div className="absolute inset-y-0 left-0 bg-red-600 transition-all duration-75 ease-linear" style={{ width: `${100 - a}%` }} />
-                <h1 className="absolute right-10 top-1/2 -translate-y-1/2 text-9xl font-black text-white mix-blend-difference italic">
-                    {Math.floor((100 - a) * 1000)}
-                </h1>
-            </div>
-
-            {/* Glitch Overlay every 4 ticks */}
-            {tick % 4 === 0 && (
-                <div className="absolute inset-0 bg-white mix-blend-exclusion z-50 text-black flex items-center justify-center">
-                    <h1 className="text-[10vw] font-black">LEADER CHANGE</h1>
+            {/* Glitch Overlay */}
+            {tick % 8 === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center z-10 bg-white mix-blend-exclusion">
+                    <h1 className="text-[10vw] font-black text-black">LEADER CHANGE</h1>
                 </div>
             )}
         </div>
     );
 };
 
-// --- SCENE 5: RITUAL (70-85s) ---
-const RitualScene = () => {
-    return (
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
-            <div className="scale-150 animate-pulse">
-                <TeaserHeroCard isRevealed={true} onRevealComplete={() => { }} />
-            </div>
+// SCENE 5: RITUAL
+const RitualVisuals = () => (
+    <div className="absolute inset-0 bg-black flex items-center justify-center">
+        <div className="scale-150 animate-pulse">
+            <TeaserHeroCard isRevealed={true} onRevealComplete={() => { }} />
         </div>
-    );
-};
+    </div>
+);
 
-// --- SCENE 6: FINALE (85s+) ---
-const FinaleScene = () => {
-    return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white mix-blend-difference">
-            <Confetti isActive={true} />
-            <h1 className="text-[15vw] font-black text-white leading-none tracking-tighter">KYEBEEZY</h1>
-            <h2 className="text-[5vw] font-bold text-white/50 tracking-[0.5em] bg-black px-4">AWARDS 2025</h2>
+// SCENE 6: BRANDING (Finale)
+const FinaleVisuals = () => (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-500">
+        <Confetti isActive={true} />
+        <div className="z-10 flex flex-col items-center">
+            <h1 className="text-[15vw] font-black text-black leading-none tracking-tighter drop-shadow-xl">KYEBEEZY</h1>
+            <h2 className="text-[5vw] font-bold text-black border-4 border-black px-4 mt-4 tracking-[0.5em] bg-white">AWARDS 2025</h2>
 
-            <Link href="/awards/bandlab2025/live" className="mt-12 z-20">
-                <button className="px-20 py-8 bg-yellow-500 text-black font-black text-4xl uppercase hover:scale-105 transition-transform border-4 border-black shadow-[15px_15px_0px_black]">
-                    ENTER
+            <Link href="/awards/bandlab2025/live" className="mt-12 z-20 hover:scale-105 transition-transform">
+                <button className="px-16 py-6 bg-black text-white font-black text-4xl uppercase border-4 border-white shadow-[10px_10px_0px_white]">
+                    ENTER EXPERIENCE
                 </button>
             </Link>
         </div>
-    );
-};
+        {/* Flash Overlay */}
+        <div className="absolute inset-0 bg-white animate-[pulse_0.5s_ease-in-out_infinite] opacity-20 pointer-events-none" />
+    </div>
+);
 
-// --- SCENE 7: CREDITS (Sponsor & Producer) ---
-const CreditsScene = () => {
-    return (
-        <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-[100]">
-            <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.5 }}
-                className="flex flex-col items-center mb-16"
-            >
-                <p className="text-black font-bold tracking-[0.3em] text-sm mb-6 uppercase">Sponsored By</p>
-                <img
-                    src="https://player.awbest.tech/image/icon/icon.svg"
-                    alt="AWBEST"
-                    className="w-32 h-32 mb-4 drop-shadow-2xl"
-                />
-                <h1 className="text-4xl font-black text-black tracking-tighter">AWBEST</h1>
-            </motion.div>
-
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 1.5 }}
-                className="flex flex-col items-center"
-            >
-                <p className="text-neutral-500 font-bold tracking-[0.3em] text-xs mb-4 uppercase">Event Produced By</p>
-                <h1 className="text-6xl font-black text-black tracking-tighter uppercase">ARIES WU</h1>
-            </motion.div>
+// SCENE 7: CREDITS
+const CreditsVisuals = () => (
+    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-[100] text-white">
+        <div className="mb-20 text-center opacity-0 animate-[fadeIn_1s_ease-out_forwards]">
+            <p className="font-bold tracking-[0.3em] text-sm mb-6 uppercase text-neutral-400">Sponsored By</p>
+            <div className="bg-white p-4 rounded-xl mb-4 inline-block">
+                <img src="https://player.awbest.tech/image/icon/icon.svg" className="w-32 h-32" />
+            </div>
+            <h1 className="text-4xl font-black tracking-tighter">AWBEST</h1>
         </div>
-    );
-};
+        <div className="text-center opacity-0 animate-[fadeIn_1s_ease-out_1s_forwards]">
+            <p className="font-bold tracking-[0.3em] text-xs mb-4 uppercase text-neutral-400">Event Produced By</p>
+            <h1 className="text-6xl font-black tracking-tighter uppercase text-yellow-500">ARIES WU</h1>
+        </div>
+    </div>
+);
 
-// --- CONTROLLER ---
 
-export default function TeaserPageV12() {
+export default function TeaserPageV13() {
     const [started, setStarted] = useState(false);
     const [tick, setTick] = useState(0);
-    const [act, setAct] = useState(0);
+    const [stepIndex, setStepIndex] = useState(0);
     const [categories, setCategories] = useState<CategoryData[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // FETCH DATA
+    // FETCH
     useEffect(() => { getAwardsData().then(setCategories); }, []);
+
+    // SEQUENCE DEFINITION
+    const sequence: SequenceStep[] = [
+        { id: 1, type: 'TEXT', sceneId: 1, duration: 4, text: { main: "100M CREATORS", sub: "GLOBAL SCALE" } },
+        { id: 2, type: 'ACTION', sceneId: 1, duration: 6 },
+
+        { id: 3, type: 'TEXT', sceneId: 2, duration: 3, text: { main: "THE ROSTER", sub: "100+ NOMINEES" } },
+        { id: 4, type: 'ACTION', sceneId: 2, duration: 17 }, // Long action
+
+        { id: 5, type: 'TEXT', sceneId: 3, duration: 3, text: { main: "12 CATEGORIES", sub: "GENRE BENDING" } },
+        { id: 6, type: 'ACTION', sceneId: 3, duration: 17 },
+
+        { id: 7, type: 'TEXT', sceneId: 4, duration: 3, text: { main: "YOUR VOTE", sub: "DECIDES DESTINY" } },
+        { id: 8, type: 'ACTION', sceneId: 4, duration: 17 },
+
+        { id: 9, type: 'TEXT', sceneId: 5, duration: 3, text: { main: "WITNESS", sub: "HISTORY" } },
+        { id: 10, type: 'ACTION', sceneId: 5, duration: 12 },
+
+        { id: 11, type: 'ACTION', sceneId: 6, duration: 10 }, // Finale
+        { id: 12, type: 'ACTION', sceneId: 7, duration: 10 }, // Credits
+    ];
+
+    const currentStep = sequence[stepIndex] || sequence[sequence.length - 1];
 
     // ENGINE
     useEffect(() => {
         if (!started) return;
 
-        // VISUAL LOOP (DOUBLE TIME)
-        const interval = setInterval(() => setTick(t => t + 1), TICK_MS);
+        const tickInterval = setInterval(() => setTick(t => t + 1), TICK_MS);
 
-        // TIMELINE (SECONDS)
-        const timeline = [
-            { t: 0, act: 1 },  // Manifesto
-            { t: 10, act: 2 }, // Roster
-            { t: 30, act: 3 }, // Categories
-            { t: 50, act: 4 }, // Voting
-            { t: 70, act: 5 }, // Ritual
-            { t: 85, act: 6 }, // Show
-            { t: 95, act: 7 }, // Credits (NEW)
-        ];
+        // Step Sequencer
+        let elapsed = 0;
+        const timeouts: NodeJS.Timeout[] = [];
 
-        const timers = timeline.map(item => setTimeout(() => setAct(item.act), item.t * 1000));
-        return () => { clearInterval(interval); timers.forEach(clearTimeout); };
+        sequence.forEach((step, index) => {
+            timeouts.push(setTimeout(() => {
+                setStepIndex(index);
+            }, elapsed * 1000));
+            elapsed += step.duration;
+        });
+
+        return () => {
+            clearInterval(tickInterval);
+            timeouts.forEach(clearTimeout);
+        };
     }, [started]);
 
-    // HANDLER: DIRECT AUDIO TRIGGER
     const handleStart = () => {
         if (audioRef.current) {
             audioRef.current.volume = 1.0;
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => setStarted(true)).catch(() => setStarted(true));
-            }
+            audioRef.current.play().then(() => setStarted(true)).catch(() => setStarted(true));
         } else {
             setStarted(true);
         }
     };
 
-    // NARRATIVE TEXT
-    const overlayText = useMemo(() => {
-        if (act === 1) return { main: "100M CREATORS", sub: "GLOBAL SCALE" };
-        if (act === 2) return { main: "THE ROSTER", sub: "100+ NOMINEES" };
-        if (act === 3) return { main: "12 CATEGORIES", sub: "GENRE BENDING" };
-        if (act === 4) return { main: "YOUR VOTE", sub: "DECIDES DESTINY" };
-        if (act === 5) return { main: "WITNESS", sub: "THE CROWNING" };
-        return null; // No overlay for credits
-    }, [act]);
-
     return (
         <div className="h-screen w-screen bg-black overflow-hidden relative font-sans cursor-none select-none">
-            {/* PERSISTENT AUDIO ELEMENT - MOVED OUTSIDE CONDITIONAL */}
             <audio ref={audioRef} src={AUDIO_URL} preload="auto" loop />
 
             {!started ? (
-                <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group select-none">
-                    <div className="w-40 h-40 rounded-full bg-white flex items-center justify-center relative hover:scale-110 transition-transform shadow-[0_0_100px_white]">
-                        <Play className="w-16 h-16 text-black fill-black ml-2" />
+                <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group hover:bg-neutral-900 transition-colors">
+                    <div className="w-40 h-40 rounded-full border-[10px] border-white flex items-center justify-center relative hover:scale-110 transition-transform">
+                        <Play className="w-16 h-16 text-white fill-white ml-2" />
                     </div>
-                    <h1 className="text-white font-black tracking-tighter text-6xl uppercase mt-8 drop-shadow-2xl">IGNITE</h1>
-                    <p className="text-neutral-500 font-mono text-sm mt-4 uppercase tracking-widest border border-white/20 px-4 py-1">CLICK TO INITIALIZE AUDIO ENGINE</p>
+                    <h1 className="text-white font-black tracking-tighter text-5xl uppercase mt-8">START SEQUENCE</h1>
+                    <p className="text-neutral-500 font-mono text-xs mt-4 uppercase tracking-widest">CLICKS ENABLED</p>
                 </div>
             ) : (
-                <>
-                    {/* SCREEN SHAKE (Heavy) */}
+                <div className="absolute inset-0">
+                    {/* SCREEN SHAKE */}
                     <motion.div
                         className="absolute inset-0"
-                        animate={{ x: tick % 4 === 0 ? [10, -10, 0] : 0, scale: tick % 8 === 0 ? 1.05 : 1 }}
+                        animate={{ x: tick % 4 === 0 ? [5, -5, 0] : 0 }}
                         transition={{ duration: 0.05 }}
                     >
-                        {act === 1 && <ManifestoScene tick={tick} />}
-                        {act === 2 && <RosterScene tick={tick} />}
-                        {act === 3 && <CategoryScene categories={categories} tick={tick} />}
-                        {act === 4 && <VotingScene tick={tick} />}
-                        {act === 5 && <RitualScene />}
-                        {act === 6 && <FinaleScene />}
-                        {act === 7 && <CreditsScene />}
+                        <AnimatePresence mode="wait">
+                            {currentStep.type === 'TEXT' ? (
+                                <motion.div key={`text-${currentStep.id}`} className="absolute inset-0 z-50">
+                                    <NarrativeOverlay text={currentStep.text?.main || ""} subtext={currentStep.text?.sub} />
+                                </motion.div>
+                            ) : (
+                                <motion.div key={`scene-${currentStep.sceneId}`} className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                    {currentStep.sceneId === 1 && <ManifestoVisuals tick={tick} />}
+                                    {currentStep.sceneId === 2 && <RosterVisuals tick={tick} />}
+                                    {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={tick} />}
+                                    {currentStep.sceneId === 4 && <VotingVisuals tick={tick} />}
+                                    {currentStep.sceneId === 5 && <RitualVisuals />}
+                                    {currentStep.sceneId === 6 && <FinaleVisuals />}
+                                    {currentStep.sceneId === 7 && <CreditsVisuals />}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
 
-                    {/* NARRATIVE OVERLAY */}
-                    <AnimatePresence mode="wait">
-                        {overlayText && act < 7 && (
-                            <NarrativeOverlay
-                                key={act}
-                                text={overlayText.main}
-                                subtext={overlayText.sub}
-                                tick={tick}
-                            />
-                        )}
-                    </AnimatePresence>
-
-                    {/* GLOBAL VFX (Heavy) */}
+                    {/* GLOBAL OVERLAYS */}
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
-
-                    {/* Vignette with Red Pulse */}
-                    <motion.div
-                        animate={{ opacity: [0, 0.5, 0] }}
-                        transition={{ duration: 0.2, repeat: Infinity }}
-                        className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_150%)] pointer-events-none mix-blend-overlay"
-                    />
-
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_120%)] pointer-events-none mix-blend-overlay opacity-50" />
                     <button onClick={() => window.location.reload()} className="absolute top-6 right-6 font-bold text-xs text-white/50 hover:text-white z-[100] border px-2 py-1">RESTART</button>
-                </>
+
+                    {/* HUD */}
+                    <div className="absolute bottom-6 left-6 font-mono text-[10px] text-yellow-500/50 flex flex-col z-[80]">
+                        <span>SEQ: {currentStep.id} // {currentStep.type}</span>
+                        <span>SCENE: {currentStep.sceneId}</span>
+                        <span>TIME: {tick}</span>
+                    </div>
+                </div>
             )}
         </div>
     );
