@@ -212,9 +212,41 @@ const FinaleScene = () => {
     );
 };
 
+// --- SCENE 7: CREDITS (Sponsor & Producer) ---
+const CreditsScene = () => {
+    return (
+        <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-[100]">
+            <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.5 }}
+                className="flex flex-col items-center mb-16"
+            >
+                <p className="text-black font-bold tracking-[0.3em] text-sm mb-6 uppercase">Sponsored By</p>
+                <img
+                    src="https://player.awbest.tech/image/icon/icon.svg"
+                    alt="AWBEST"
+                    className="w-32 h-32 mb-4 drop-shadow-2xl"
+                />
+                <h1 className="text-4xl font-black text-black tracking-tighter">AWBEST</h1>
+            </motion.div>
+
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 1.5 }}
+                className="flex flex-col items-center"
+            >
+                <p className="text-neutral-500 font-bold tracking-[0.3em] text-xs mb-4 uppercase">Event Produced By</p>
+                <h1 className="text-6xl font-black text-black tracking-tighter uppercase">ARIES WU</h1>
+            </motion.div>
+        </div>
+    );
+};
+
 // --- CONTROLLER ---
 
-export default function TeaserPageV11() {
+export default function TeaserPageV12() {
     const [started, setStarted] = useState(false);
     const [tick, setTick] = useState(0);
     const [act, setAct] = useState(0);
@@ -239,6 +271,7 @@ export default function TeaserPageV11() {
             { t: 50, act: 4 }, // Voting
             { t: 70, act: 5 }, // Ritual
             { t: 85, act: 6 }, // Show
+            { t: 95, act: 7 }, // Credits (NEW)
         ];
 
         const timers = timeline.map(item => setTimeout(() => setAct(item.act), item.t * 1000));
@@ -249,16 +282,9 @@ export default function TeaserPageV11() {
     const handleStart = () => {
         if (audioRef.current) {
             audioRef.current.volume = 1.0;
-            // Force play inside interaction event
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    setStarted(true);
-                }).catch(error => {
-                    console.error("Playback failed", error);
-                    // Still start visuals even if audio fails
-                    setStarted(true);
-                });
+                playPromise.then(() => setStarted(true)).catch(() => setStarted(true));
             }
         } else {
             setStarted(true);
@@ -272,61 +298,64 @@ export default function TeaserPageV11() {
         if (act === 3) return { main: "12 CATEGORIES", sub: "GENRE BENDING" };
         if (act === 4) return { main: "YOUR VOTE", sub: "DECIDES DESTINY" };
         if (act === 5) return { main: "WITNESS", sub: "THE CROWNING" };
-        return null;
+        return null; // No overlay for credits
     }, [act]);
-
-    if (!started) {
-        return (
-            <div onClick={handleStart} className="h-screen w-screen bg-black flex flex-col items-center justify-center cursor-pointer group select-none">
-                <div className="w-40 h-40 rounded-full bg-white flex items-center justify-center relative hover:scale-110 transition-transform shadow-[0_0_100px_white]">
-                    <Play className="w-16 h-16 text-black fill-black ml-2" />
-                </div>
-                <h1 className="text-white font-black tracking-tighter text-6xl uppercase mt-8 drop-shadow-2xl">IGNITE</h1>
-                <p className="text-neutral-500 font-mono text-sm mt-4 uppercase tracking-widest border border-white/20 px-4 py-1">CLICK TO INITIALIZE AUDIO ENGINE</p>
-                <audio ref={audioRef} src={AUDIO_URL} preload="auto" loop />
-            </div>
-        );
-    }
 
     return (
         <div className="h-screen w-screen bg-black overflow-hidden relative font-sans cursor-none select-none">
-            {/* SCREEN SHAKE (Heavy) */}
-            <motion.div
-                className="absolute inset-0"
-                animate={{ x: tick % 4 === 0 ? [10, -10, 0] : 0, scale: tick % 8 === 0 ? 1.05 : 1 }}
-                transition={{ duration: 0.05 }}
-            >
-                {act === 1 && <ManifestoScene tick={tick} />}
-                {act === 2 && <RosterScene tick={tick} />}
-                {act === 3 && <CategoryScene categories={categories} tick={tick} />}
-                {act === 4 && <VotingScene tick={tick} />}
-                {act === 5 && <RitualScene />}
-                {act === 6 && <FinaleScene />}
-            </motion.div>
+            {/* PERSISTENT AUDIO ELEMENT - MOVED OUTSIDE CONDITIONAL */}
+            <audio ref={audioRef} src={AUDIO_URL} preload="auto" loop />
 
-            {/* NARRATIVE OVERLAY */}
-            <AnimatePresence mode="wait">
-                {overlayText && (
-                    <NarrativeOverlay
-                        key={act}
-                        text={overlayText.main}
-                        subtext={overlayText.sub}
-                        tick={tick}
+            {!started ? (
+                <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group select-none">
+                    <div className="w-40 h-40 rounded-full bg-white flex items-center justify-center relative hover:scale-110 transition-transform shadow-[0_0_100px_white]">
+                        <Play className="w-16 h-16 text-black fill-black ml-2" />
+                    </div>
+                    <h1 className="text-white font-black tracking-tighter text-6xl uppercase mt-8 drop-shadow-2xl">IGNITE</h1>
+                    <p className="text-neutral-500 font-mono text-sm mt-4 uppercase tracking-widest border border-white/20 px-4 py-1">CLICK TO INITIALIZE AUDIO ENGINE</p>
+                </div>
+            ) : (
+                <>
+                    {/* SCREEN SHAKE (Heavy) */}
+                    <motion.div
+                        className="absolute inset-0"
+                        animate={{ x: tick % 4 === 0 ? [10, -10, 0] : 0, scale: tick % 8 === 0 ? 1.05 : 1 }}
+                        transition={{ duration: 0.05 }}
+                    >
+                        {act === 1 && <ManifestoScene tick={tick} />}
+                        {act === 2 && <RosterScene tick={tick} />}
+                        {act === 3 && <CategoryScene categories={categories} tick={tick} />}
+                        {act === 4 && <VotingScene tick={tick} />}
+                        {act === 5 && <RitualScene />}
+                        {act === 6 && <FinaleScene />}
+                        {act === 7 && <CreditsScene />}
+                    </motion.div>
+
+                    {/* NARRATIVE OVERLAY */}
+                    <AnimatePresence mode="wait">
+                        {overlayText && act < 7 && (
+                            <NarrativeOverlay
+                                key={act}
+                                text={overlayText.main}
+                                subtext={overlayText.sub}
+                                tick={tick}
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* GLOBAL VFX (Heavy) */}
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
+
+                    {/* Vignette with Red Pulse */}
+                    <motion.div
+                        animate={{ opacity: [0, 0.5, 0] }}
+                        transition={{ duration: 0.2, repeat: Infinity }}
+                        className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_150%)] pointer-events-none mix-blend-overlay"
                     />
-                )}
-            </AnimatePresence>
 
-            {/* GLOBAL VFX (Heavy) */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
-
-            {/* Vignette with Red Pulse */}
-            <motion.div
-                animate={{ opacity: [0, 0.5, 0] }}
-                transition={{ duration: 0.2, repeat: Infinity }}
-                className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_150%)] pointer-events-none mix-blend-overlay"
-            />
-
-            <button onClick={() => window.location.reload()} className="absolute top-6 right-6 font-bold text-xs text-white/50 hover:text-white z-[100] border px-2 py-1">RESTART</button>
+                    <button onClick={() => window.location.reload()} className="absolute top-6 right-6 font-bold text-xs text-white/50 hover:text-white z-[100] border px-2 py-1">RESTART</button>
+                </>
+            )}
         </div>
     );
 }
