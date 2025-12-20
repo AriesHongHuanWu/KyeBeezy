@@ -105,12 +105,9 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
     const [rawName, imgSrc] = entries[idx];
     const name = rawName.replace('@', '').split('(')[0].trim().toUpperCase();
 
-    // Flash Logic
-    const isFlash = tick % 2 === 0;
-
     return (
         <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden perspective-1000">
-            {/* Premium Background: Dark Grid + Spotlight (No Cheap Yellow) */}
+            {/* Premium Background: Dark Grid + Spotlight */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-50" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.1)_0%,transparent_60%)]" />
 
@@ -131,24 +128,19 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
                 {/* Image */}
                 <img
                     src={imgSrc}
-                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert brightness-125' : 'brightness-100'}`}
+                    className="w-full h-full object-cover transition-all duration-75 brightness-100"
+                    onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/awbest-logo.png"; // Fallback to logo
+                        (e.target as HTMLImageElement).style.filter = "grayscale(100%) opacity(0.5)";
+                    }}
                 />
 
                 {/* Glass Gloss */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50 mixing-blend-overlay" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50 mix-blend-overlay" />
 
                 {/* Border Glow */}
                 <div className="absolute inset-0 border-[1px] border-white/30 rounded-2xl" />
             </motion.div>
-
-            {/* Negative Film Name Overlay (Synced) */}
-            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
-                {isFlash && (
-                    <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter text-center uppercase scale-150 blur-sm opacity-50">
-                        {name}
-                    </h1>
-                )}
-            </div>
 
             {/* Bottom Left Name Tag - Clean & Premium */}
             <div className="absolute bottom-[15vh] left-[5vw] z-30 flex flex-col items-start gap-2">
