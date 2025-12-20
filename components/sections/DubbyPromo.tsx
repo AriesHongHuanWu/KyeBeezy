@@ -135,17 +135,9 @@ export default function DubbyPromo() {
                         transition={{ duration: 0.8 }}
                         className="flex-1 text-center lg:text-left z-10"
                     >
-                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl flex flex-col lg:block items-center lg:items-start gap-4">
-                            <span>POWER UP WITH</span>
-                            <div className="relative h-16 md:h-24 w-48 md:w-72 lg:inline-block lg:ml-4 align-middle">
-                                <Image
-                                    src="/dubby/dubby-logo.webp"
-                                    alt="Dubby Energy"
-                                    fill
-                                    className="object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
-                                    priority
-                                />
-                            </div>
+                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl">
+                            POWER UP WITH <br className="hidden lg:block" />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 animate-gradient-x">DUBBY</span>
                         </h2>
                         <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
                             Focus better. React faster. <br />
@@ -216,15 +208,31 @@ export default function DubbyPromo() {
                                     />
                                 </motion.div>
 
-                                {/* Floating Badge */}
+                                {/* Floating Badge - Moved to Bottom Left */}
                                 <motion.div
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 1, duration: 0.5 }}
-                                    className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 pointer-events-none"
+                                    className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 pointer-events-none z-10"
                                 >
                                     <span className={`w-2 h-2 rounded-full ${isAltImage ? 'bg-pink-500' : 'bg-green-500'} animate-pulse`} />
                                     OFFICIAL PARTNER
+                                </motion.div>
+
+                                {/* Dubby Logo Overlay - Bottom Right */}
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.5 }}
+                                    className="absolute bottom-4 right-4 w-32 h-auto z-10 opacity-90 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
+                                >
+                                    <Image
+                                        src="/dubby/dubby-logo.webp"
+                                        alt="Dubby Logo"
+                                        width={150}
+                                        height={50}
+                                        className="object-contain"
+                                    />
                                 </motion.div>
 
                                 {/* Hint Text */}
