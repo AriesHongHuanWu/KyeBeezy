@@ -9,8 +9,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
 // --- Types ---
 interface Nominee {
@@ -522,11 +523,6 @@ const CategorySlide = ({
 };
 
 // --- Page Controller ---
-import { useAuth } from "@/context/AuthContext";
-import { setDoc } from "firebase/firestore";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-
 export default function LiveAwardsPage() {
     const { user, loading: authLoading } = useAuth();
     const isAdmin = !!user; // Assume any logged-in user is Admin for this context
