@@ -125,6 +125,22 @@ export default function DubbyPromo() {
             {/* REMOVED opaque bg-background, adjusted gradient to be very subtle overlay */}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
 
+            {/* Decorative Icon Watermark */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
+                whileInView={{ opacity: 0.1, scale: 1, rotate: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="absolute top-10 left-[-10%] md:left-[-5%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] z-0 pointer-events-none blur-sm opacity-10 mix-blend-multiply dark:mix-blend-screen"
+            >
+                <Image
+                    src="/dubby/icon.jpg"
+                    alt="Dubby Icon"
+                    fill
+                    className="object-contain animate-float-slow"
+                />
+            </motion.div>
+
             <div className="container mx-auto px-4 relative z-10">
                 <div className="mb-20 flex flex-col lg:flex-row items-center gap-12 max-w-7xl mx-auto">
                     {/* Text Section */}
