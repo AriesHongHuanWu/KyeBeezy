@@ -128,6 +128,7 @@ const OutroSlide = () => {
 const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void }) => {
     const [isRevealed, setIsRevealed] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
+    const [showFlash, setShowFlash] = useState(false);
 
     // --- Audio Helper ---
     const playSound = (type: 'drum' | 'tada' | 'click') => {
@@ -146,30 +147,41 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
         // playSound('drum'); // Removed as requested
         setIsShaking(true);
         setTimeout(() => {
+            setShowFlash(true); // Trigger Flash
             playSound('tada');
             setIsShaking(false);
             setIsRevealed(true);
             onReveal();
+            setTimeout(() => setShowFlash(false), 500); // Hide Flash
         }, 1200);
     };
 
     return (
         <div className="flex flex-col items-center justify-center py-10 relative z-20 perspective-1000">
             {/* Glow Effect behind the card */}
-            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[120px] rounded-full transition-opacity duration-1000 ${isRevealed ? 'opacity-100' : 'opacity-0'}`} />
+            <motion.div
+                animate={{ scale: isShaking ? [1, 1.2, 1] : 1, opacity: isRevealed ? 1 : 0.5 }}
+                transition={{ duration: 0.5, repeat: isShaking ? Infinity : 0 }}
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[120px] rounded-full transition-opacity duration-1000 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}
+            />
 
             <motion.div
                 className="relative w-[340px] h-[520px] cursor-pointer group"
                 onClick={handleClick}
+                initial={{ y: 0 }}
                 animate={{
                     rotateY: isRevealed ? 180 : 0,
                     x: isShaking ? [0, -20, 20, -20, 20, 0] : 0,
-                    rotateZ: isShaking ? [0, -5, 5, -5, 5, 0] : 0,
+                    rotateZ: isShaking ? [0, -5, 5, -5, 5, 0] : [0, 2, -2, 0], // Subtle idle sway
+                    y: isShaking ? 0 : [0, -15, 0], // Idle float
+                    scale: isShaking ? [1, 0.95, 1.05, 0.95, 1] : 1, // Squash and stretch
                 }}
                 transition={{
                     rotateY: { type: "spring", damping: 15, stiffness: 50 },
-                    x: { duration: 0.4, repeat: isShaking ? 2 : 0 },
-                    rotateZ: { duration: 0.4, repeat: isShaking ? 2 : 0 }
+                    x: { duration: 0.1, repeat: isShaking ? 10 : 0 }, // Faster shake
+                    rotateZ: { duration: isShaking ? 0.1 : 5, repeat: Infinity, ease: "easeInOut" },
+                    y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+                    scale: { duration: 0.2, repeat: isShaking ? 5 : 0 }
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
@@ -183,11 +195,23 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                 {/* Bottom Side */}
                 <div className="absolute bottom-0 left-[30px] w-[calc(100%-60px)] h-[16px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
 
+                {/* White Flash Overlay */}
+                <AnimatePresence>
+                    {showFlash && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-50 bg-white rounded-[30px] pointer-events-none mix-blend-overlay"
+                            style={{ transform: "translateZ(50px)" }}
+                        />
+                    )}
+                </AnimatePresence>
 
                 {/* CARD BACK (Mystery) */}
                 <div
                     className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden"
-                    style={{ backfaceVisibility: "hidden", transform: "translateZ(10px)" }} // Push front slightly to hide seams
+                    style={{ backfaceVisibility: "hidden", transform: "translateZ(10px)" }}
                 >
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-yellow-900/40" />
@@ -220,9 +244,9 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
 
                     <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center">
                         <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: isRevealed ? 1 : 0.5, opacity: isRevealed ? 1 : 0 }}
-                            transition={{ type: "spring", delay: 0.2 }}
+                            initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                            animate={{ scale: isRevealed ? 1 : 0.5, opacity: isRevealed ? 1 : 0, rotate: isRevealed ? 0 : -10 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
                             className="relative"
                         >
                             <div className="absolute inset-0 bg-yellow-400 blur-md rounded-full" />
@@ -236,9 +260,9 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                         </motion.div>
 
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: isRevealed ? 1 : 0, y: 0 }}
-                            transition={{ delay: 0.5 }}
+                            transition={{ delay: 0.3 }}
                             className="mt-8"
                         >
                             <Crown className="w-10 h-10 text-yellow-200 mx-auto mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
@@ -288,22 +312,39 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext?: 
                     {phase === 'NOMINEES' && (
                         <motion.div
                             key="nominees"
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                            exit={{ opacity: 0, scale: 1.2, filter: "blur(20px)" }}
                             className="w-full max-w-[95vw]"
                         >
-                            {/* FLEX ROW for Single Line Layout */}
+                            {/* FLEX ROW for Single Line Layout with Floating Animation */}
                             <div className="flex flex-wrap justify-center items-center gap-12 md:gap-16">
                                 {category.nominees.map((nominee, i) => (
                                     <motion.div
                                         key={nominee.name}
-                                        initial={{ opacity: 0, y: 30 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.1 }}
+                                        initial={{ opacity: 0, y: 50, rotate: -5 }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                            rotate: 0,
+                                            // Floating "Breathing" Effect
+                                            translateY: [0, -10, 0]
+                                        }}
+                                        transition={{
+                                            delay: i * 0.1,
+                                            opacity: { duration: 0.5 },
+                                            y: { type: "spring", stiffness: 100 },
+                                            rotate: { duration: 0.5 },
+                                            translateY: { // Floating Loop
+                                                duration: 3 + (i * 0.5), // Stagger loop duration so they don't sync
+                                                repeat: Infinity,
+                                                ease: "easeInOut",
+                                                delay: 0.5 + (i * 0.2) // Stagger start of float
+                                            }
+                                        }}
                                         className="flex flex-col items-center gap-4 group cursor-default"
                                     >
-                                        <div className="relative w-32 h-32 md:w-36 md:h-36 lg:w-44 lg:h-44 rounded-full p-1 bg-gradient-to-b from-white/20 to-transparent group-hover:from-yellow-500 group-hover:to-yellow-800 transition-all duration-300">
+                                        <div className="relative w-32 h-32 md:w-36 md:h-36 lg:w-44 lg:h-44 rounded-full p-1 bg-gradient-to-b from-white/20 to-transparent group-hover:from-yellow-500 group-hover:to-yellow-800 transition-all duration-300 shadow-[0_0_0_0px_rgba(234,179,8,0)] group-hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] group-hover:scale-110">
                                             <div className="absolute inset-0 bg-black rounded-full m-[2px]" />
                                             {nominee.image ? (
                                                 <img src={nominee.image} alt={nominee.name} className="relative z-10 w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 pointer-events-none" />
@@ -313,7 +354,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext?: 
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-white/60 font-bold text-lg md:text-xl group-hover:text-yellow-400 transition-colors text-center max-w-[180px] leading-tight">{nominee.name}</span>
+                                        <span className="text-white/60 font-bold text-lg md:text-xl group-hover:text-yellow-400 transition-colors text-center max-w-[180px] leading-tight drop-shadow-md">{nominee.name}</span>
                                     </motion.div>
                                 ))}
                             </div>
