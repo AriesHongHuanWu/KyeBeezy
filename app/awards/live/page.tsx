@@ -64,18 +64,24 @@ const IntroSlide = ({ onStart }: { onStart: () => void }) => (
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="z-10 relative"
+            className="z-10 relative flex flex-col items-center"
         >
-            <div className="mb-8 flex justify-center">
-                <div className="p-6 rounded-full bg-yellow-500/10 border border-yellow-500/30 animate-[spin_10s_linear_infinite]">
-                    <Crown className="w-20 h-20 text-yellow-500" />
-                </div>
+            <div className="mb-10 relative">
+                <div className="absolute inset-0 bg-yellow-500/30 blur-3xl rounded-full animate-pulse" />
+                {/* Bandlab Logo with Gold Tint Effect */}
+                <img
+                    src="/bandlab-logo.png"
+                    alt="Bandlab Logo"
+                    className="w-32 h-32 md:w-40 md:h-40 object-contain relative z-10 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]"
+                    style={{ filter: "brightness(0) saturate(100%) invert(83%) sepia(36%) saturate(1000%) hue-rotate(2deg) brightness(108%) contrast(105%)" }} // Approximate Gold Filter
+                />
             </div>
-            <h1 className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-400 to-yellow-800 drop-shadow-[0_0_50px_rgba(234,179,8,0.4)] mb-6 tracking-tighter">
-                AWARDS<br />NIGHT
+
+            <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-yellow-400 to-yellow-700 drop-shadow-[0_0_50px_rgba(234,179,8,0.4)] mb-4 tracking-tighter">
+                Bandlab Award
             </h1>
-            <p className="text-2xl text-white/50 font-light tracking-[0.8em] uppercase mb-16">
-                Live Ceremony
+            <p className="text-xl md:text-2xl text-white/50 font-light tracking-[0.6em] uppercase mb-16">
+                2025 Ceremony
             </p>
 
             <button
@@ -124,45 +130,36 @@ const OutroSlide = () => {
     );
 }
 
-// 3. Thick 3D Gacha Card
+// 3. Thick 3D Gacha Card (No Shake, Fly Out Version)
 const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void }) => {
     const [isRevealed, setIsRevealed] = useState(false);
-    const [isShaking, setIsShaking] = useState(false);
     const [showFlash, setShowFlash] = useState(false);
 
     // --- Audio Helper ---
-    const playSound = (type: 'drum' | 'tada' | 'click') => {
-        const sounds = {
-            drum: "https://www.myinstants.com/media/sounds/drum-roll.mp3",
-            tada: "https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3",
-            click: "https://github.com/wilcooo/TagPro-SoundPacks/raw/master/SoundPacks/minimal/click.mp3"
-        };
-        const audio = new Audio(sounds[type]);
-        audio.volume = type === 'drum' ? 0.6 : 0.8;
+    const playSound = (type: 'tada') => {
+        const audio = new Audio("https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3");
+        audio.volume = 0.8;
         audio.play().catch(e => console.warn("Audio play failed", e));
     };
 
     const handleClick = () => {
         if (isRevealed) return;
-        // playSound('drum'); // Removed as requested
-        setIsShaking(true);
-        setTimeout(() => {
-            setShowFlash(true); // Trigger Flash
-            playSound('tada');
-            setIsShaking(false);
-            setIsRevealed(true);
-            onReveal();
-            setTimeout(() => setShowFlash(false), 500); // Hide Flash
-        }, 1200);
+
+        // Immediate Trigger
+        setIsRevealed(true);
+        setShowFlash(true);
+        playSound('tada');
+        onReveal();
+        setTimeout(() => setShowFlash(false), 800);
     };
 
     return (
         <div className="flex flex-col items-center justify-center py-10 relative z-20 perspective-1000">
             {/* Glow Effect behind the card */}
             <motion.div
-                animate={{ scale: isShaking ? [1, 1.2, 1] : 1, opacity: isRevealed ? 1 : 0.5 }}
-                transition={{ duration: 0.5, repeat: isShaking ? Infinity : 0 }}
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[120px] rounded-full transition-opacity duration-1000 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}
+                animate={{ scale: isRevealed ? 1.2 : 1, opacity: isRevealed ? 0.8 : 0.4 }}
+                transition={{ duration: 1 }}
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[100px] rounded-full transition-opacity duration-1000`}
             />
 
             <motion.div
@@ -171,17 +168,11 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                 initial={{ y: 0 }}
                 animate={{
                     rotateY: isRevealed ? 180 : 0,
-                    x: isShaking ? [0, -20, 20, -20, 20, 0] : 0,
-                    rotateZ: isShaking ? [0, -5, 5, -5, 5, 0] : [0, 2, -2, 0], // Subtle idle sway
-                    y: isShaking ? 0 : [0, -15, 0], // Idle float
-                    scale: isShaking ? [1, 0.95, 1.05, 0.95, 1] : 1, // Squash and stretch
+                    y: isRevealed ? [0, -40, 0] : [0, -15, 0], // Higher float when revealed
                 }}
                 transition={{
-                    rotateY: { type: "spring", damping: 15, stiffness: 50 },
-                    x: { duration: 0.1, repeat: isShaking ? 10 : 0 }, // Faster shake
-                    rotateZ: { duration: isShaking ? 0.1 : 5, repeat: Infinity, ease: "easeInOut" },
+                    rotateY: { type: "spring", damping: 10, stiffness: 40, mass: 0.8 }, // Smooth, heavy flip
                     y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                    scale: { duration: 0.2, repeat: isShaking ? 5 : 0 }
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
@@ -203,7 +194,7 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 z-50 bg-white rounded-[30px] pointer-events-none mix-blend-overlay"
-                            style={{ transform: "translateZ(50px)" }}
+                            style={{ transform: "translateZ(60px)" }}
                         />
                     )}
                 </AnimatePresence>
@@ -224,8 +215,8 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                         <h3 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 uppercase tracking-widest text-center drop-shadow-sm">
                             SECRET<br />REVEAL
                         </h3>
-                        <div className="mt-8 px-6 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 text-sm font-bold animate-bounce">
-                            TAP TO OPEN
+                        <div className="mt-8 px-6 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-200 text-sm font-bold animate-pulse">
+                            CLICK TO REVEAL
                         </div>
                     </div>
                 </div>
@@ -242,34 +233,37 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                     {/* Particles / Rays */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,223,0,0.4)_0%,transparent_70%)]" />
 
-                    <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center">
+                    {/* WINNER CONTENT - FLY OUT ANIMATION */}
+                    <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center" style={{ transformStyle: "preserve-3d" }}>
                         <motion.div
-                            initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
-                            animate={{ scale: isRevealed ? 1 : 0.5, opacity: isRevealed ? 1 : 0, rotate: isRevealed ? 0 : -10 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                            initial={{ scale: 0.5, z: 0, opacity: 0 }}
+                            animate={{ scale: isRevealed ? 1.1 : 0.5, z: isRevealed ? 120 : 0, opacity: isRevealed ? 1 : 0 }}
+                            transition={{ type: "spring", stiffness: 150, damping: 12, delay: 0.2 }}
                             className="relative"
+                            style={{ transformStyle: "preserve-3d" }}
                         >
-                            <div className="absolute inset-0 bg-yellow-400 blur-md rounded-full" />
+                            <div className="absolute inset-0 bg-yellow-400 blur-xl rounded-full opacity-50" />
                             {winner.image ? (
-                                <img src={winner.image} alt={winner.name} className="w-48 h-48 rounded-full border-4 border-white shadow-2xl object-cover relative z-10" />
+                                <img src={winner.image} alt={winner.name} className="w-52 h-52 rounded-full border-[6px] border-white shadow-2xl object-cover relative z-10" />
                             ) : (
-                                <div className="w-48 h-48 rounded-full border-4 border-white bg-yellow-600 flex items-center justify-center text-5xl font-bold text-white relative z-10 shadow-2xl">
+                                <div className="w-52 h-52 rounded-full border-[6px] border-white bg-yellow-600 flex items-center justify-center text-6xl font-bold text-white relative z-10 shadow-2xl">
                                     {winner.name.substring(0, 2).toUpperCase()}
                                 </div>
                             )}
                         </motion.div>
 
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: isRevealed ? 1 : 0, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="mt-8"
+                            initial={{ opacity: 0, scale: 0.8, z: 0 }}
+                            animate={{ opacity: isRevealed ? 1 : 0, scale: isRevealed ? 1 : 0.8, z: isRevealed ? 80 : 0 }}
+                            transition={{ delay: 0.4, type: "spring" }}
+                            className="mt-10"
+                            style={{ transformStyle: "preserve-3d" }}
                         >
-                            <Crown className="w-10 h-10 text-yellow-200 mx-auto mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                            <h2 className="text-4xl font-black text-white leading-tight mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+                            <Crown className="w-12 h-12 text-yellow-200 mx-auto mb-2 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" />
+                            <h2 className="text-5xl font-black text-white leading-none mb-3 drop-shadow-[0_5px_5px_rgba(0,0,0,1)] tracking-tight">
                                 {winner.name}
                             </h2>
-                            <div className="px-4 py-1.5 bg-white text-black text-sm font-black uppercase rounded-full inline-block shadow-lg">
+                            <div className="px-5 py-2 bg-white text-black text-sm font-black uppercase rounded-full inline-block shadow-xl">
                                 WINNER • {winner.voteCount} Votes
                             </div>
                         </motion.div>
