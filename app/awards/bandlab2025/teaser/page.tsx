@@ -28,7 +28,7 @@ interface SequenceStep {
 const PersistentCredits = () => (
     <div className="absolute bottom-6 right-6 z-[999] flex items-center bg-black/50 backdrop-blur-md px-6 py-3 border border-white/10 rounded-full hover:bg-black/80 transition-colors">
         <div className="flex items-center gap-3 border-r border-white/20 pr-4 mr-4">
-            <img src="https://player.awbest.tech/image/icon/icon.svg" className="w-6 h-6 invert" />
+            <img src="/awbest-logo.png" className="w-6 h-auto" />
             <span className="text-xs font-black text-white tracking-widest uppercase">AWBEST</span>
         </div>
         <span className="text-xs font-black text-yellow-500 tracking-widest uppercase">ARIES WU</span>
