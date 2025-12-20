@@ -12,42 +12,8 @@ import SponsorsSection from "@/components/sections/Sponsors";
 import { motion } from "framer-motion";
 import { ChevronDown, Twitch, Youtube, Music, Gamepad2 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
-interface GlobalSettings {
-    heroTitle: string[];
-    heroSubtitle: string;
-    socials: {
-        twitch: string;
-        youtube: string;
-        discord: string;
-        bandlab: string;
-    };
-}
 
 export default function Home() {
-    const [settings, setSettings] = useState<GlobalSettings>({
-        heroTitle: ["KYE BEEZY", "ARTIST", "STREAMER", "VISIONARY"],
-        heroSubtitle: "DIGITAL CREATOR & ARTIST",
-        socials: {
-            twitch: "https://twitch.tv/",
-            youtube: "https://youtube.com/",
-            discord: "https://discord.gg/JU3MNRGWXq",
-            bandlab: "https://www.bandlab.com/"
-        }
-    });
-
-    useEffect(() => {
-        const unsubscribe = onSnapshot(doc(db, "settings", "global"), (doc) => {
-            if (doc.exists()) {
-                setSettings(doc.data() as GlobalSettings);
-            }
-        });
-        return () => unsubscribe();
-    }, []);
-
     return (
         <main className="relative text-foreground bg-background font-sans selection:bg-purple-500/30 transition-colors duration-300">
             {/* Background - Fixed */}
@@ -74,7 +40,7 @@ export default function Home() {
                             transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
                         >
                             <GooeyText
-                                texts={settings.heroTitle}
+                                texts={["KYE BEEZY", "ARTIST", "STREAMER", "VISIONARY"]}
                                 morphTime={1.5}
                                 cooldownTime={1}
                                 className="font-outfit text-foreground"
@@ -88,7 +54,7 @@ export default function Home() {
                             className="text-center space-y-4"
                         >
                             <p className="text-xl md:text-2xl font-light tracking-[0.2em] text-muted-foreground">
-                                {settings.heroSubtitle}
+                                DIGITAL CREATOR & ARTIST
                             </p>
                         </motion.div>
 
@@ -99,16 +65,16 @@ export default function Home() {
                             transition={{ delay: 1.2, duration: 0.8 }}
                             className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all"
                         >
-                            <Link href={settings.socials.twitch} target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://twitch.tv/" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Twitch className="w-8 h-8" />
                             </Link>
-                            <Link href={settings.socials.bandlab} target="_blank" className="hover:text-red-400 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://www.bandlab.com/" target="_blank" className="hover:text-red-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Music className="w-8 h-8" />
                             </Link>
-                            <Link href={settings.socials.youtube} target="_blank" className="hover:text-red-600 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://youtube.com/" target="_blank" className="hover:text-red-600 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Youtube className="w-8 h-8" />
                             </Link>
-                            <Link href={settings.socials.discord} target="_blank" className="hover:text-indigo-500 text-foreground transition-colors transform hover:scale-110 duration-300">
+                            <Link href="https://discord.gg/JU3MNRGWXq" target="_blank" className="hover:text-indigo-500 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Gamepad2 className="w-8 h-8" />
                             </Link>
                         </motion.div>

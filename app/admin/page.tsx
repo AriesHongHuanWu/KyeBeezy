@@ -30,34 +30,6 @@ interface ProductItem {
     order: number;
 }
 
-interface GlobalSettings {
-    heroTitle: string[];
-    heroSubtitle: string;
-    socials: {
-        twitch: string;
-        youtube: string;
-        discord: string;
-        bandlab: string;
-    };
-}
-
-
-
-// --- Default Data for Seeding ---
-const defaultSettings: GlobalSettings = {
-    heroTitle: ["KYE BEEZY", "ARTIST", "STREAMER", "VISIONARY"],
-    heroSubtitle: "DIGITAL CREATOR & ARTIST",
-    socials: {
-        twitch: "https://twitch.tv/realkyebeezylive",
-        youtube: "https://youtube.com/@KyeBeezy",
-        discord: "https://discord.gg/JU3MNRGWXq",
-        bandlab: "https://www.bandlab.com/kyebeezy"
-    }
-};
-
-
-
-
 const SUPER_ADMIN = "arieswu001@gmail.com";
 
 // --- Default Data for Seeding ---
@@ -67,8 +39,9 @@ const defaultVideos = [
 ];
 
 const defaultMusic = [
-    { title: "Kye Beezy - 4AM IN TAIPEI", embedCode: '<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1987654321&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>', order: 1 },
-    { title: "BandLab Beat 1", embedCode: '<iframe src="https://www.bandlab.com/embed/?id=6d3c0519-7538-ef11-86c3-000d3a425266&blur=true" width="100%" height="450" frameborder="0" allowfullscreen></iframe>', order: 2 }
+    { title: "Latest Heat", embedCode: '<iframe src="https://www.bandlab.com/embed/?id=7d44e991-08cf-f011-8196-000d3a96100f&blur=true" width="100%" height="450" frameborder="0" allowfullscreen></iframe>', order: 1 },
+    { title: "Night Vibes", embedCode: '<iframe src="https://www.bandlab.com/embed/?id=2f1287da-399e-f011-8e64-6045bd354e91&blur=true" width="100%" height="450" frameborder="0" allowfullscreen></iframe>', order: 2 },
+    { title: "Studio Sessions", embedCode: '<iframe src="https://www.bandlab.com/embed/?id=bcdc5788-3f63-f011-8dc9-000d3a960be3&blur=true" width="100%" height="450" frameborder="0" allowfullscreen></iframe>', order: 3 }
 ];
 
 const defaultProducts = [
@@ -166,7 +139,7 @@ const defaultProducts = [
 
 // --- Main Dashboard Component ---
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings">("videos");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins">("videos");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -219,7 +192,6 @@ export default function AdminDashboard() {
                                     <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={<Video size={20} />} label="Stream Highlights" />
                                     <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} icon={<Music size={20} />} label="Music Embeds" />
                                     <TabButton active={activeTab === 'products'} onClick={() => setActiveTab('products')} icon={<ShoppingBag size={20} />} label="Dubby Products" />
-                                    <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20} />} label="Global Settings" />
                                 </div>
 
                                 <div className="my-4 h-px bg-white/5 mx-4" />
@@ -250,7 +222,6 @@ export default function AdminDashboard() {
                             {activeTab === 'videos' && <VideosManager key="videos" />}
                             {activeTab === 'music' && <MusicManager key="music" />}
                             {activeTab === 'products' && <ProductsManager key="products" />}
-                            {activeTab === 'settings' && <SettingsManager key="settings" />}
                             {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
                         </AnimatePresence>
                     </main>
@@ -659,123 +630,6 @@ function ProductsManager() {
                     </div>
                 ))}
             </div>
-        </motion.div>
-    );
-}
-
-
-function SettingsManager() {
-    const { register, handleSubmit, reset, setValue } = useForm();
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const docRef = doc(db, "settings", "global");
-        const unsubscribe = onSnapshot(docRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.data() as GlobalSettings;
-                setValue("heroTitle", data.heroTitle.join(", "));
-                setValue("heroSubtitle", data.heroSubtitle);
-                setValue("socials.twitch", data.socials.twitch);
-                setValue("socials.youtube", data.socials.youtube);
-                setValue("socials.discord", data.socials.discord);
-                setValue("socials.bandlab", data.socials.bandlab);
-            } else {
-                // If checking for existence, we can just stop loading.
-                // Or optionally seed if empty.
-            }
-            setLoading(false);
-        });
-
-        // Cleanup listener on unmount
-        return () => unsubscribe();
-    }, [setValue, reset]);
-
-    const onSubmit = async (data: any) => {
-        try {
-            const settingsData: GlobalSettings = {
-                heroTitle: data.heroTitle.split(",").map((s: string) => s.trim()),
-                heroSubtitle: data.heroSubtitle,
-                socials: {
-                    twitch: data.socials.twitch,
-                    youtube: data.socials.youtube,
-                    discord: data.socials.discord,
-                    bandlab: data.socials.bandlab
-                }
-            };
-            await setDoc(doc(db, "settings", "global"), settingsData);
-            toast.success("Global settings updated");
-        } catch (e) { toast.error("Failed to update settings"); }
-    };
-
-    const handleSeed = async () => {
-        if (!confirm("Reset global settings to defaults?")) return;
-        try {
-            await setDoc(doc(db, "settings", "global"), defaultSettings);
-            setValue("heroTitle", defaultSettings.heroTitle.join(", "));
-            setValue("heroSubtitle", defaultSettings.heroSubtitle);
-            setValue("socials.twitch", defaultSettings.socials.twitch);
-            setValue("socials.youtube", defaultSettings.socials.youtube);
-            setValue("socials.discord", defaultSettings.socials.discord);
-            setValue("socials.bandlab", defaultSettings.socials.bandlab);
-            toast.success("Settings reset to defaults");
-        } catch (e) { toast.error("Reset failed"); }
-    }
-
-    if (loading) return <div className="text-neutral-500">Loading settings...</div>;
-
-    return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-            <SectionHeader
-                title="Global Settings"
-                subtitle="Manage site-wide text and links."
-                action={
-                    <button onClick={handleSeed} className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all border border-red-500/10">
-                        <Database size={18} /> Reset Defaults
-                    </button>
-                }
-            />
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
-                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Settings size={18} /> Hero Section</h3>
-                    <div>
-                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Morphing Titles (Comma separated)</label>
-                        <input {...register("heroTitle")} className="input-field" placeholder="KYE BEEZY, ARTIST, STREAMER" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Subtitle</label>
-                        <input {...register("heroSubtitle")} className="input-field" placeholder="DIGITAL CREATOR" />
-                    </div>
-                </div>
-
-                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Users size={18} /> Social Links</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Twitch URL</label>
-                            <input {...register("socials.twitch")} className="input-field" placeholder="https://twitch.tv/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">YouTube URL</label>
-                            <input {...register("socials.youtube")} className="input-field" placeholder="https://youtube.com/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Discord URL</label>
-                            <input {...register("socials.discord")} className="input-field" placeholder="https://discord.gg/..." />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">BandLab URL</label>
-                            <input {...register("socials.bandlab")} className="input-field" placeholder="https://bandlab.com/..." />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-end">
-                    <button type="submit" className="bg-purple-600 px-8 py-3 rounded-xl text-white font-bold hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all hover:scale-105">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
         </motion.div>
     );
 }
