@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Share2, ExternalLink, Star, Crown, Loader2, RefreshCw, ArrowLeft, Lock } from "lucide-react";
+import { Trophy, Share2, ExternalLink, Star, Crown, Loader2, RefreshCw, ArrowLeft, Lock, MonitorPlay } from "lucide-react";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -129,6 +129,15 @@ export default function AwardsPage() {
                     </h2>
 
                     <div className="flex items-center gap-2">
+                        <Link
+                            href="/awards/live"
+                            target="_blank"
+                            className="p-3 rounded-lg border border-border hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all"
+                            title="Live Presentation Mode"
+                        >
+                            <MonitorPlay className="w-5 h-5" />
+                        </Link>
+
                         <button
                             onClick={fetchData}
                             className="p-3 rounded-lg border border-border hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all"
