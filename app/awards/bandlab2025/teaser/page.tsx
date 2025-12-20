@@ -163,29 +163,44 @@ const PremiumCardVisuals = ({ tick }: { tick: number }) => {
     );
 };
 
-// SCENE 3: KINETIC TYPE
+// SCENE 3: KINETIC TYPE (Apple Style - Clean & Bold)
 const CategoryVisuals = ({ categories, tick }: { categories: CategoryData[], tick: number }) => {
     const idx = Math.floor(tick / 2) % (categories.length || 1);
     const cat = categories[idx] || { title: "MUSIC" };
     return (
-        <div className="absolute inset-0 bg-yellow-400 flex items-center justify-center overflow-hidden">
-            <div className="absolute inset-0 flex flex-col justify-center gap-0 opacity-10 pointer-events-none">
-                {[...Array(5)].map((_, i) => (
-                    <h1 key={i} className="text-[20vh] leading-[0.8] font-black text-black whitespace-nowrap overflow-hidden">
-                        {cat.title} {cat.title}
+        <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
+            {/* Subtle Spotlight Background */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+
+            {/* Background Echo Text */}
+            <div className="absolute inset-0 flex flex-col justify-center gap-0 opacity-5 pointer-events-none scale-150 blur-sm">
+                {[...Array(3)].map((_, i) => (
+                    <h1 key={i} className="text-[20vh] leading-[0.8] font-black text-white whitespace-nowrap overflow-hidden text-center">
+                        {cat.title}
                     </h1>
                 ))}
             </div>
+
+            {/* Main Title Reveal */}
             <motion.div
                 key={cat.title + tick}
-                initial={{ scale: 0.8, rotate: 5, opacity: 0 }}
-                animate={{ scale: 1, rotate: -2, opacity: 1 }}
-                transition={{ duration: 0.4, ease: "backOut" }} // Removed Blur, clearer animation
-                className="bg-black px-12 py-8 shadow-[20px_20px_0px_white]"
+                initial={{ y: 100, opacity: 0, clipPath: "inset(0% 0% 100% 0%)" }}
+                animate={{ y: 0, opacity: 1, clipPath: "inset(0% 0% 0% 0%)" }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} // Apple-like ease
+                className="relative z-10"
             >
-                <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter uppercase whitespace-nowrap">
-                    {cat.title}
-                </h1>
+                <div className="overflow-hidden">
+                    <h1 className="text-5xl md:text-9xl font-black text-white tracking-tighter uppercase drop-shadow-[0_10px_30px_rgba(255,255,255,0.2)]">
+                        {cat.title}
+                    </h1>
+                </div>
+                {/* Gold Accent Line */}
+                <motion.div
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 0.2, duration: 0.8, ease: "circOut" }}
+                    className="h-1 md:h-2 bg-yellow-500 mt-4 w-full origin-left"
+                />
             </motion.div>
         </div>
     );
@@ -225,66 +240,67 @@ const RitualVisuals = () => (
     </div>
 );
 
-// SCENE 6: BRANDING (Finale Redesign)
+// SCENE 6: BRANDING (Finale - Apple Event Style)
 const FinaleVisuals = () => (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-500 overflow-hidden">
-        <Confetti isActive={true} />
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black overflow-hidden perspective-1000">
+        {/* Volumetric Fog / God Rays (Subtle) */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(20,20,20,1)_100%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] h-[50vh] bg-gradient-to-b from-white/10 to-transparent blur-[100px] opacity-20 pointer-events-none" />
 
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(0,0,0,0.1)_0px,rgba(0,0,0,0.1)_20px,transparent_20px,transparent_40px)] animate-[pulse_2s_ease-in-out_infinite]" />
-
-        <div className="z-10 flex flex-col items-center">
-            {/* TOP LINE */}
+        <div className="z-10 flex flex-col items-center gap-8">
+            {/* "The Official" Badge */}
             <motion.div
-                initial={{ y: -100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "circOut" }}
-                className="bg-black text-white px-8 py-2 mb-4 skew-x-[-10deg]"
+                initial={{ opacity: 0, letterSpacing: "1em" }}
+                animate={{ opacity: 1, letterSpacing: "0.5em" }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="text-white/50 text-xs md:text-sm font-bold uppercase tracking-[0.5em]"
             >
-                <span className="text-xl md:text-3xl font-bold tracking-[0.5em] uppercase">The Official</span>
+                THE OFFICIAL 2025
             </motion.div>
 
-            {/* KYEBEEZY */}
-            <motion.h1
-                initial={{ scale: 5, filter: "blur(20px)", opacity: 0 }}
-                animate={{ scale: 1, filter: "blur(0px)", opacity: 1 }}
-                transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-                className="text-[18vw] md:text-[15vw] font-black text-black leading-[0.8] tracking-tighter drop-shadow-2xl mix-blend-hard-light"
-            >
-                KYEBEEZY
-            </motion.h1>
+            {/* Main Title Stack */}
+            <div className="flex flex-col items-center relative">
+                <motion.h1
+                    initial={{ y: 50, opacity: 0, filter: "blur(10px)" }}
+                    animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+                    transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-[12vw] md:text-[8vw] font-black text-white leading-none tracking-tighter"
+                >
+                    KYEBEEZY
+                </motion.h1>
 
-            {/* X SEPARATOR */}
-            <motion.div
-                initial={{ scale: 0, rotate: 180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-                className="text-[5vw] font-black text-white my-2"
-            >
-                X
-            </motion.div>
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="flex items-center gap-6 mt-4"
+                >
+                    <span className="h-[1px] w-12 bg-white/30" />
+                    <span className="text-2xl font-light text-white/50">X</span>
+                    <span className="h-[1px] w-12 bg-white/30" />
+                </motion.div>
 
-            {/* BANDLAB LOCKUP */}
-            <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.6, ease: "backOut" }}
-                className="flex items-center gap-4 bg-black px-8 py-4 border-4 border-white shadow-[10px_10px_0px_white] hover:scale-105 transition-transform"
-            >
-                <img src="/bandlab-logo.png" className="h-[5vw] md:h-16 filter invert brightness-0 saturate-100 invert" />
-                <span className="text-[5vw] md:text-6xl font-black text-white tracking-tighter uppercase">BANDLAB</span>
-            </motion.div>
+                <motion.h1
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+                    className="text-[10vw] md:text-[6vw] font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 leading-none tracking-tighter"
+                >
+                    BANDLAB
+                </motion.h1>
+            </div>
 
-            {/* ENTER BUTTON */}
+            {/* CTA Button - Minimal & Premium */}
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, duration: 0.8 }}
                 className="mt-12"
             >
                 <Link href="/awards/bandlab2025/live">
-                    <button className="px-12 py-4 bg-white text-black font-black text-2xl md:text-3xl uppercase border-4 border-black hover:bg-black hover:text-white transition-colors">
-                        ENTER EXPERIENCE
+                    <button className="group relative px-12 py-4 bg-white text-black font-bold text-lg tracking-widest uppercase overflow-hidden transition-all hover:scale-105">
+                        <span className="relative z-10 transition-colors group-hover:text-white">Enter Experience</span>
+                        <div className="absolute inset-0 bg-black translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[0.16,1,0.3,1]" />
                     </button>
                 </Link>
             </motion.div>
