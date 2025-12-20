@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Volume2, VolumeX, SkipForward, Globe, Trophy, Sparkles } from "lucide-react";
+import { Play, Volume2, VolumeX, SkipForward, Globe, Trophy, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { getAwardsData, CategoryData } from "../../data-fetcher";
+import { NOMINEE_IMAGES } from "../../nominee-images";
 import { Confetti } from "@/components/ui/confetti";
 
 // --- CONFIG ---
@@ -54,6 +55,21 @@ const DataGlobe = () => {
                     />
                 ))}
 
+                {/* Floating Data Text for Complexity */}
+                {[...Array(20)].map((_, i) => (
+                    <motion.div
+                        key={`txt-${i}`}
+                        className="absolute text-[8px] text-yellow-500/50 font-mono whitespace-nowrap"
+                        style={{
+                            transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px, ${Math.random() * 600 - 300}px)`
+                        }}
+                        animate={{ opacity: [0, 1, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: Math.random() * 2 }}
+                    >
+                        {Math.floor(Math.random() * 9999)}
+                    </motion.div>
+                ))}
+
                 {/* Core Core */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-yellow-500/10 rounded-full blur-xl" />
             </motion.div>
@@ -69,8 +85,28 @@ const DataGlobe = () => {
 
 // 2. CATEGORY TUNNEL (Scene 2)
 const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
+    // Get random images
+    const images = useMemo(() => Object.values(NOMINEE_IMAGES).sort(() => 0.5 - Math.random()).slice(0, 20), []);
+
     return (
         <div className="absolute inset-0 bg-black perspective-500 overflow-hidden">
+            {/* Flying Images */}
+            {images.map((img, i) => (
+                <motion.div
+                    key={`img-${i}`}
+                    className="absolute top-1/2 left-1/2 w-32 h-32 rounded-lg bg-neutral-900 border border-white/10 opacity-50 grayscale"
+                    style={{
+                        backgroundImage: `url(${img})`,
+                        backgroundSize: "cover",
+                        x: (Math.random() - 0.5) * 1200, // Wide spread
+                        y: (Math.random() - 0.5) * 800,
+                    }}
+                    initial={{ z: -1000, scale: 0 }}
+                    animate={{ z: 500, scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 4, delay: Math.random() * 3, ease: "linear", repeat: Infinity }}
+                />
+            ))}
+
             {categories.slice(0, 10).map((cat, i) => (
                 <motion.div
                     key={cat.id}
@@ -122,8 +158,23 @@ const RitualScene = () => {
                 className="absolute inset-0 border-[100px] border-yellow-500 rounded-full"
                 initial={{ scale: 2, opacity: 0 }}
                 animate={{ scale: 0, opacity: 1 }}
-                transition={{ duration: 2.5, ease: "expoIn", delay: 0.5 }}
+                transition={{ duration: 2.5, ease: "circIn", delay: 0.5 }}
             />
+
+            {/* Lightning Effects */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {[...Array(5)].map((_, i) => (
+                    <motion.path
+                        key={i}
+                        d={`M50,50 L${Math.random() * 100},${Math.random() * 100}`}
+                        stroke="yellow"
+                        strokeWidth="0.5"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: [0, 1, 0], opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.2, repeat: Infinity, repeatDelay: Math.random() * 0.5 }}
+                    />
+                ))}
+            </svg>
         </div>
     );
 };
