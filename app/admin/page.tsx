@@ -6,7 +6,7 @@ import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, setDoc, writeBatch, getDocs } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X } from "lucide-react";
+import { LogOut, Plus, Trash2, Video, Music, Settings, Users, ShieldCheck, User as UserIcon, ShoppingBag, Database, Pencil, X, Trophy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 
@@ -137,9 +137,71 @@ const defaultProducts = [
     }
 ];
 
-// --- Main Dashboard Component ---
+// --- Settings Manager (NEW) ---
+function SettingsManager() {
+    const [settings, setSettings] = useState<any>({ showAwardsWinners: false });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Doc: settings/config
+        const unsub = onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+            if (docSnap.exists()) {
+                setSettings(docSnap.data());
+            }
+            setLoading(false);
+        });
+        return () => unsub();
+    }, []);
+
+    const toggleAwards = async () => {
+        try {
+            const newVal = !settings.showAwardsWinners;
+            await setDoc(doc(db, "settings", "config"), { ...settings, showAwardsWinners: newVal }, { merge: true });
+            toast.success(`Awards Winners ${newVal ? 'ENABLED' : 'DISABLED'}`);
+        } catch (e) {
+            toast.error("Failed to update settings");
+        }
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="System Settings"
+                subtitle="Global configuration for the website."
+                action={<div />}
+            />
+
+            <div className="bg-neutral-900/30 border border-white/5 p-6 rounded-2xl">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${settings?.showAwardsWinners ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/5 text-neutral-400'}`}>
+                            <Trophy size={24} />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white text-lg">Awards: Reveal Winners</h4>
+                            <p className="text-sm text-neutral-500">
+                                {settings?.showAwardsWinners
+                                    ? "Winners are currently VISIBLE to the public."
+                                    : "Winners are users HIDDEN. Only 'Vote Now' is shown."}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={toggleAwards}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-black ${settings?.showAwardsWinners ? 'bg-yellow-500' : 'bg-neutral-700'}`}
+                    >
+                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings?.showAwardsWinners ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+// --- Main Dashboard Component --- (Updated)
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins">("videos");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings">("videos");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -155,7 +217,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
-                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.1.0 • ACCESS GRANTED</p>
+                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.2.0 • ACCESS GRANTED</p>
                         </div>
                     </div>
 
@@ -199,6 +261,7 @@ export default function AdminDashboard() {
                                 <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">System</p>
                                 <div className="space-y-1">
                                     <TabButton active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} icon={<Users size={20} />} label="Manage Admins" />
+                                    <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20} />} label="Global Settings" />
                                 </div>
                             </div>
 
@@ -223,6 +286,7 @@ export default function AdminDashboard() {
                             {activeTab === 'music' && <MusicManager key="music" />}
                             {activeTab === 'products' && <ProductsManager key="products" />}
                             {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
+                            {activeTab === 'settings' && <SettingsManager key="settings" />}
                         </AnimatePresence>
                     </main>
                 </div>

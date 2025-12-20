@@ -2,24 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Share2, ExternalLink, Star, Crown, Loader2, RefreshCw } from "lucide-react";
+import { Trophy, Share2, ExternalLink, Star, Crown, Loader2, RefreshCw, ArrowLeft, Lock } from "lucide-react";
 import { Confetti } from "@/components/ui/confetti";
 import { toast } from "sonner";
 import Link from "next/link";
-import { getAwardsData } from "./actions";
+import { getAwardsData } from "./data-fetcher";
+import { db } from "@/lib/firebase"; // Import db
+import { doc, onSnapshot } from "firebase/firestore"; // Import Firestore functions
 
 // --- Configuration ---
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYw_lYGgNBndvw6TlCYqm6JCcd0QUtON501jjLqOx10Pu_wQ/viewform";
 
+interface Nominee {
+    name: string;
+    voteCount: number;
+    image?: string;
+}
+
 interface CategoryData {
     id: string;
     title: string;
-    nominees: string[];
-    winner: string;
+    nominees: Nominee[];
+    winner: Nominee | null;
 }
 
 export default function AwardsPage() {
     const [revealWinners, setRevealWinners] = useState(false);
+    const [canReveal, setCanReveal] = useState(false); // New State
     const [categories, setCategories] = useState<CategoryData[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,6 +46,19 @@ export default function AwardsPage() {
 
     useEffect(() => {
         fetchData();
+
+        // Listen for Admin Settings
+        const unsub = onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+            if (docSnap.exists()) {
+                setCanReveal(docSnap.data()?.showAwardsWinners || false);
+                // If permission revoked while revealed, hide it
+                if (!docSnap.data()?.showAwardsWinners) {
+                    setRevealWinners(false);
+                }
+            }
+        });
+
+        return () => unsub();
     }, []);
 
     const copyInvite = () => {
@@ -48,6 +70,13 @@ export default function AwardsPage() {
     return (
         <main className="min-h-screen bg-black text-white selection:bg-yellow-500/30 font-sans overflow-x-hidden">
             <Confetti isActive={revealWinners} />
+
+            {/* Back Button */}
+            <div className="absolute top-6 left-6 z-50">
+                <Link href="/" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/10">
+                    <ArrowLeft className="w-4 h-4" /> Back to Home
+                </Link>
+            </div>
 
             {/* --- Hero Section --- */}
             <div className="relative min-h-[80vh] flex flex-col items-center justify-center p-6 text-center border-b border-white/10">
@@ -108,12 +137,18 @@ export default function AwardsPage() {
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
 
-                        <button
-                            onClick={() => setRevealWinners(!revealWinners)}
-                            className={`text-xs uppercase tracking-widest font-bold px-4 py-3 rounded-lg border transition-all ${revealWinners ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-white/20 border-white/10 hover:text-white hover:border-white'}`}
-                        >
-                            {revealWinners ? 'Hide Results' : 'Reveal Winners'}
-                        </button>
+                        {canReveal ? (
+                            <button
+                                onClick={() => setRevealWinners(!revealWinners)}
+                                className={`text-xs uppercase tracking-widest font-bold px-4 py-3 rounded-lg border transition-all ${revealWinners ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-transparent text-white/20 border-white/10 hover:text-white hover:border-white'}`}
+                            >
+                                {revealWinners ? 'Hide Results' : 'Reveal Winners'}
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-white/5 bg-white/5 text-white/30 text-xs font-bold uppercase tracking-widest cursor-not-allowed" title="Results not yet available">
+                                <Lock className="w-3 h-3" /> Results Locked
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -122,7 +157,7 @@ export default function AwardsPage() {
                         <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
                     </div>
                 ) : (
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {categories.map((cat, index) => (
                             <motion.div
                                 key={cat.id}
@@ -140,11 +175,17 @@ export default function AwardsPage() {
                                     </div>
 
                                     {/* Nominees List */}
-                                    <div className="space-y-3 mb-8 flex-1">
+                                    <div className="space-y-4 mb-8 flex-1">
                                         {cat.nominees.length > 0 ? cat.nominees.map((nominee, i) => (
-                                            <div key={i} className="flex items-center gap-3 text-white/60">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                                                <span className="break-all">{nominee}</span>
+                                            <div key={i} className="flex items-center gap-4 text-white/80 group/nominee">
+                                                {nominee.image ? (
+                                                    <img src={nominee.image} alt={nominee.name} className="w-10 h-10 rounded-full border border-white/10 object-cover group-hover/nominee:border-yellow-500/50 transition-colors" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/40">
+                                                        {nominee.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <span className="break-all font-medium text-sm">{nominee.name}</span>
                                             </div>
                                         )) : (
                                             <p className="text-white/20 italic">No nominees yet</p>
@@ -159,9 +200,14 @@ export default function AwardsPage() {
                                         }}
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent" />
+
+                                        {cat.winner?.image && (
+                                            <img src={cat.winner.image} alt="Winner" className="w-24 h-24 rounded-full border-4 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.5)] mb-6 object-cover" />
+                                        )}
+
                                         <Crown className="w-12 h-12 text-yellow-400 mb-4 animate-bounce" />
                                         <p className="text-yellow-500 text-sm font-bold uppercase tracking-widest mb-2">The Winner Is</p>
-                                        <p className="text-3xl font-black text-white break-words max-w-full">{cat.winner}</p>
+                                        <p className="text-3xl font-black text-white break-words max-w-full">{cat.winner?.name}</p>
                                     </div>
                                 </div>
                             </motion.div>

@@ -10,7 +10,7 @@ import ContactSection from "@/components/sections/Contact";
 import DubbyPromo from "@/components/sections/DubbyPromo";
 import SponsorsSection from "@/components/sections/Sponsors";
 import { motion } from "framer-motion";
-import { ChevronDown, Twitch, Youtube, Music, Gamepad2 } from "lucide-react";
+import { ChevronDown, Twitch, Youtube, Music, Gamepad2, Trophy } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -63,8 +63,12 @@ export default function Home() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1.2, duration: 0.8 }}
-                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all"
+                            className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all items-center"
                         >
+                            <Link href="/awards" className="hover:text-yellow-400 text-foreground transition-colors transform hover:scale-110 duration-300" title="Kye Beezy Awards">
+                                <Trophy className="w-8 h-8" />
+                            </Link>
+                            <div className="w-px h-8 bg-white/10" />
                             <Link href="https://www.twitch.tv/realkyebeezylive" target="_blank" className="hover:text-purple-400 text-foreground transition-colors transform hover:scale-110 duration-300">
                                 <Twitch className="w-8 h-8" />
                             </Link>

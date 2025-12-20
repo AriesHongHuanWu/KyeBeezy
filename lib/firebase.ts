@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    apiKey: "AIzaSyAnDDm7HCp6FcAMuWLWlkKru7ImYw8PKU4",
+    authDomain: "kyebeezyonline.firebaseapp.com",
+    projectId: "kyebeezyonline",
+    storageBucket: "kyebeezyonline.firebasestorage.app",
+    messagingSenderId: "604455178250",
+    appId: "1:604455178250:web:6a150d15ee6ba451c58ff3",
+    measurementId: "G-S8NC12VB98"
 };
 
 // Initialize Firebase SDK
