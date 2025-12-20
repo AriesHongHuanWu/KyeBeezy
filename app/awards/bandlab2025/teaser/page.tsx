@@ -12,7 +12,7 @@ import { TeaserHeroCard } from "@/components/awards/TeaserHeroCard";
 // --- CONFIG ---
 const BPM = 140;
 const BEAT_MS = (60 / BPM) * 1000;
-const AUDIO_URL = "/Memories_Take_Time.wav"; // User provided track
+const AUDIO_URL = "/Memories_Take_Time.mp3"; // User provided track (Compressed)
 
 // --- NARRATIVE COMPONENT ---
 const NarrativeOverlay = ({ text, subtext }: { text: string, subtext?: string }) => {
