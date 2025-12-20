@@ -68,73 +68,96 @@ const CRTScanline = () => (
     </div>
 );
 
-// SCENE 1: AUDIO MANIFESTO (Circular EQ)
-const AudioSpectrumVisuals = ({ tick }: { tick: number }) => (
+// SCENE 1: CINEMATIC INTRO (Clean Typography)
+const CinematicIntroVisuals = ({ tick }: { tick: number }) => (
     <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
-        {/* Pulsing Core */}
-        <div className="absolute w-[20vw] h-[20vw] bg-yellow-500 rounded-full blur-[50px] animate-pulse opacity-20" />
+        {/* Subtle Background Flow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#222_0%,black_100%)]" />
 
-        {/* Circular EQ Bars */}
-        {[...Array(36)].map((_, i) => (
-            <div
-                key={i}
-                className="absolute bg-white/80 w-2 md:w-4 rounded-full origin-bottom"
-                style={{
-                    height: `${10 + Math.sin(tick * 0.5 + i) * 10}vh`,
-                    transform: `rotate(${i * 10}deg) translateY(-10vh)`, // Circle arrangement
-                }}
-            />
-        ))}
-        {/* Flash Center */}
-        {tick % 4 === 0 && <div className="absolute w-[30vh] h-[30vh] rounded-full border-[20px] border-white opacity-20 animate-ping" />}
+        {/* Large pulsing text behind */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-10 scale-[2]">
+            <h1 className="text-[20vw] font-black text-white animate-pulse">2025</h1>
+        </div>
+
+        {/* Main Title Strobe */}
+        <div className="relative z-10 flex flex-col items-center gap-4">
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="bg-yellow-500 text-black px-4 py-1 tracking-[0.5em] text-xs md:text-xl font-bold uppercase"
+            >
+                The Official
+            </motion.div>
+            <h1 className="text-6xl md:text-9xl font-black text-white tracking-tighter uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]">
+                TEASER
+            </h1>
+        </div>
     </div>
 );
 
-// SCENE 2: ROSTER (3D Gacha Card Flip)
-const GachaRosterVisuals = ({ tick }: { tick: number }) => {
-    const keys = Object.keys(NOMINEE_IMAGES);
-    const images = Object.values(NOMINEE_IMAGES);
-    const total = keys.length;
+// SCENE 2: ROSTER (Premium Card Showcase - No Ugly Bars)
+const PremiumCardVisuals = ({ tick }: { tick: number }) => {
+    const entries = Object.entries(NOMINEE_IMAGES);
+    const total = entries.length;
 
     // Cycle linearly
     const idx = tick % total;
-    const name = keys[idx].replace('@', '').split('(')[0].trim().toUpperCase();
+    const [rawName, imgSrc] = entries[idx];
+    const name = rawName.replace('@', '').split('(')[0].trim().toUpperCase();
 
     // Flash Logic
     const isFlash = tick % 2 === 0;
 
     return (
-        <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center overflow-hidden perspective-1000">
-            {/* Dynamic Background Audio Waveform */}
-            <div className="absolute inset-0 flex items-center gap-1 justify-center opacity-20">
-                {[...Array(20)].map((_, i) => (
-                    <div key={i} className="w-[4vw] bg-yellow-500" style={{ height: `${Math.random() * 100}vh`, transition: 'height 0.1s' }} />
-                ))}
+        <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden perspective-1000">
+            {/* Premium Background: Dark Grid + Spotlight (No Cheap Yellow) */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-50" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.1)_0%,transparent_60%)]" />
+
+            {/* Moving Light Beam */}
+            <div className="absolute inset-0 animate-[spin_10s_linear_infinite] opacity-30">
+                <div className="absolute top-1/2 left-1/2 w-[200vw] h-[20vh] bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-1/2 -translate-y-1/2 rotate-45 blur-xl" />
             </div>
 
-            {/* 3D Card Container */}
+            {/* 3D Card Container - LARGER & CLEANER */}
             <motion.div
-                key={idx} // Re-mounts on change to trigger animation
-                initial={{ rotateY: 90, scale: 0.5, opacity: 0 }}
-                animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-                exit={{ rotateY: -90, scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-                className="relative z-10 w-[80vw] h-[60vh] md:w-[400px] md:h-[600px] bg-black border-[10px] border-white rounded-xl overflow-hidden shadow-[0_0_100px_rgba(255,255,0,0.3)]"
+                key={idx}
+                initial={{ rotateY: 90, scale: 0.8, opacity: 0, z: -500 }}
+                animate={{ rotateY: 0, scale: 1.2, opacity: 1, z: 0 }} // Scale 1.2 for impact
+                exit={{ rotateY: -90, scale: 0.8, opacity: 0, z: -500 }}
+                transition={{ duration: 0.4, type: "spring", stiffness: 100, damping: 20 }}
+                className="relative z-10 w-[60vw] h-[50vh] md:w-[400px] md:h-[600px] rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/20 group"
             >
+                {/* Image */}
                 <img
-                    src={images[idx]}
-                    className={`w-full h-full object-cover ${isFlash ? 'filter invert contrast-150' : 'contrast-125'}`}
+                    src={imgSrc}
+                    className={`w-full h-full object-cover transition-all duration-75 ${isFlash ? 'filter invert brightness-125' : 'brightness-100'}`}
                 />
 
-                {/* Holographic Sheen */}
-                <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.4)_45%,transparent_50%)] animate-[shine_2s_infinite]" />
+                {/* Glass Gloss */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50 mixing-blend-overlay" />
+
+                {/* Border Glow */}
+                <div className="absolute inset-0 border-[1px] border-white/30 rounded-2xl" />
             </motion.div>
 
-            {/* Bottom Left Name Tag (Variable height to clear bars) */}
-            <div className="absolute bottom-[15vh] left-[5vw] z-30">
-                <div className="bg-yellow-500 text-black px-6 py-2 skew-x-[-10deg] border-4 border-black shadow-[10px_10px_0px_white]">
-                    <h2 className="text-3xl md:text-6xl font-black uppercase tracking-tighter line-clamp-1">{name}</h2>
+            {/* Negative Film Name Overlay (Synced) */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center mix-blend-exclusion pointer-events-none">
+                {isFlash && (
+                    <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter text-center uppercase scale-150 blur-sm opacity-50">
+                        {name}
+                    </h1>
+                )}
+            </div>
+
+            {/* Bottom Left Name Tag - Clean & Premium */}
+            <div className="absolute bottom-[15vh] left-[5vw] z-30 flex flex-col items-start gap-2">
+                <div className="bg-white text-black px-4 py-1 text-xs font-bold tracking-widest uppercase">
+                    Nominee
                 </div>
+                <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter drop-shadow-lg">
+                    {name}
+                </h2>
             </div>
         </div>
     );
@@ -418,9 +441,8 @@ export default function TeaserPageV19() {
                                     exit={{ opacity: 0, filter: "brightness(2)" }}
                                     transition={{ duration: 0.4 }}
                                 >
-                                    {currentStep.sceneId === 1 && <AudioSpectrumVisuals tick={tick} />}
-                                    {/* Pass Key prop to force re-render/animate on return if needed, but SceneId handles it */}
-                                    {currentStep.sceneId === 2 && <GachaRosterVisuals tick={tick} />}
+                                    {currentStep.sceneId === 1 && <CinematicIntroVisuals tick={tick} />}
+                                    {currentStep.sceneId === 2 && <PremiumCardVisuals tick={tick} />}
                                     {currentStep.sceneId === 3 && <CategoryVisuals categories={categories} tick={tick} />}
                                     {currentStep.sceneId === 4 && <EQMeterVisuals tick={tick} />}
                                     {currentStep.sceneId === 5 && <RitualVisuals />}
