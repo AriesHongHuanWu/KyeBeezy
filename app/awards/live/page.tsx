@@ -168,23 +168,23 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                 initial={{ y: 0 }}
                 animate={{
                     rotateY: isRevealed ? 180 : 0,
-                    y: isRevealed ? [0, -40, 0] : [0, -15, 0], // Higher float when revealed
+                    y: isRevealed ? [0, -10, 0] : [0, -15, 0],
                 }}
                 transition={{
-                    rotateY: { type: "spring", damping: 10, stiffness: 40, mass: 0.8 }, // Smooth, heavy flip
+                    rotateY: { duration: 0.8, ease: "easeInOut" }, // Smooth flip, no spring bounce to prevent edge clipping
                     y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
-                {/* --- 3D THICKNESS SIDES (Inset to match rounded corners) --- */}
+                {/* --- 3D THICKNESS SIDES (Heavily Inset to avoid Rounded Corner Clipping) --- */}
                 {/* Right Side */}
-                <div className="absolute top-[30px] right-0 w-[16px] h-[calc(100%-60px)] bg-yellow-800 origin-right transform rotateY(-90deg) translateZ(1px)" />
+                <div className="absolute top-[40px] right-0 w-[12px] h-[calc(100%-80px)] bg-yellow-800 origin-right transform rotateY(-90deg) translateZ(1px)" />
                 {/* Left Side */}
-                <div className="absolute top-[30px] left-0 w-[16px] h-[calc(100%-60px)] bg-yellow-600 origin-left transform rotateY(90deg) translateZ(1px)" />
+                <div className="absolute top-[40px] left-0 w-[12px] h-[calc(100%-80px)] bg-yellow-600 origin-left transform rotateY(90deg) translateZ(1px)" />
                 {/* Top Side */}
-                <div className="absolute top-0 left-[30px] w-[calc(100%-60px)] h-[16px] bg-yellow-700 origin-top transform rotateX(-90deg) translateZ(1px)" />
+                <div className="absolute top-0 left-[40px] w-[calc(100%-80px)] h-[12px] bg-yellow-700 origin-top transform rotateX(-90deg) translateZ(1px)" />
                 {/* Bottom Side */}
-                <div className="absolute bottom-0 left-[30px] w-[calc(100%-60px)] h-[16px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
+                <div className="absolute bottom-0 left-[40px] w-[calc(100%-80px)] h-[12px] bg-yellow-900 origin-bottom transform rotateX(90deg) translateZ(1px)" />
 
                 {/* White Flash Overlay */}
                 <AnimatePresence>
@@ -202,7 +202,7 @@ const GachaCard = ({ winner, onReveal }: { winner: Nominee, onReveal: () => void
                 {/* CARD BACK (Mystery) */}
                 <div
                     className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden"
-                    style={{ backfaceVisibility: "hidden", transform: "translateZ(10px)" }}
+                    style={{ backfaceVisibility: "hidden", transform: "translateZ(2px)" }}
                 >
                     <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-yellow-900/40" />
