@@ -165,6 +165,7 @@ type RitualPhase = 'IDLE' | 'GATHERING' | 'ABSORBING' | 'REVEALED';
 const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: RitualPhase, onReveal?: () => void }) => {
     const isRevealed = phase === 'REVEALED';
     const isCharging = phase === 'GATHERING' || phase === 'ABSORBING';
+    const isAbsorbing = phase === 'ABSORBING'; // Hyper-tension phase
 
     // Internal Flash State
     const [showFlash, setShowFlash] = useState(false);
@@ -188,33 +189,51 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[radial-gradient(circle_choke,rgba(234,179,8,0.15)_0%,transparent_70%)] pointer-events-none transition-opacity duration-1000"
             />
 
-            {/* Energy Vortex Rings (Charging) */}
+            {/* Shockwave Ring (On Reveal) */}
+            {isRevealed && (
+                <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-yellow-200 z-0"
+                    initial={{ width: 300, height: 300, opacity: 0.8, borderWidth: 10 }}
+                    animate={{ width: 2000, height: 2000, opacity: 0, borderWidth: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+            )}
+
+            {/* Energy Vortex Rings (Charging - Speed Up on Absorb) */}
             {isCharging && (
                 <>
                     <motion.div
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-yellow-500/30 rounded-full"
                         style={{ width: 400, height: 400 }}
-                        animate={{ scale: [1, 0.1], opacity: [0, 1, 0], rotate: 180 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "easeIn" }}
+                        animate={{
+                            scale: isAbsorbing ? [1, 0.05] : [1, 0.8], // Suck in or Breathe
+                            opacity: isAbsorbing ? [1, 0] : [0, 1, 0],
+                            rotate: isAbsorbing ? 720 : 180
+                        }}
+                        transition={{ duration: isAbsorbing ? 0.5 : 1, repeat: isAbsorbing ? 0 : Infinity, ease: isAbsorbing ? "backIn" : "easeIn" }}
                     />
                     <motion.div
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-yellow-200/50 rounded-full"
                         style={{ width: 600, height: 600 }}
-                        animate={{ scale: [1, 0.1], opacity: [0, 0.5, 0], rotate: -180 }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5, ease: "easeIn" }}
+                        animate={{
+                            scale: isAbsorbing ? [1, 0.05] : [1, 0.8],
+                            opacity: isAbsorbing ? [0.5, 0] : [0, 0.5, 0],
+                            rotate: isAbsorbing ? -720 : -180
+                        }}
+                        transition={{ duration: isAbsorbing ? 0.5 : 1.5, repeat: isAbsorbing ? 0 : Infinity, delay: isAbsorbing ? 0 : 0.5, ease: isAbsorbing ? "backIn" : "easeIn" }}
                     />
                 </>
             )}
 
-            {/* Glow Effect (Breathing Light - Slower) */}
+            {/* Glow Effect (Breathing -> Hyper-Ventilating) */}
             <motion.div
                 animate={{
-                    scale: isCharging ? [1, 1.5, 1] : (isRevealed ? 1.2 : [1, 1.2, 1]),
-                    opacity: isCharging ? 0.8 : (isRevealed ? 0.8 : [0.3, 0.5, 0.3])
+                    scale: isAbsorbing ? [1.5, 0.5] : (isCharging ? [1, 1.5, 1] : (isRevealed ? 1.2 : [1, 1.2, 1])),
+                    opacity: isAbsorbing ? [1, 0] : (isCharging ? 0.8 : (isRevealed ? 0.8 : [0.3, 0.5, 0.3]))
                 }}
                 transition={{
-                    duration: isCharging ? 0.5 : 4, // 4s for slow breathing
-                    repeat: Infinity,
+                    duration: isAbsorbing ? 0.1 : (isCharging ? 0.5 : 4), // Fast drop if absorbing
+                    repeat: isAbsorbing ? 0 : Infinity,
                     ease: "easeInOut"
                 }}
                 className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/20 blur-[100px] rounded-full transition-opacity duration-1000`}
@@ -227,13 +246,13 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                     scale: phase === 'IDLE' ? 0 : 1,
                     rotateY: isRevealed ? 180 : 0,
                     y: isRevealed ? [0, -40, 0] : (isCharging ? [0, -5, 0] : 0),
-                    x: isCharging ? [-2, 2, -2, 2, 0] : 0, // Vibration
+                    x: isCharging ? (isAbsorbing ? [-10, 10, -10, 10, 0] : [-2, 2, -2, 2, 0]) : 0, // Violent Shake on Absorb
                 }}
                 transition={{
                     scale: { type: "spring", stiffness: 100, damping: 20 },
                     rotateY: { duration: 0.8, ease: "easeInOut" },
                     y: { duration: isCharging ? 0.1 : 4, repeat: Infinity, ease: isCharging ? "linear" : "easeInOut" },
-                    x: { duration: 0.05, repeat: Infinity },
+                    x: { duration: isAbsorbing ? 0.02 : 0.05, repeat: Infinity },
                 }}
                 style={{ transformStyle: "preserve-3d" }}
             >
@@ -347,13 +366,18 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
             <GoldDust />
 
             <div className="z-10 flex-1 flex flex-col p-10 mt-10">
-                {/* Header (Fades out during ritual to focus attention) */}
-                <div className={`mb-24 transition-all duration-1000 ${phase !== 'IDLE' ? 'opacity-0 scale-90' : 'opacity-100'}`}>
+                {/* Header (Staggered Entrance) */}
+                <motion.div
+                    initial={{ opacity: 0, y: -50 }}
+                    animate={{ opacity: (phase !== 'IDLE' ? 0 : 1), y: (phase !== 'IDLE' ? -50 : 0) }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className={`mb-24 transition-all duration-1000 ${phase !== 'IDLE' ? 'scale-90' : ''}`}
+                >
                     <h2 className="text-yellow-500 font-bold tracking-[0.5em] uppercase mb-6 text-center">Current Category</h2>
                     <h1 className="text-6xl md:text-8xl font-black text-white text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tighter">
                         {category.title}
                     </h1>
-                </div>
+                </motion.div>
 
                 <div className="flex-1 flex flex-col items-center justify-center relative perspective-distant">
 
@@ -362,7 +386,12 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                     <LayoutGroup>
                         {phase === 'IDLE' ? (
                             // GRID LAYOUT (Circular Avatars - Restored)
-                            <motion.div className="flex flex-wrap justify-center items-start gap-10 w-full max-w-[90vw] relative z-10 px-4">
+                            <motion.div
+                                className="flex flex-wrap justify-center items-start gap-10 w-full max-w-[90vw] relative z-10 px-4"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+                            >
                                 {category.nominees.map((nominee, idx) => (
                                     <div key={nominee.name} className="flex flex-col items-center gap-6 group">
                                         {/* The Flying Element (Head) - Matches Vortex layoutId */}
@@ -393,7 +422,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.1 }}
+                                            transition={{ delay: 0.5 + (idx * 0.1) }} // Staggered Names
                                             className="text-center"
                                         >
                                             <p className="font-bold text-white text-xl md:text-2xl group-hover:text-yellow-400 transition-colors drop-shadow-md">{nominee.name}</p>
@@ -425,10 +454,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                                                 animate={
                                                     phase === 'ABSORBING' || phase === 'REVEALED'
                                                         ? { x: 0, y: 0, scale: 0, opacity: 0 } // Suck into center
-                                                        : { x, y, scale: 1, opacity: 1, rotate: -360 } // Orbit (Counter-rotate to stay upright?)
-                                                    // Actually, rotating the container rotates the items. 
-                                                    // To keep heads upright, we might need to counter-rotate.
-                                                    // For Vortex, spinning heads is fine/chaotic good.
+                                                        : { x, y, scale: 1, opacity: 1, rotate: -360 }
                                                 }
                                                 transition={{
                                                     duration: phase === 'ABSORBING' ? 0.5 : 0.8,
@@ -459,7 +485,12 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                 </div>
 
                 {/* Footer / Controls */}
-                <div className="flex justify-between items-end mt-10 z-30">
+                <motion.div
+                    className="flex justify-between items-end mt-10 z-30"
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                >
                     {phase === 'IDLE' && (
                         <button
                             onClick={startRitual}
@@ -477,7 +508,7 @@ const CategorySlide = ({ category, onNext }: { category: CategoryData, onNext: (
                             NEXT CATEGORY <ChevronRight className="w-4 h-4" />
                         </button>
                     )}
-                </div>
+                </motion.div>
             </div>
         </div>
     );
