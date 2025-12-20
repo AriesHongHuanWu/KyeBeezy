@@ -1,106 +1,123 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Sparkles, Zap, Trophy, Play } from "lucide-react";
-import { Confetti } from "@/components/ui/confetti";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { Play, Volume2, VolumeX, SkipForward } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-// --- Visual Components ---
+// --- Configuration ---
+// USER: Replace this URL with your epic background music file
+const MUSIC_URL = "/audio/teaser-track.mp3";
 
-const TornadoCard = ({ delay, x, y, z, rotateX, rotateY }: any) => (
-    <motion.div
-        className="absolute top-1/2 left-1/2 w-32 h-48 md:w-48 md:h-72 bg-black rounded-xl border-2 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
-        style={{
-            transformStyle: "preserve-3d",
-        }}
-        initial={{
-            x: 0, y: 0, z: -1000, opacity: 0, scale: 0
-        }}
-        animate={{
-            x: [x, -x, x], // Orbit behavior simplified
-            y: [y, -y, y],
-            z: [z, z + 500, z],
-            rotateX: [rotateX, rotateX + 360],
-            rotateY: [rotateY, rotateY + 360],
-            opacity: 1,
-            scale: 1
-        }}
-        transition={{
-            duration: 5 + Math.random() * 5,
-            repeat: Infinity,
-            delay: delay,
-            ease: "linear"
-        }}
-    >
-        {/* Back Design */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 to-yellow-900/40 rounded-xl overflow-hidden">
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-10 h-10 text-yellow-500/50" />
-            </div>
-        </div>
-    </motion.div>
+// --- Components ---
+
+// 1. The Warp Tunnel Effect
+const WarpTunnel = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_100%)] z-10" />
+        {/* Speed Lines */}
+        {[...Array(20)].map((_, i) => (
+            <motion.div
+                key={i}
+                className="absolute top-1/2 left-1/2 w-[2px] h-[50vh] bg-neutral-500 origin-top"
+                style={{ opacity: 0.5 }}
+                initial={{ rotate: i * 18, y: 0, scaleY: 0 }}
+                animate={{
+                    y: [0, 1000],
+                    scaleY: [0, 2, 0],
+                    opacity: [0, 0.8, 0]
+                }}
+                transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    delay: Math.random() * 0.5,
+                    ease: "linear"
+                }}
+            />
+        ))}
+    </div>
 );
 
-const HeroCard = () => (
-    <div className="relative w-[300px] h-[460px] md:w-[360px] md:h-[540px] perspective-1000">
-        <motion.div
-            className="w-full h-full relative"
-            style={{ transformStyle: "preserve-3d" }}
-            initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
-            animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        >
-            {/* Front */}
-            <div className="absolute inset-0 bg-black rounded-[30px] border-[6px] border-yellow-400 shadow-[0_0_100px_rgba(234,179,8,1)] overflow-hidden flex flex-col items-center justify-center text-center p-6" style={{ backfaceVisibility: "hidden" }}>
-                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay" />
-                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/20 via-transparent to-black" />
+// 2. Rapid Strobe of Nominees
+const StrobeFaces = () => {
+    // Placeholder faces/colors for the strobe effect
+    const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#ec4899"];
+    const [index, setIndex] = useState(0);
 
-                {/* Content */}
-                <div className="relative z-10 animate-in fade-in zoom-in duration-1000 delay-300">
-                    <div className="w-48 h-48 mx-auto mb-6 rounded-full border-4 border-yellow-300 shadow-2xl overflow-hidden bg-neutral-900 flex items-center justify-center relative">
-                        <div className="absolute inset-0 bg-yellow-500/20 animate-pulse" />
-                        <img
-                            src="/bandlab-logo.png"
-                            alt="Bandlab"
-                            className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                            style={{ filter: "brightness(0) saturate(100%) invert(83%) sepia(36%) saturate(1000%) hue-rotate(2deg) brightness(108%) contrast(105%)" }}
-                        />
-                    </div>
-                    <img
-                        src="/bandlab-logo.png"
-                        alt="Bandlab"
-                        className="w-12 h-12 mx-auto mb-2 object-contain opacity-80"
-                        style={{ filter: "brightness(0) saturate(100%) invert(83%) sepia(36%) saturate(1000%) hue-rotate(2deg) brightness(108%) contrast(105%)" }}
-                    />
-                    <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 drop-shadow-lg">
-                        BANDLAB<br />AWARDS
-                    </h2>
-                    <div className="inline-block px-6 py-2 bg-yellow-500 text-black font-black uppercase tracking-widest rounded-full shadow-lg animate-pulse">
-                        2025
-                    </div>
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIndex(prev => (prev + 1) % colors.length);
+        }, 80); // 12.5fps strobe
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <motion.div
+                key={index}
+                className="w-full h-full opacity-30 mix-blend-screen"
+                style={{ backgroundColor: colors[index] }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-[20vw] font-black text-white/10 uppercase tracking-tighter leading-none select-none">
+                    {["WHO", "WILL", "WIN", "THE", "GOLD"][index % 5]}
                 </div>
             </div>
-        </motion.div>
+        </div>
+    );
+};
+
+// 3. Glitch Text (Non-Italic)
+const GlitchText = ({ text, subtext }: { text: string, subtext?: string }) => (
+    <div className="relative flex flex-col items-center z-50 mix-blend-difference">
+        <motion.h1
+            className="text-6xl md:text-9xl font-black text-white tracking-tighter uppercase relative"
+            initial={{ scale: 0.8, filter: "blur(10px)" }}
+            animate={{ scale: 1, filter: "blur(0px)" }}
+            transition={{ duration: 0.1, type: "spring", stiffness: 500 }}
+        >
+            <span className="absolute top-0 left-[-2px] text-red-500 opacity-70 animate-pulse">{text}</span>
+            <span className="absolute top-0 left-[2px] text-blue-500 opacity-70 animate-pulse">{text}</span>
+            {text}
+        </motion.h1>
+        {subtext && (
+            <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xl md:text-3xl font-bold text-white/80 tracking-[1em] mt-4 uppercase"
+            >
+                {subtext}
+            </motion.p>
+        )}
     </div>
 );
 
 // --- Main Page ---
 
-export default function TeaserPage() {
-    const router = useRouter();
-    const [stage, setStage] = useState(0);
+export default function TeaserPageV2() {
+    const [started, setStarted] = useState(false);
+    const [stage, setStage] = useState(-1);
+    const [muted, setMuted] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Sequence Timing
+    // Sequence Engine
     useEffect(() => {
+        if (!started) return;
+
+        // Play Audio
+        if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.muted = muted;
+            audioRef.current.play().catch(e => console.log("Audio play failed", e));
+        }
+
         const schedule = [
-            { time: 3000, stage: 1 }, // Intro -> Text
-            { time: 6500, stage: 2 }, // Text -> Tornado
-            { time: 10500, stage: 3 }, // Tornado -> Suck
-            { time: 11000, stage: 4 }, // Suck -> Explode/Reveal
-            { time: 15000, stage: 5 }  // Reveal -> CTA
+            { time: 0, stage: 0 },      // Intro
+            { time: 2500, stage: 1 },   // Warp Speed
+            { time: 5000, stage: 2 },   // Strobe Data
+            { time: 8000, stage: 3 },   // Silence / Float
+            { time: 9500, stage: 4 },   // THE DROP (Reveal)
+            { time: 14000, stage: 5 }   // Outro Loop
         ];
 
         let timeouts: NodeJS.Timeout[] = [];
@@ -109,181 +126,148 @@ export default function TeaserPage() {
             timeouts.push(t);
         });
 
-        return () => timeouts.forEach(clearTimeout);
-    }, []);
+        return () => {
+            timeouts.forEach(clearTimeout);
+            if (audioRef.current) audioRef.current.pause();
+        };
+    }, [started]);
 
-    // Restart
-    const handleReplay = () => {
-        setStage(-1);
-        setTimeout(() => setStage(0), 100);
+    // Handle Mute Toggle during playback
+    useEffect(() => {
+        if (audioRef.current) audioRef.current.muted = muted;
+    }, [muted]);
 
-        // Reset Logic reuse
-        const schedule = [
-            { time: 3000, stage: 1 },
-            { time: 6500, stage: 2 },
-            { time: 10500, stage: 3 },
-            { time: 11000, stage: 4 },
-            { time: 15000, stage: 5 }
-        ];
-        schedule.forEach(({ time, stage: s }) => {
-            setTimeout(() => setStage(s), time);
-        });
-    };
+
+    // --- RENDER ---
+
+    // 1. CLICK TO START (Browser requires interaction for audio)
+    if (!started) {
+        return (
+            <div
+                onClick={() => setStarted(true)}
+                className="h-screen w-screen bg-black flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-900 transition-colors"
+            >
+                <div className="p-6 rounded-full border border-white/20 bg-white/5 animate-pulse mb-8">
+                    <Play className="w-8 h-8 text-white fill-white" />
+                </div>
+                <h1 className="text-white font-bold tracking-[0.5em] text-sm uppercase">Click to Initialize</h1>
+                <p className="text-white/30 text-xs mt-4">Sound Recommended</p>
+                {/* Preload Audio */}
+                <audio ref={audioRef} src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto" loop={false} />
+                {/* Note: Using a reliable generic creative commons placeholder. User should replace. */}
+            </div>
+        );
+    }
 
     return (
-        <div className="bg-black h-screen w-screen overflow-hidden relative font-sans perspective-distant">
-            {/* BACKGROUND */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 pointer-events-none z-50 mix-blend-overlay" />
-            <motion.div
-                className="absolute inset-0 z-0 bg-radial-gradient"
-                animate={{
-                    background: stage === 4
-                        ? "radial-gradient(circle at center, #422006 0%, #000000 100%)" // Gold/Brown during reveal
-                        : "radial-gradient(circle at center, #111111 0%, #000000 100%)"
-                }}
-            />
+        <div className="bg-black h-screen w-screen overflow-hidden relative font-sans">
+            {/* Audio Controller */}
+            <div className="absolute top-6 right-6 z-[100] flex gap-4">
+                <button onClick={() => setMuted(!muted)} className="text-white/50 hover:text-white transition-colors">
+                    {muted ? <VolumeX /> : <Volume2 />}
+                </button>
+                <Link href="/awards/bandlab2025/live">
+                    <button className="text-white/50 hover:text-white transition-colors font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+                        Skip <SkipForward className="w-4 h-4" />
+                    </button>
+                </Link>
+            </div>
 
-            {/* STAGE 0: BRAND INTRO (0-3s) */}
-            <AnimatePresence>
-                {stage === 0 && (
+            {/* STAGE 0: INTRO (0-2.5s) */}
+            {stage === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black">
                     <motion.div
-                        className="absolute inset-0 flex items-center justify-center z-10"
-                        exit={{ opacity: 0, scale: 2, filter: "blur(20px)" }}
-                        transition={{ duration: 0.5 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-center"
                     >
+                        <h1 className="text-[12vw] font-black text-white leading-none tracking-tighter">
+                            2025
+                        </h1>
                         <motion.div
-                            initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", bounce: 0.5 }}
-                            className="text-4xl md:text-7xl font-black text-white tracking-tighter mr-4"
-                        >
-                            KYEBEEZY
-                        </motion.div>
-                        <motion.div
-                            initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.5, type: "spring" }}
-                            className="text-yellow-500 text-6xl md:text-9xl font-black mx-4"
-                        >
-                            X
-                        </motion.div>
-                        <motion.div
-                            initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", bounce: 0.5 }}
-                            className="text-4xl md:text-7xl font-black text-white tracking-tighter ml-4 flex items-center gap-4"
-                        >
-                            <img src="/bandlab-logo.png" className="h-16 w-16 md:h-24 md:w-24 object-contain invert" style={{ filter: "brightness(0) invert(1)" }} />
-                            BANDLAB
-                        </motion.div>
+                            initial={{ width: 0 }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 1.5, ease: "circOut" }}
+                            className="h-2 bg-yellow-500 mx-auto mt-4"
+                        />
                     </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
-            {/* STAGE 1: HYPE TEXT (3-6.5s) */}
-            <AnimatePresence>
-                {stage === 1 && (
+            {/* STAGE 1: WARP SPEED (2.5s - 5s) */}
+            {stage === 1 && (
+                <div className="absolute inset-0 bg-black">
+                    <WarpTunnel />
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                        <GlitchText text="Bandlab" />
+                    </div>
+                </div>
+            )}
+
+            {/* STAGE 2: STROBE DATA (5s - 8s) */}
+            {stage === 2 && (
+                <StrobeFaces />
+            )}
+
+            {/* STAGE 3: SILENCE (8s - 9.5s) */}
+            {stage === 3 && (
+                <div className="absolute inset-0 bg-black flex items-center justify-center">
                     <motion.div
-                        className="absolute inset-0 flex flex-col items-center justify-center z-20"
-                        exit={{ opacity: 0, scale: 0.5, filter: "blur(50px)" }}
-                    >
-                        {["PREPARE", "FOR", "GLORY"].map((word, i) => (
-                            <motion.h1
-                                key={word}
-                                initial={{ opacity: 0, scale: 5, z: 1000 }}
-                                animate={{ opacity: 1, scale: 1, z: 0 }}
-                                transition={{ delay: i * 0.8, duration: 0.4, type: "spring", stiffness: 200 }}
-                                className="text-6xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 tracking-tighter uppercase italic"
-                                style={{
-                                    textShadow: "0 0 50px rgba(255,255,255,0.5)"
-                                }}
-                            >
-                                {word}
-                            </motion.h1>
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [1, 0.8] }} // Heartbeat
+                        transition={{ duration: 0.2 }}
+                        className="w-4 h-4 bg-white rounded-full shadow-[0_0_50px_white]"
+                    />
+                </div>
+            )}
 
-            {/* STAGE 2 & 3: TORNADO (6.5s - 11s) */}
-            <AnimatePresence>
-                {(stage === 2 || stage === 3) && (
-                    <motion.div
-                        className="absolute inset-0 z-10 flex items-center justify-center"
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.5, ease: "backIn" }}
-                    >
-                        {/* Core Vortex */}
-                        <div className="relative w-full h-full perspective- distant" style={{ perspective: "1000px" }}>
-                            {[...Array(30)].map((_, i) => (
-                                <TornadoCard
-                                    key={i}
-                                    delay={Math.random() * 2}
-                                    x={(Math.random() - 0.5) * 1500}
-                                    y={(Math.random() - 0.5) * 1000}
-                                    z={(Math.random() - 0.5) * 1000}
-                                    rotateX={Math.random() * 360}
-                                    rotateY={Math.random() * 360}
-                                />
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* STAGE 4: REVEAL (11s+) */}
+            {/* STAGE 4: THE DROP (9.5s+) */}
             {stage >= 4 && (
-                <>
-                    <Confetti isActive={stage === 4} />
-
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white animate-in fade-in duration-1000">
+                    {/* Flash Out to Video Ending Style */}
                     <motion.div
-                        className="absolute inset-0 bg-white z-[100] pointer-events-none"
-                        initial={{ opacity: 1 }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+                        className="absolute inset-0 bg-black"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.1, delay: 0.1 }} // Immediate cut to black after white flash
                     />
 
-                    <div className="absolute inset-0 flex items-center justify-center z-30">
-                        {/* Shockwave */}
+                    <div className="relative z-10 text-center mix-blend-difference">
                         <motion.div
-                            className="absolute rounded-full border-4 border-yellow-500"
-                            initial={{ width: 0, height: 0, opacity: 1, borderWidth: 50 }}
-                            animate={{ width: 3000, height: 3000, opacity: 0, borderWidth: 0 }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                        />
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, type: "spring", bounce: 0.5 }}
+                        >
+                            <img src="/bandlab-logo.png" className="w-32 h-32 mx-auto mb-8 invert object-contain" />
+                            <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-4">
+                                KYEBEEZY
+                            </h1>
+                            <p className="text-2xl font-bold text-white/50 tracking-[0.5em] uppercase">
+                                X BANDLAB
+                            </p>
+                        </motion.div>
 
-                        <HeroCard />
+                        {stage === 5 && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="mt-16"
+                            >
+                                <Link href="/awards/bandlab2025/live">
+                                    <button className="px-10 py-4 bg-white text-black font-black uppercase tracking-widest hover:bg-yellow-400 hover:scale-105 transition-all">
+                                        Enter Experience
+                                    </button>
+                                </Link>
+                                <div className="mt-8">
+                                    <button onClick={() => { setStarted(false); setStage(-1); }} className="text-white/30 hover:text-white uppercase font-bold text-xs tracking-widest">
+                                        Replay Ad
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
-                </>
-            )}
-
-            {/* STAGE 5: OUTRO UI (15s+) */}
-            {stage === 5 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="absolute bottom-10 left-0 right-0 z-50 flex flex-col items-center gap-6"
-                >
-                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-[0.5em] text-center">
-                        DECEMBER 20
-                    </h1>
-
-                    <div className="flex gap-4">
-                        <Link href="/awards/bandlab2025/live">
-                            <button className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(234,179,8,0.5)] hover:scale-105 transition-all flex items-center gap-2">
-                                <Zap className="w-5 h-5" /> Enter Live
-                            </button>
-                        </Link>
-                        <button onClick={() => window.location.reload()} className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold uppercase tracking-widest rounded-full transition-all flex items-center gap-2">
-                            <Play className="w-5 h-5" /> Replay
-                        </button>
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Skip Button (Always visible until end) */}
-            {stage < 5 && (
-                <button
-                    onClick={() => setStage(5)}
-                    className="absolute bottom-10 right-10 text-white/30 hover:text-white uppercase tracking-widest text-xs font-bold z-[60]"
-                >
-                    Skip Trailer
-                </button>
+                </div>
             )}
         </div>
     );
