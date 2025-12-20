@@ -85,34 +85,59 @@ const DataGlobe = () => {
 
 // 2. CATEGORY TUNNEL (Scene 2)
 const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
-    // Get random images
-    const images = useMemo(() => Object.values(NOMINEE_IMAGES).sort(() => 0.5 - Math.random()).slice(0, 20), []);
+    // Get ALL images and duplicate them to create a dense crowd
+    const images = useMemo(() => {
+        const raw = Object.values(NOMINEE_IMAGES);
+        // Create massive array for density
+        return [...raw, ...raw, ...raw, ...raw, ...raw].sort(() => 0.5 - Math.random()).slice(0, 100);
+    }, []);
 
     return (
         <div className="absolute inset-0 bg-black perspective-500 overflow-hidden">
-            {/* Flying Images */}
-            {images.map((img, i) => (
-                <motion.div
-                    key={`img-${i}`}
-                    className="absolute top-1/2 left-1/2 w-32 h-32 rounded-lg bg-neutral-900 border border-white/10 opacity-50 grayscale"
-                    style={{
-                        backgroundImage: `url(${img})`,
-                        backgroundSize: "cover",
-                        x: (Math.random() - 0.5) * 1200, // Wide spread
-                        y: (Math.random() - 0.5) * 800,
-                    }}
-                    initial={{ z: -1000, scale: 0 }}
-                    animate={{ z: 500, scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 4, delay: Math.random() * 3, ease: "linear", repeat: Infinity }}
-                />
-            ))}
+            {/* FLYING IMAGE WARP */}
+            <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
+                {images.map((img, i) => {
+                    // Spiral Distribution
+                    const angle = (i * 0.5) + Math.random();
+                    const radius = 400 + Math.random() * 400; // Wide tunnel
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
 
+                    return (
+                        <motion.div
+                            key={`img-${i}`}
+                            className="absolute top-1/2 left-1/2 w-32 h-32 md:w-48 md:h-48 rounded-xl bg-neutral-900 border-2 border-white/20"
+                            style={{
+                                backgroundImage: `url(${img})`,
+                                backgroundSize: "cover",
+                                x: x,
+                                y: y,
+                            }}
+                            initial={{ z: -2000, scale: 0, opacity: 0, rotateZ: 0 }}
+                            animate={{
+                                z: [-2000, 1000], // Fly from deep back to past camera
+                                scale: [0, 1.5],
+                                opacity: [0, 1, 0],
+                                rotateZ: [0, Math.random() * 90 - 45]
+                            }}
+                            transition={{
+                                duration: 3,
+                                delay: Math.random() * 4, // Random stream
+                                ease: "linear",
+                                repeat: Infinity
+                            }}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Category Names Interspersed */}
             {categories.slice(0, 10).map((cat, i) => (
                 <motion.div
                     key={cat.id}
                     className="absolute top-1/2 left-1/2 flex items-center justify-center w-[80vw]"
-                    initial={{ z: -1000, opacity: 0, scale: 0 }}
-                    animate={{ z: 500, opacity: [0, 1, 0], scale: 1 }}
+                    initial={{ z: -2000, opacity: 0 }}
+                    animate={{ z: 800, opacity: [0, 1, 0] }}
                     transition={{
                         duration: 3,
                         delay: i * 0.8, // Stagger flyby
@@ -120,17 +145,17 @@ const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
                     }}
                     style={{
                         x: "-50%", y: "-50%",
-                        marginLeft: i % 2 === 0 ? "-200px" : "200px" // Zig Zag
+                        rotateZ: i % 2 === 0 ? -10 : 10
                     }}
                 >
-                    <h2 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-600 uppercase italic tracking-tighter whitespace-nowrap">
+                    <h2 className="text-4xl md:text-7xl font-black text-white uppercase italic tracking-tighter whitespace-nowrap drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] bg-black/50 px-6 py-2 border border-white/10 backdrop-blur-sm">
                         {cat.title}
                     </h2>
                 </motion.div>
             ))}
 
             {/* Speed Lines */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay animate-pulse" />
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay animate-pulse" />
         </div>
     );
 };
@@ -138,20 +163,38 @@ const CategoryTunnel = ({ categories }: { categories: CategoryData[] }) => {
 // 3. THE RITUAL (Scene 3)
 const RitualScene = () => {
     return (
-        <div className="absolute inset-0 flex items-center justify-center bg-black perspective-1000">
+        <div className="absolute inset-0 flex items-center justify-center bg-black perspective-1000 overflow-hidden">
+            {/* Spinning/Flipping Card */}
             <motion.div
-                className="w-64 h-96 bg-black border-2 border-yellow-500 relative"
-                initial={{ rotateY: 0, scale: 0.8 }}
+                className="w-64 h-96 bg-gradient-to-br from-neutral-900 to-black border-4 border-yellow-500 rounded-2xl relative shadow-[0_0_100px_rgba(234,179,8,0.3)]"
+                initial={{ rotateY: 0, rotateX: 0, scale: 0.8, z: 0 }}
                 animate={{
-                    rotateY: [0, 3600], // Spin fast
-                    scale: [0.8, 0.5], // Shrink
-                    filter: ["brightness(1)", "brightness(5)"] // Glow up
+                    rotateY: [0, 360, 720, 1080, 1440, 1800], // Hyper spin
+                    rotateX: [0, 15, -15, 30, -30, 0], // Wobble
+                    scale: [0.8, 0.6, 0.9, 0.5, 1.2], // Heartbeat
+                    z: [0, -500, 200]
                 }}
-                transition={{ duration: 3, ease: "circIn" }}
+                transition={{ duration: 3, ease: "easeInOut" }}
                 style={{ transformStyle: "preserve-3d" }}
             >
-                <div className="absolute inset-0 bg-yellow-500/20 blur-lg" />
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Trophy className="w-24 h-24 text-yellow-500" />
+                </div>
+                {/* Backface */}
+                <div className="absolute inset-0 bg-yellow-500 backface-hidden" style={{ transform: "rotateY(180deg)" }} />
             </motion.div>
+
+            {/* Energy Vortex Rings */}
+            {[...Array(5)].map((_, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute border border-yellow-500/50 rounded-full"
+                    style={{ width: 400 + i * 100, height: 400 + i * 100 }}
+                    animate={{ rotate: 360, scale: [1, 0], opacity: [0, 1, 0] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2, ease: "easeIn" }}
+                />
+            ))}
 
             {/* Implode Particles */}
             <motion.div
