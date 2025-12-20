@@ -368,15 +368,33 @@ function MusicManager() {
         } catch (e) { toast.error("Error adding track"); }
     };
 
+    const handleSeed = async () => {
+        if (!confirm("Seed default music? This will add entries to your database.")) return;
+        try {
+            const batch = writeBatch(db);
+            defaultMusic.forEach(t => {
+                const docRef = doc(collection(db, "music"));
+                batch.set(docRef, { ...t, createdAt: new Date() });
+            });
+            await batch.commit();
+            toast.success("Seeded default music");
+        } catch (e) { toast.error("Seed failed"); }
+    }
+
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
             <SectionHeader
                 title="Music Embeds"
                 subtitle="Manage BandLab & SoundCloud players."
                 action={
-                    <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
-                        <Plus size={20} /> Add New
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={handleSeed} className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-all border border-white/10">
+                            <Database size={18} /> Seed Defaults
+                        </button>
+                        <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all hover:scale-105 shadow-lg shadow-white/10">
+                            <Plus size={20} /> Add New
+                        </button>
+                    </div>
                 }
             />
 
