@@ -125,22 +125,6 @@ export default function DubbyPromo() {
             {/* REMOVED opaque bg-background, adjusted gradient to be very subtle overlay */}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
 
-            {/* Decorative Icon Watermark */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
-                whileInView={{ opacity: 0.1, scale: 1, rotate: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="absolute top-10 left-[-10%] md:left-[-5%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] z-0 pointer-events-none blur-sm opacity-10 mix-blend-multiply dark:mix-blend-screen"
-            >
-                <Image
-                    src="/dubby/icon.jpg"
-                    alt="Dubby Icon"
-                    fill
-                    className="object-contain animate-float-slow"
-                />
-            </motion.div>
-
             <div className="container mx-auto px-4 relative z-10">
                 <div className="mb-20 flex flex-col lg:flex-row items-center gap-12 max-w-7xl mx-auto">
                     {/* Text Section */}
@@ -151,10 +135,21 @@ export default function DubbyPromo() {
                         transition={{ duration: 0.8 }}
                         className="flex-1 text-center lg:text-left z-10"
                     >
-                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl">
-                            POWER UP WITH <br className="hidden lg:block" />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 animate-gradient-x">DUBBY</span>
-                        </h2>
+                        <div className="flex flex-col items-center lg:items-start">
+                            <h2 className="text-4xl md:text-5xl font-black font-outfit mb-4 text-foreground leading-tight drop-shadow-xl">
+                                POWER UP WITH
+                            </h2>
+                            <div className="relative w-64 h-24 md:w-80 md:h-28 mb-6 transition-transform hover:scale-105 duration-300">
+                                <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full opacity-50 dark:opacity-20" />
+                                <Image
+                                    src="/dubby/logo.png"
+                                    alt="DUBBY Logo"
+                                    fill
+                                    className="object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] dark:drop-shadow-[0_0_25px_rgba(255,255,255,0.1)]"
+                                    priority
+                                />
+                            </div>
+                        </div>
                         <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
                             Focus better. React faster. <br />
                             <span className="text-foreground font-semibold">No crash. No jitters.</span> Just pure performance.
