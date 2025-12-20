@@ -53,6 +53,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Noise from "@/components/ui/noise";
 import CustomCursor from "@/components/ui/custom-cursor";
 import ScrollProgress from "@/components/ui/scroll-progress";
+import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -64,17 +66,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Noise />
-          <CustomCursor />
-          <ScrollProgress />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Noise />
+            <CustomCursor />
+            <ScrollProgress />
+            <Toaster theme="dark" position="top-right" />
+          </ThemeProvider>
+        </AuthProvider>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -1,9 +1,9 @@
 "use client";
 
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -80,11 +80,8 @@ function AdminProtection({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
-        <AuthProvider>
-            <AdminProtection>
-                {children}
-                <Toaster theme="dark" position="top-right" />
-            </AdminProtection>
-        </AuthProvider>
+        <AdminProtection>
+            {children}
+        </AdminProtection>
     );
 }
