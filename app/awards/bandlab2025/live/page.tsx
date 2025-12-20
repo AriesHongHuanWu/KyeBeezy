@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { ChevronRight, ChevronLeft, Star, Crown, Sparkles, MonitorPlay, ArrowLeft, Lock, Trophy } from "lucide-react";
+import { ChevronRight, ChevronLeft, Star, Crown, Sparkles, MonitorPlay, ArrowLeft, Lock, Trophy, RotateCcw } from "lucide-react";
 import { getAwardsData } from "../../data-fetcher";
 import { Confetti } from "@/components/ui/confetti";
 import Link from "next/link";
@@ -339,7 +339,12 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                             className="mt-10"
                             style={{ transformStyle: "preserve-3d" }}
                         >
-                            <Crown className="w-12 h-12 text-yellow-200 mx-auto mb-2 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" />
+                            <img
+                                src="/bandlab-logo.png"
+                                alt="Bandlab"
+                                className="w-12 h-12 mx-auto mb-2 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                                style={{ filter: "brightness(0) saturate(100%) invert(83%) sepia(36%) saturate(1000%) hue-rotate(2deg) brightness(108%) contrast(105%)" }}
+                            />
                             <h2 className="text-5xl font-black text-white leading-none mb-3 drop-shadow-[0_5px_5px_rgba(0,0,0,1)] tracking-tight">
                                 {winner.name}
                             </h2>
@@ -602,6 +607,13 @@ export default function LiveAwardsPage() {
         toast.info(isFreeRoam ? "Free Roam DISABLED" : "Free Roam ENABLED");
     };
 
+    const handleReset = async () => {
+        if (!isAdmin) return;
+        if (confirm("Reset show to start?")) {
+            await updateCloudState({ currentIndex: -1, ritualPhase: 'IDLE' });
+        }
+    };
+
     const handleStartRitual = async () => {
         if (!isAdmin) return; // Only Admin starts ritual
         if (isFreeRoam) return; // Disable ritual triggering in free roam mode to prevent confusion? Or allow it? Let's allow it but warn.
@@ -686,12 +698,21 @@ export default function LiveAwardsPage() {
             <div className="fixed top-6 right-6 z-[60] flex items-center gap-3">
                 {/* Free Roam Toggle for Admin */}
                 {isAdmin && (
-                    <button
-                        onClick={toggleFreeRoam}
-                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${isFreeRoam ? 'bg-green-500/20 border-green-500 text-green-500' : 'bg-white/10 border-white/20 text-white/50 hover:bg-white/20'}`}
-                    >
-                        {isFreeRoam ? "Free Roam ON" : "Sync Mode"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleReset}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white border border-white/10 transition-colors"
+                            title="Reset Show"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={toggleFreeRoam}
+                            className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all ${isFreeRoam ? 'bg-green-500/20 border-green-500 text-green-500' : 'bg-white/10 border-white/20 text-white/50 hover:bg-white/20'}`}
+                        >
+                            {isFreeRoam ? "Free Roam" : "Sync Mode"}
+                        </button>
+                    </div>
                 )}
 
                 {authLoading ? (
