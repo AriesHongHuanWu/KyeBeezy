@@ -116,7 +116,7 @@ const RosterVisuals = ({ tick }: { tick: number }) => {
             </div>
 
             {/* Bottom Left Name Tag (Always Visible) */}
-            <div className="absolute bottom-8 left-8 z-30 bg-yellow-500 text-black px-4 py-2 skew-x-[-10deg] border-4 border-black box-content">
+            <div className="absolute bottom-[12vh] left-8 z-30 bg-yellow-500 text-black px-4 py-2 skew-x-[-10deg] border-4 border-black box-content">
                 <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">
                     {name}
                 </h2>
