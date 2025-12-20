@@ -669,9 +669,8 @@ function SettingsManager() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            const docRef = doc(db, "settings", "global");
-            const snapshot = await new Promise<any>((resolve) => onSnapshot(docRef, resolve)());
+        const docRef = doc(db, "settings", "global");
+        const unsubscribe = onSnapshot(docRef, async (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.data() as GlobalSettings;
                 setValue("heroTitle", data.heroTitle.join(", "));
@@ -681,16 +680,21 @@ function SettingsManager() {
                 setValue("socials.discord", data.socials.discord);
                 setValue("socials.bandlab", data.socials.bandlab);
             } else {
-                await setDoc(docRef, defaultSettings);
-                reset({
-                    heroTitle: defaultSettings.heroTitle.join(", "),
-                    heroSubtitle: defaultSettings.heroSubtitle,
-                    socials: defaultSettings.socials
-                });
+                // If no settings exist, seed defaults
+                try {
+                    await setDoc(docRef, defaultSettings);
+                    reset({
+                        heroTitle: defaultSettings.heroTitle.join(", "),
+                        heroSubtitle: defaultSettings.heroSubtitle,
+                        socials: defaultSettings.socials
+                    });
+                } catch (e) {
+                    console.error("Auto-seeding settings failed:", e);
+                }
             }
             setLoading(false);
-        };
-        fetchSettings();
+        });
+        return () => unsubscribe();
     }, [setValue, reset]);
 
     const onSubmit = async (data: any) => {
