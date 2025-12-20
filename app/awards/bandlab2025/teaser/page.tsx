@@ -270,7 +270,7 @@ const FinaleVisuals = () => (
 );
 
 
-export default function TeaserPageV17() {
+export default function TeaserPageV19() {
     const [started, setStarted] = useState(false);
     const [tick, setTick] = useState(0);
     const [stepIndex, setStepIndex] = useState(0);
@@ -359,12 +359,34 @@ export default function TeaserPageV17() {
             <div className={`fixed inset-0 bg-white z-[9999] pointer-events-none transition-opacity duration-300 ease-out ${flash ? 'opacity-30' : 'opacity-0'}`} />
 
             {!started ? (
-                <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group hover:bg-neutral-900 transition-colors">
-                    <div className="w-40 h-40 rounded-full border-[10px] border-white flex items-center justify-center relative hover:scale-110 transition-transform">
-                        <Play className="w-16 h-16 text-white fill-white ml-2" />
+                // --- NEW PREMIUM START SCREEN ---
+                <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group transition-colors overflow-hidden">
+                    {/* Ambient Background */}
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1a1a1a_0%,black_100%)] opacity-80" />
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
+
+                    {/* Center Play Button */}
+                    <div className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 ease-out bg-white/5 backdrop-blur-sm">
+                        <div className="absolute inset-0 rounded-full border border-white/40 animate-[ping_3s_infinite]" />
+                        <div className="absolute inset-0 rounded-full border border-yellow-500/30 animate-[ping_3s_infinite_0.5s]" />
+                        <Play className="w-12 h-12 md:w-20 md:h-20 text-white fill-white ml-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
                     </div>
-                    <h1 className="text-white font-black tracking-tighter text-5xl uppercase mt-8">IGNITE V17</h1>
-                    <p className="text-neutral-500 font-mono text-xs mt-4 uppercase tracking-widest">CINEMATIC EXPERIENCE</p>
+
+                    {/* Title Block */}
+                    <div className="relative z-10 text-center mt-12 md:mt-16 space-y-4">
+                        <h2 className="text-yellow-500 font-bold tracking-[0.5em] text-xs md:text-sm uppercase animate-pulse">The Official Teaser</h2>
+                        <h1 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-200 to-neutral-600 tracking-tighter uppercase drop-shadow-2xl">
+                            BANDLAB<br />AWARDS<span className="text-yellow-500">2025</span>
+                        </h1>
+                        <p className="text-neutral-500 font-mono text-[10px] md:text-xs uppercase tracking-widest mt-4">
+                            Click to Initialize Experience
+                        </p>
+                    </div>
+
+                    {/* Footer Tech Text */}
+                    <div className="absolute bottom-8 text-[10px] text-neutral-800 font-mono tracking-widest">
+                        v19.0.2 // AUDIO_ REACTIVE // SYSTEM_READY
+                    </div>
                 </div>
             ) : (
                 <div className="absolute inset-0">
