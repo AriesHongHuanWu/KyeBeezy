@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc } from "firebase/firestore";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, Variants } from "framer-motion";
 import { toast } from "sonner";
 import {
     ArrowRight,
@@ -24,7 +24,7 @@ interface SubmissionForm {
     link: string;
 }
 
-// Animation Variants
+// --- Animation Variants ---
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -54,6 +54,32 @@ const glitchVariants = {
     }
 };
 
+// --- Particles Component ---
+const FloatingParticles = () => {
+    // Generate static random positions to avoid hydration mismatch
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: `${(i * 7) % 100}%`,
+        top: `${(i * 13) % 100}%`,
+        duration: 10 + (i % 10),
+        delay: i % 5
+    }));
+
+    return (
+        <div className="fixed inset-0 pointer-events-none z-0">
+            {particles.map((p) => (
+                <motion.div
+                    key={p.id}
+                    className="absolute w-1 h-1 bg-white/20 rounded-full"
+                    style={{ left: p.left, top: p.top }}
+                    animate={{ y: [0, -100, 0], opacity: [0, 1, 0] }}
+                    transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "linear" }}
+                />
+            ))}
+        </div>
+    );
+};
+
 export default function SubmitPage() {
     const [form, setForm] = useState<SubmissionForm>({
         songName: "",
@@ -66,11 +92,38 @@ export default function SubmitPage() {
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [showSplash, setShowSplash] = useState(false);
 
-    // Ref to track previous round for splash triggering
+    // Splash Logic Refs
     const prevRoundRef = useRef<number>(1);
     const isFirstLoad = useRef(true);
 
-    // Initial Status Check
+    // --- Parallax Logic ---
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    // Spring physics for smooth tilt
+    const mouseX = useSpring(x, { stiffness: 150, damping: 20 });
+    const mouseY = useSpring(y, { stiffness: 150, damping: 20 });
+
+    // Map mouse position to rotation degrees
+    const rotateX = useTransform(mouseY, [-0.5, 0.5], [10, -10]);
+    const rotateY = useTransform(mouseX, [-0.5, 0.5], [-10, 10]);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const { width, height, left, top } = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+        const centerX = left + width / 2;
+        const centerY = top + height / 2;
+
+        // Calculate normalized position (-0.5 to 0.5)
+        x.set((e.clientX - centerX) / width);
+        y.set((e.clientY - centerY) / height);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    // --- Logic ---
     useEffect(() => {
         const checkStatus = async () => {
             try {
@@ -83,20 +136,16 @@ export default function SubmitPage() {
                         const isEventActive = data.isEventActive !== false;
                         const remoteSessionVersion = data.sessionVersion || "v1";
 
-                        // Splash Logic: If round incremented (and not first load), show splash
                         if (!isFirstLoad.current && currentRound > prevRoundRef.current) {
                             setShowSplash(true);
-                            // Hide splash after 3 seconds
                             setTimeout(() => setShowSplash(false), 3500);
                         }
 
-                        // Update Refs
                         prevRoundRef.current = currentRound;
                         if (isFirstLoad.current) isFirstLoad.current = false;
 
                         setRoundId(currentRound);
 
-                        // Version Check (Hard Reset)
                         const localSessionVersion = localStorage.getItem("sessionVersion");
                         if (localSessionVersion !== remoteSessionVersion) {
                             console.log("Session reset detected.");
@@ -104,13 +153,11 @@ export default function SubmitPage() {
                             localStorage.setItem("sessionVersion", remoteSessionVersion);
                         }
 
-                        // Determine Mode
                         if (!isEventActive) {
                             setStatus("event_offline");
                         } else if (!isOpen) {
                             setStatus("round_locked");
                         } else {
-                            // Check local submission
                             const lastSubmittedRound = localStorage.getItem("lastSubmittedRound");
                             if (lastSubmittedRound && parseInt(lastSubmittedRound) === currentRound) {
                                 setStatus("submitted");
@@ -119,7 +166,6 @@ export default function SubmitPage() {
                             }
                         }
                     } else {
-                        // Init
                         setDoc(settingsRef, { currentRoundId: 1, isOpen: true, isEventActive: true, sessionVersion: "v1" }, { merge: true });
                         setRoundId(1);
                         setStatus("idle");
@@ -181,9 +227,13 @@ export default function SubmitPage() {
     }
 
     return (
-        <div className="min-h-screen w-full bg-black text-white font-sans selection:bg-purple-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="min-h-screen w-full bg-black text-white font-sans selection:bg-purple-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden perspective-1000"
+        >
 
-            {/* --- Splash Overlay (Cinematic Round Start) --- */}
+            {/* --- Splash Overlay --- */}
             <AnimatePresence>
                 {showSplash && (
                     <motion.div
@@ -222,11 +272,17 @@ export default function SubmitPage() {
                 <div className="absolute top-[40%] right-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
                 <div className="absolute bottom-[-10%] left-[20%] w-96 h-96 bg-pink-600/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+
+                {/* Particles */}
+                <FloatingParticles />
             </div>
 
-            {/* --- Main Container --- */}
-            <div className="w-full max-w-lg relative z-10">
-                <div className="mb-12 text-center relative">
+            {/* --- Main 3D Container --- */}
+            <motion.div
+                style={{ rotateX, rotateY, z: 100 }}
+                className="w-full max-w-lg relative z-10 preserve-3d"
+            >
+                <div className="mb-12 text-center relative" style={{ transform: "translateZ(50px)" }}>
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-bold tracking-widest uppercase mb-6 text-neutral-300 shadow-lg">
                         {status === "event_offline" ? (
                             <span className="flex items-center gap-2 text-red-500"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /> Offline</span>
@@ -235,8 +291,8 @@ export default function SubmitPage() {
                         )}
                     </div>
 
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-sm">
-                        DROP THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">HEAT</span>
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-sm [text-shadow:0_0_30px_rgba(168,85,247,0.5)]">
+                        DROP THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse">HEAT</span>
                     </h1>
                     <p className="text-neutral-400 text-lg font-medium">Send your track to the stream queue.</p>
                 </div>
@@ -251,6 +307,7 @@ export default function SubmitPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
                             className="glass-panel p-10 rounded-3xl text-center border border-white/5"
+                            style={{ transform: "translateZ(20px)" }}
                         >
                             <motion.div
                                 variants={glitchVariants}
@@ -273,6 +330,7 @@ export default function SubmitPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
                             className="glass-panel p-10 rounded-3xl text-center border border-white/5"
+                            style={{ transform: "translateZ(20px)" }}
                         >
                             <motion.div
                                 animate={{ rotate: [0, 10, -10, 0] }}
@@ -294,6 +352,7 @@ export default function SubmitPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.05 }}
                             className="glass-panel p-10 rounded-3xl text-center border border-white/5 relative overflow-hidden"
+                            style={{ transform: "translateZ(20px)" }}
                         >
                             <div className="absolute inset-0 bg-green-500/5 z-0" />
                             <div className="relative z-10">
@@ -323,6 +382,7 @@ export default function SubmitPage() {
                             animate="show"
                             exit={{ opacity: 0, y: -20 }}
                             className="glass-panel p-8 rounded-3xl border border-white/10 relative"
+                            style={{ transform: "translateZ(20px)" }}
                         >
                             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
@@ -376,9 +436,11 @@ export default function SubmitPage() {
                                     variants={itemVariants}
                                     type="submit"
                                     disabled={loading}
-                                    className="mt-4 w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-lg tracking-wide hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2 group relative overflow-hidden"
+                                    className="mt-4 w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white font-bold text-lg tracking-wide hover:shadow-[0_0_30px_rgba(147,51,234,0.6)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2 group relative overflow-hidden bg-[length:200%_auto] animate-shimmer"
                                 >
+                                    {/* Liquid Glow overlay */}
                                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+
                                     {loading ? (
                                         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     ) : (
@@ -392,7 +454,7 @@ export default function SubmitPage() {
                     )}
 
                 </AnimatePresence>
-            </div>
+            </motion.div>
 
             {/* Footer */}
             <div className="absolute bottom-6 flex items-center gap-2 text-xs font-bold text-neutral-600 uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
