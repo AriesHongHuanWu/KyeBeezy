@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, query, orderBy, onSnapshot, doc, getDoc, setDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import {
     Loader2,
@@ -228,7 +228,7 @@ export default function AdminPage() {
                     <Input
                         placeholder="Search artist, song, round..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                         className="pl-10 bg-card/50 border-input text-foreground focus:border-primary/50"
                     />
                 </div>
