@@ -1,20 +1,19 @@
-```javascript
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { toast } from "sonner";
-import { 
-    ArrowRight, 
-    Check, 
-    Lock, 
-    WifiOff, 
-    Music2, 
-    User, 
-    Link as LinkIcon, 
-    Sparkles, 
+import {
+    ArrowRight,
+    Check,
+    Lock,
+    WifiOff,
+    Music2,
+    User,
+    Link as LinkIcon,
+    Sparkles,
     Radio,
     Zap
 } from "lucide-react";
@@ -26,7 +25,7 @@ interface SubmissionForm {
 }
 
 // Animation Variants
-const containerVariants = {
+const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
@@ -37,21 +36,21 @@ const containerVariants = {
     }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
 const glitchVariants = {
     hidden: { skew: 0 },
-    visible: { 
+    visible: {
         skew: [0, 10, -10, 0],
         x: [0, -2, 2, 0],
-        transition: { 
-            repeat: Infinity, 
-            repeatDelay: 3, 
-            duration: 0.2 
-        } 
+        transition: {
+            repeat: Infinity,
+            repeatDelay: 3,
+            duration: 0.2
+        }
     }
 };
 
@@ -66,7 +65,7 @@ export default function SubmitPage() {
     const [roundId, setRoundId] = useState<number>(1);
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [showSplash, setShowSplash] = useState(false);
-    
+
     // Ref to track previous round for splash triggering
     const prevRoundRef = useRef<number>(1);
     const isFirstLoad = useRef(true);
@@ -90,7 +89,7 @@ export default function SubmitPage() {
                             // Hide splash after 3 seconds
                             setTimeout(() => setShowSplash(false), 3500);
                         }
-                        
+
                         // Update Refs
                         prevRoundRef.current = currentRound;
                         if (isFirstLoad.current) isFirstLoad.current = false;
@@ -174,8 +173,8 @@ export default function SubmitPage() {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-black text-white">
                 <div className="flex flex-col items-center gap-4">
-                     <div className="w-8 h-8 rounded-full border-t-2 border-purple-500 animate-spin" />
-                     <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 animate-pulse">Initializing Uplink...</p>
+                    <div className="w-8 h-8 rounded-full border-t-2 border-purple-500 animate-spin" />
+                    <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 animate-pulse">Initializing Uplink...</p>
                 </div>
             </div>
         )
@@ -183,11 +182,11 @@ export default function SubmitPage() {
 
     return (
         <div className="min-h-screen w-full bg-black text-white font-sans selection:bg-purple-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            
+
             {/* --- Splash Overlay (Cinematic Round Start) --- */}
             <AnimatePresence>
                 {showSplash && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -205,7 +204,7 @@ export default function SubmitPage() {
                             <h1 className="relative text-7xl md:text-9xl font-black italic tracking-tighter text-white text-center">
                                 ROUND <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">{roundId}</span>
                             </h1>
-                            <motion.div 
+                            <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: "100%" }}
                                 transition={{ delay: 0.5, duration: 0.8 }}
@@ -235,7 +234,7 @@ export default function SubmitPage() {
                             <span className="flex items-center gap-2 text-green-400"><div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" /> Live • Round {roundId}</span>
                         )}
                     </div>
-                    
+
                     <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-sm">
                         DROP THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">HEAT</span>
                     </h1>
@@ -243,7 +242,7 @@ export default function SubmitPage() {
                 </div>
 
                 <AnimatePresence mode="wait">
-                    
+
                     {/* STATE: OFFLINE */}
                     {status === "event_offline" && (
                         <motion.div
@@ -253,16 +252,16 @@ export default function SubmitPage() {
                             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
                             className="glass-panel p-10 rounded-3xl text-center border border-white/5"
                         >
-                            <motion.div 
-                                variants={glitchVariants} 
-                                initial="hidden" 
+                            <motion.div
+                                variants={glitchVariants}
+                                initial="hidden"
                                 animate="visible"
                                 className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
                             >
                                 <WifiOff size={40} className="text-red-500" />
                             </motion.div>
                             <h2 className="text-2xl font-bold text-white mb-2">Stream Offline</h2>
-                            <p className="text-neutral-400">The gateway is currently closed.<br/>Stand by for the next session.</p>
+                            <p className="text-neutral-400">The gateway is currently closed.<br />Stand by for the next session.</p>
                         </motion.div>
                     )}
 
@@ -275,7 +274,7 @@ export default function SubmitPage() {
                             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
                             className="glass-panel p-10 rounded-3xl text-center border border-white/5"
                         >
-                            <motion.div 
+                            <motion.div
                                 animate={{ rotate: [0, 10, -10, 0] }}
                                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
                                 className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]"
@@ -283,7 +282,7 @@ export default function SubmitPage() {
                                 <Lock size={40} className="text-yellow-500" />
                             </motion.div>
                             <h2 className="text-2xl font-bold text-white mb-2">Round Locked</h2>
-                            <p className="text-neutral-400">Submissions are paused while we vibe.<br/>Next round starting soon.</p>
+                            <p className="text-neutral-400">Submissions are paused while we vibe.<br />Next round starting soon.</p>
                         </motion.div>
                     )}
 
@@ -298,7 +297,7 @@ export default function SubmitPage() {
                         >
                             <div className="absolute inset-0 bg-green-500/5 z-0" />
                             <div className="relative z-10">
-                                <motion.div 
+                                <motion.div
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ type: "spring", stiffness: 200, damping: 10 }}
@@ -307,7 +306,7 @@ export default function SubmitPage() {
                                     <Check size={48} className="text-green-400 drop-shadow-md" />
                                 </motion.div>
                                 <h2 className="text-3xl font-bold text-white mb-2">Received</h2>
-                                <p className="text-neutral-400 mb-8">You're in the queue for Round {roundId}.<br/>Good luck!</p>
+                                <p className="text-neutral-400 mb-8">You're in the queue for Round {roundId}.<br />Good luck!</p>
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-xs text-neutral-500 font-mono">
                                     ID: {Date.now().toString().slice(-8)} • PENDING REVIEW
                                 </div>
@@ -326,7 +325,7 @@ export default function SubmitPage() {
                             className="glass-panel p-8 rounded-3xl border border-white/10 relative"
                         >
                             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                                
+
                                 {/* Input Group */}
                                 <motion.div variants={itemVariants} className="space-y-1">
                                     <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">Track Title</label>
@@ -394,7 +393,7 @@ export default function SubmitPage() {
 
                 </AnimatePresence>
             </div>
-            
+
             {/* Footer */}
             <div className="absolute bottom-6 flex items-center gap-2 text-xs font-bold text-neutral-600 uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
                 <Sparkles size={12} /> Powered by KyeBeezy Engine
