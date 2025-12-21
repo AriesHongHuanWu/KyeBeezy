@@ -201,7 +201,7 @@ export default function SubmitPage() {
                             className="relative"
                         >
                             <div className="absolute inset-0 bg-purple-500/20 blur-[100px] rounded-full animate-pulse" />
-                            <h1 className="relative text-7xl md:text-9xl font-black italic tracking-tighter text-white text-center">
+                            <h1 className="relative text-7xl md:text-9xl font-black tracking-tighter text-white text-center">
                                 ROUND <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">{roundId}</span>
                             </h1>
                             <motion.div
