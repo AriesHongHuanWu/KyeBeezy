@@ -51,35 +51,11 @@
 
 @layer base {
   * {
-    border-color: var(--border);
-    outline-color: color-mix(in oklch, var(--ring), transparent 50%);
+    @apply border-border;
   }
 
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-  }
-}
-
-@layer components {
-  .input-field {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    color: white;
-    transition: all 0.15s ease-in-out;
-  }
-
-  .input-field::placeholder {
-    color: #737373;
-  }
-
-  .input-field:focus {
-    outline: none;
-    border-color: rgba(168, 85, 247, 0.5);
-    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.5);
+    @apply bg-background text-foreground;
   }
 }
 
@@ -94,15 +70,7 @@
   }
 
   .glass-panel {
-    background-color: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  }
-
-  .perspective-1000 {
-    perspective: 1000px;
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0, 0, 0, 0.37)];
   }
 }
 

@@ -1,21 +1,22 @@
+```javascript
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc } from "firebase/firestore";
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import confetti from "canvas-confetti";
-import {
-    ArrowRight,
-    Check,
-    Lock,
-    WifiOff,
-    Music2,
-    User,
-    Link as LinkIcon,
-    Sparkles,
-    Radio
+import { 
+    ArrowRight, 
+    Check, 
+    Lock, 
+    WifiOff, 
+    Music2, 
+    User, 
+    Link as LinkIcon, 
+    Sparkles, 
+    Radio,
+    Zap
 } from "lucide-react";
 
 interface SubmissionForm {
@@ -23,6 +24,36 @@ interface SubmissionForm {
     artistName: string;
     link: string;
 }
+
+// Animation Variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.3
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
+const glitchVariants = {
+    hidden: { skew: 0 },
+    visible: { 
+        skew: [0, 10, -10, 0],
+        x: [0, -2, 2, 0],
+        transition: { 
+            repeat: Infinity, 
+            repeatDelay: 3, 
+            duration: 0.2 
+        } 
+    }
+};
 
 export default function SubmitPage() {
     const [form, setForm] = useState<SubmissionForm>({
@@ -34,31 +65,11 @@ export default function SubmitPage() {
     const [status, setStatus] = useState<"idle" | "submitted" | "round_locked" | "event_offline">("idle");
     const [roundId, setRoundId] = useState<number>(1);
     const [checkingStatus, setCheckingStatus] = useState(true);
-    const [showRoundTransition, setShowRoundTransition] = useState(false);
-    const prevRoundIdRef = useRef<number>(1);
-
-    // --- 3D Tilt Logic ---
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-    const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), { stiffness: 150, damping: 20 });
-    const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), { stiffness: 150, damping: 20 });
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        const xPct = mouseX / width - 0.5;
-        const yPct = mouseY / height - 0.5;
-        x.set(xPct);
-        y.set(yPct);
-    };
-
-    const handleMouseLeave = () => {
-        x.set(0);
-        y.set(0);
-    };
+    const [showSplash, setShowSplash] = useState(false);
+    
+    // Ref to track previous round for splash triggering
+    const prevRoundRef = useRef<number>(1);
+    const isFirstLoad = useRef(true);
 
     // Initial Status Check
     useEffect(() => {
@@ -73,12 +84,17 @@ export default function SubmitPage() {
                         const isEventActive = data.isEventActive !== false;
                         const remoteSessionVersion = data.sessionVersion || "v1";
 
-                        // Round Transition Detection
-                        if (currentRound > prevRoundIdRef.current && !checkingStatus) {
-                            setShowRoundTransition(true);
-                            setTimeout(() => setShowRoundTransition(false), 3500); // Hide after animation
+                        // Splash Logic: If round incremented (and not first load), show splash
+                        if (!isFirstLoad.current && currentRound > prevRoundRef.current) {
+                            setShowSplash(true);
+                            // Hide splash after 3 seconds
+                            setTimeout(() => setShowSplash(false), 3500);
                         }
-                        prevRoundIdRef.current = currentRound;
+                        
+                        // Update Refs
+                        prevRoundRef.current = currentRound;
+                        if (isFirstLoad.current) isFirstLoad.current = false;
+
                         setRoundId(currentRound);
 
                         // Version Check (Hard Reset)
@@ -118,7 +134,7 @@ export default function SubmitPage() {
             }
         };
         checkStatus();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -144,28 +160,6 @@ export default function SubmitPage() {
 
             localStorage.setItem("lastSubmittedRound", roundId.toString());
             setStatus("submitted");
-
-            // FIRE CONFETTI
-            const duration = 3000;
-            const end = Date.now() + duration;
-            (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#a855f7', '#ec4899', '#3b82f6'] // purple, pink, blue
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#a855f7', '#ec4899', '#3b82f6']
-                });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
-
             toast.success("Requests Sent!");
             setForm({ songName: "", artistName: "", link: "" });
         } catch (error) {
@@ -180,100 +174,95 @@ export default function SubmitPage() {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-black text-white">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 rounded-full border-t-2 border-purple-500 animate-spin" />
+                     <div className="w-8 h-8 rounded-full border-t-2 border-purple-500 animate-spin" />
+                     <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 animate-pulse">Initializing Uplink...</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            className="min-h-screen w-full bg-black text-white font-sans selection:bg-purple-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden preserve-3d perspective-1000"
-        >
-
-            {/* --- ROUND TRANSITION OVERLAY --- */}
+        <div className="min-h-screen w-full bg-black text-white font-sans selection:bg-purple-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+            
+            {/* --- Splash Overlay (Cinematic Round Start) --- */}
             <AnimatePresence>
-                {showRoundTransition && (
-                    <motion.div
-                        initial={{ x: "100%" }}
-                        animate={{ x: "0%" }}
-                        exit={{ x: "-100%" }}
-                        transition={{ duration: 0.8, ease: "circInOut" }}
-                        className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+                {showSplash && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl"
                     >
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-                        <div className="relative z-10 text-center">
-                            <motion.h2
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1.5, opacity: 1 }}
-                                transition={{ delay: 0.3, duration: 0.5 }}
-                                className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 via-pink-500 to-blue-600 drop-shadow-[0_0_50px_rgba(168,85,247,0.5)] italic tracking-tighter"
-                            >
-                                ROUND {roundId}
-                            </motion.h2>
-                            <motion.p
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                                className="text-2xl text-white font-bold tracking-[0.5em] mt-4"
-                            >
-                                FIGHT
-                            </motion.p>
-                        </div>
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 1.5, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                            className="relative"
+                        >
+                            <div className="absolute inset-0 bg-purple-500/20 blur-[100px] rounded-full animate-pulse" />
+                            <h1 className="relative text-7xl md:text-9xl font-black italic tracking-tighter text-white text-center">
+                                ROUND <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">{roundId}</span>
+                            </h1>
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: "100%" }}
+                                transition={{ delay: 0.5, duration: 0.8 }}
+                                className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mt-4"
+                            />
+                            <p className="text-center text-neutral-400 font-mono tracking-[0.5em] mt-6 text-xl">UNLOCKED // BEGIN</p>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* --- Ambient Background --- */}
-            <div className="fixed inset-0 pointer-events-none transform-gpu">
-                <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-600/20 rounded-full blur-[128px] animate-blob mix-blend-screen" />
-                <div className="absolute top-[40%] right-[-10%] w-[50vw] h-[50vw] bg-blue-600/20 rounded-full blur-[128px] animate-blob animation-delay-2000 mix-blend-screen" />
-                <div className="absolute bottom-[-10%] left-[20%] w-[50vw] h-[50vw] bg-pink-600/20 rounded-full blur-[128px] animate-blob animation-delay-4000 mix-blend-screen" />
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-[128px] animate-blob" />
+                <div className="absolute top-[40%] right-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+                <div className="absolute bottom-[-10%] left-[20%] w-96 h-96 bg-pink-600/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
             </div>
 
-            {/* --- Main 3D Container --- */}
-            <motion.div
-                style={{ rotateX, rotateY }}
-                className="w-full max-w-lg relative z-10 perspective-1000"
-            >
-                <div className="mb-12 text-center relative pointer-events-none">
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-bold tracking-widest uppercase mb-6 text-neutral-300 shadow-lg"
-                    >
+            {/* --- Main Container --- */}
+            <div className="w-full max-w-lg relative z-10">
+                <div className="mb-12 text-center relative">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-bold tracking-widest uppercase mb-6 text-neutral-300 shadow-lg">
                         {status === "event_offline" ? (
                             <span className="flex items-center gap-2 text-red-500"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /> Offline</span>
                         ) : (
                             <span className="flex items-center gap-2 text-green-400"><div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" /> Live • Round {roundId}</span>
                         )}
-                    </motion.div>
-
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-2xl">
-                        DROP THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse">HEAT</span>
+                    </div>
+                    
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-sm">
+                        DROP THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">HEAT</span>
                     </h1>
                     <p className="text-neutral-400 text-lg font-medium">Send your track to the stream queue.</p>
                 </div>
 
                 <AnimatePresence mode="wait">
-
+                    
                     {/* STATE: OFFLINE */}
                     {status === "event_offline" && (
                         <motion.div
                             key="offline"
-                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                            className="glass-panel p-10 rounded-3xl text-center border border-white/5 backdrop-blur-2xl bg-black/40 shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                            className="glass-panel p-10 rounded-3xl text-center border border-white/5"
                         >
-                            <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)] animate-pulse">
+                            <motion.div 
+                                variants={glitchVariants} 
+                                initial="hidden" 
+                                animate="visible"
+                                className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
+                            >
                                 <WifiOff size={40} className="text-red-500" />
-                            </div>
+                            </motion.div>
                             <h2 className="text-2xl font-bold text-white mb-2">Stream Offline</h2>
-                            <p className="text-neutral-400">The gateway is currently closed.<br />Stand by for the next session.</p>
+                            <p className="text-neutral-400">The gateway is currently closed.<br/>Stand by for the next session.</p>
                         </motion.div>
                     )}
 
@@ -281,16 +270,20 @@ export default function SubmitPage() {
                     {status === "round_locked" && (
                         <motion.div
                             key="locked"
-                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                            className="glass-panel p-10 rounded-3xl text-center border border-white/5 backdrop-blur-2xl bg-black/40 shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                            className="glass-panel p-10 rounded-3xl text-center border border-white/5"
                         >
-                            <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                            <motion.div 
+                                animate={{ rotate: [0, 10, -10, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                                className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]"
+                            >
                                 <Lock size={40} className="text-yellow-500" />
-                            </div>
+                            </motion.div>
                             <h2 className="text-2xl font-bold text-white mb-2">Round Locked</h2>
-                            <p className="text-neutral-400">Submissions are paused while we vibe.<br />Next round starting soon.</p>
+                            <p className="text-neutral-400">Submissions are paused while we vibe.<br/>Next round starting soon.</p>
                         </motion.div>
                     )}
 
@@ -298,23 +291,23 @@ export default function SubmitPage() {
                     {status === "submitted" && (
                         <motion.div
                             key="submitted"
-                            initial={{ opacity: 0, scale: 0.8, rotateX: 20 }}
-                            animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-                            exit={{ opacity: 0, scale: 1.1 }}
-                            className="glass-panel p-10 rounded-3xl text-center border border-white/5 relative overflow-hidden backdrop-blur-2xl bg-black/40 shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.05 }}
+                            className="glass-panel p-10 rounded-3xl text-center border border-white/5 relative overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-green-500/5 z-0 animate-pulse" />
+                            <div className="absolute inset-0 bg-green-500/5 z-0" />
                             <div className="relative z-10">
-                                <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ type: "spring", bounce: 0.5 }}
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
                                     className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.3)]"
                                 >
                                     <Check size={48} className="text-green-400 drop-shadow-md" />
                                 </motion.div>
                                 <h2 className="text-3xl font-bold text-white mb-2">Received</h2>
-                                <p className="text-neutral-400 mb-8">You're in the queue for Round {roundId}.<br />Good luck!</p>
+                                <p className="text-neutral-400 mb-8">You're in the queue for Round {roundId}.<br/>Good luck!</p>
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-xs text-neutral-500 font-mono">
                                     ID: {Date.now().toString().slice(-8)} • PENDING REVIEW
                                 </div>
@@ -326,15 +319,16 @@ export default function SubmitPage() {
                     {status === "idle" && (
                         <motion.div
                             key="form"
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -50 }}
-                            className="glass-panel p-8 rounded-3xl border border-white/10 relative backdrop-blur-2xl bg-black/30 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                            exit={{ opacity: 0, y: -20 }}
+                            className="glass-panel p-8 rounded-3xl border border-white/10 relative"
                         >
                             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
+                                
                                 {/* Input Group */}
-                                <div className="space-y-1">
+                                <motion.div variants={itemVariants} className="space-y-1">
                                     <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">Track Title</label>
                                     <div className="relative group">
                                         <Music2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-purple-400 transition-colors" />
@@ -347,9 +341,9 @@ export default function SubmitPage() {
                                             className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-purple-500/50 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
                                         />
                                     </div>
-                                </div>
+                                </motion.div>
 
-                                <div className="space-y-1">
+                                <motion.div variants={itemVariants} className="space-y-1">
                                     <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">Artist</label>
                                     <div className="relative group">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-blue-400 transition-colors" />
@@ -362,9 +356,9 @@ export default function SubmitPage() {
                                             className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                                         />
                                     </div>
-                                </div>
+                                </motion.div>
 
-                                <div className="space-y-1">
+                                <motion.div variants={itemVariants} className="space-y-1">
                                     <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">Link</label>
                                     <div className="relative group">
                                         <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 group-focus-within:text-pink-400 transition-colors" />
@@ -377,9 +371,10 @@ export default function SubmitPage() {
                                             className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-pink-500/50 focus:bg-black/60 focus:ring-1 focus:ring-pink-500/50 transition-all font-medium"
                                         />
                                     </div>
-                                </div>
+                                </motion.div>
 
-                                <button
+                                <motion.button
+                                    variants={itemVariants}
                                     type="submit"
                                     disabled={loading}
                                     className="mt-4 w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-lg tracking-wide hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2 group relative overflow-hidden"
@@ -392,16 +387,16 @@ export default function SubmitPage() {
                                             SEND IT <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}
-                                </button>
+                                </motion.button>
                             </form>
                         </motion.div>
                     )}
 
                 </AnimatePresence>
-            </motion.div>
-
+            </div>
+            
             {/* Footer */}
-            <div className="absolute bottom-6 flex items-center gap-2 text-xs font-bold text-neutral-600 uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="absolute bottom-6 flex items-center gap-2 text-xs font-bold text-neutral-600 uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
                 <Sparkles size={12} /> Powered by KyeBeezy Engine
             </div>
         </div>
