@@ -51,11 +51,13 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
+    outline-color: color-mix(in oklch, var(--ring), transparent 50%);
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
