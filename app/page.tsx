@@ -58,6 +58,20 @@ export default function Home() {
                             </p>
                         </motion.div>
 
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.0, duration: 0.8 }}
+                            className="flex justify-center pt-4"
+                        >
+                            <Link href="/submit">
+                                <button className="px-8 py-3 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold shadow-lg shadow-purple-500/30 transition-all hover:scale-105 flex items-center gap-2">
+                                    <Music className="w-5 h-5" />
+                                    Submit Your Heat
+                                </button>
+                            </Link>
+                        </motion.div>
+
                         {/* Social Links - Enhanced with glass effect */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
