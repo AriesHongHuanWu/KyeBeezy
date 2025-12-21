@@ -1,17 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Music2, Link as LinkIcon, User, CheckCircle2, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Music, User, Link as LinkIcon, Send, Loader2, CheckCircle2 } from "lucide-react";
 
-// --- Types ---
+// Types
 interface SubmissionForm {
     songName: string;
     artistName: string;
@@ -19,210 +15,217 @@ interface SubmissionForm {
 }
 
 export default function SubmitPage() {
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentRoundId, setCurrentRoundId] = useState<string | null>(null);
-    const [checkingRound, setCheckingRound] = useState(true);
+    const [form, setForm] = useState<SubmissionForm>({
+        songName: "",
+        artistName: "",
+        link: "",
+    });
+    const [loading, setLoading] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [canSubmit, setCanSubmit] = useState(true);
+    const [roundId, setRoundId] = useState<number>(1);
+    const [checkingStatus, setCheckingStatus] = useState(true);
 
-    const { register, handleSubmit, formState: { errors } } = useForm<SubmissionForm>();
-
-    // Use a hardcoded "default" round if none exists in DB yet, to prevent total blocking
-    // In production, we'd want to explicitly create this config doc.
+    // Check round status and user eligibility
     useEffect(() => {
-        const fetchRound = async () => {
+        const checkStatus = async () => {
             try {
-                const configRef = doc(db, "config", "general");
-                const configSnap = await getDoc(configRef);
+                // Listen to round settings
+                const settingsRef = doc(db, "settings", "submission");
+                const unsubscribe = onSnapshot(settingsRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.data();
+                        const currentRound = data.currentRoundId || 1;
+                        setRoundId(currentRound);
 
-                let roundId = "round_1"; // Default
-                if (configSnap.exists()) {
-                    roundId = configSnap.data().currentRoundId || "round_1";
-                }
+                        // Check local storage for this round
+                        const lastSubmittedRound = localStorage.getItem("lastSubmittedRound");
+                        if (lastSubmittedRound && parseInt(lastSubmittedRound) === currentRound) {
+                            setCanSubmit(false);
+                            setSubmitted(true);
+                        } else {
+                            // If it's a new round, allow submission again (unless they just submitted in this session)
+                            setCanSubmit(true);
+                            setSubmitted(false);
+                        }
+                    } else {
+                        // Initialize settings if not exists
+                        setDoc(settingsRef, { currentRoundId: 1 }, { merge: true });
+                        setRoundId(1);
+                    }
+                    setCheckingStatus(false);
+                });
 
-                setCurrentRoundId(roundId);
-
-                // Check local storage for this round
-                const lastSubmission = localStorage.getItem("last_submission_round");
-                if (lastSubmission === roundId) {
-                    setIsSubmitted(true);
-                }
+                return () => unsubscribe();
             } catch (error) {
-                console.error("Error fetching round:", error);
-                // Fail safe to allow submission or show error? 
-                // Let's allow but maybe log it.
-            } finally {
-                setCheckingRound(false);
+                console.error("Error checking status:", error);
+                setCheckingStatus(false);
             }
         };
 
-        fetchRound();
+        checkStatus();
     }, []);
 
-    const onSubmit = async (data: SubmissionForm) => {
-        if (!currentRoundId) return;
-        setIsLoading(true);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!form.songName || !form.artistName || !form.link) {
+            toast.error("Please fill in all fields");
+            return;
+        }
+
+        setLoading(true);
 
         try {
+            // Add submission to Firestore
             await addDoc(collection(db, "submissions"), {
-                ...data,
-                roundId: currentRoundId,
-                createdAt: serverTimestamp(),
-                // We could add client IP or something here if we had backend access, 
-                // but for client-side only, localStorage is the best simple deterrent.
+                ...form,
+                roundId: roundId,
+                submittedAt: serverTimestamp(),
+                status: "pending"
             });
 
             // Mark as submitted locally
-            localStorage.setItem("last_submission_round", currentRoundId);
+            localStorage.setItem("lastSubmittedRound", roundId.toString());
 
-            setIsSubmitted(true);
-            toast.success("Song submitted successfully!", {
-                description: "Good luck with the review!",
-            });
+            setSubmitted(true);
+            setCanSubmit(false);
+            toast.success("Song submitted successfully!");
+            setForm({ songName: "", artistName: "", link: "" });
         } catch (error) {
-            console.error("Submission error:", error);
-            toast.error("Failed to submit", {
-                description: "Please try again later.",
-            });
+            console.error("Error submitting:", error);
+            toast.error("Failed to submit. Please try again.");
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
-    if (checkingRound) {
+    if (checkingStatus) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="min-h-screen flex items-center justify-center bg-black text-white">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden bg-background text-foreground flex flex-col items-center justify-center p-4">
-            {/* Background Ambience */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 dark:bg-purple-600/20 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/20 rounded-full blur-[120px]" />
+        <div className="min-h-screen w-full bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]" />
             </div>
 
-            <div className="relative z-10 w-full max-w-md">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-lg z-10"
+            >
                 <div className="mb-8 text-center space-y-2">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                    >
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent font-outfit">
-                            Submit Your Heat
-                        </h1>
-                        <p className="text-muted-foreground text-lg">
-                            Drop your track for the next listening session.
-                        </p>
-                    </motion.div>
+                    <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-white/60">
+                        Submit Your Track
+                    </h1>
+                    <p className="text-white/50 text-lg">
+                        Round {roundId} is open for submissions
+                    </p>
                 </div>
 
-                <div className="bg-card/50 backdrop-blur-xl border border-border/50 p-6 md:p-8 rounded-3xl shadow-xl">
-                    <AnimatePresence mode="wait">
-                        {isSubmitted ? (
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                    {/* Glass Shine */}
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+                    {!canSubmit ? (
+                        <div className="flex flex-col items-center justify-center py-10 spaces-y-6 text-center">
                             <motion.div
-                                key="success"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="flex flex-col items-center text-center space-y-6 py-8"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                type="spring"
+                                className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6"
                             >
-                                <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center">
-                                    <CheckCircle2 className="w-10 h-10 text-green-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-2xl font-semibold text-foreground">Submission Received!</h2>
-                                    <p className="text-muted-foreground">
-                                        You're locked in for this round. Stay tuned to the stream to see if your track gets played!
-                                    </p>
-                                </div>
-                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-600 dark:text-yellow-200 text-sm flex items-start gap-3 text-left">
-                                    <AlertCircle className="w-5 h-5 shrink-0" />
-                                    <p>You can only submit once per round. Wait for the admin to start a new round to submit again.</p>
-                                </div>
+                                <CheckCircle2 className="w-10 h-10 text-green-500" />
                             </motion.div>
-                        ) : (
-                            <motion.form
-                                key="form"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onSubmit={handleSubmit(onSubmit)}
-                                className="space-y-6"
-                            >
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="artistName" className="text-muted-foreground">Artist Name</Label>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                {...register("artistName", { required: "Artist name is required" })}
-                                                className="pl-10 bg-background/50 border-input focus:border-primary/50 h-11 transition-all"
-                                                placeholder="e.g. Kye Beezy"
-                                            />
-                                        </div>
-                                        {errors.artistName && <span className="text-destructive text-xs ml-1">{errors.artistName.message}</span>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="songName" className="text-muted-foreground">Song Title</Label>
-                                        <div className="relative">
-                                            <Music2 className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                {...register("songName", { required: "Song title is required" })}
-                                                className="pl-10 bg-background/50 border-input focus:border-primary/50 h-11 transition-all"
-                                                placeholder="e.g. Midnight Drives"
-                                            />
-                                        </div>
-                                        {errors.songName && <span className="text-destructive text-xs ml-1">{errors.songName.message}</span>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="link" className="text-muted-foreground">Streaming Link</Label>
-                                        <div className="relative">
-                                            <LinkIcon className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                {...register("link", {
-                                                    required: "Link is required",
-                                                    pattern: {
-                                                        value: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
-                                                        message: "Please enter a valid URL"
-                                                    }
-                                                })}
-                                                className="pl-10 bg-background/50 border-input focus:border-primary/50 h-11 transition-all"
-                                                placeholder="SoundCloud, Spotify, YouTube..."
-                                            />
-                                        </div>
-                                        {errors.link && <span className="text-destructive text-xs ml-1">{errors.link.message}</span>}
-                                    </div>
+                            <h2 className="text-2xl font-semibold mb-2">Submission Received!</h2>
+                            <p className="text-white/60 max-w-xs mx-auto">
+                                You have already submitted a song for this round. Wait for the next round to submit again.
+                            </p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/70 ml-1">Song Title</label>
+                                <div className="relative group">
+                                    <Music className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                                    <input
+                                        type="text"
+                                        name="songName"
+                                        value={form.songName}
+                                        onChange={handleChange}
+                                        placeholder="Awesome Track"
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                                        required
+                                    />
                                 </div>
+                            </div>
 
-                                <Button
-                                    type="submit"
-                                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white transition-all rounded-xl shadow-lg shadow-purple-500/20"
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        "Submit Song"
-                                    )}
-                                </Button>
-                            </motion.form>
-                        )}
-                    </AnimatePresence>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/70 ml-1">Artist Name</label>
+                                <div className="relative group">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                                    <input
+                                        type="text"
+                                        name="artistName"
+                                        value={form.artistName}
+                                        onChange={handleChange}
+                                        placeholder="Your Stage Name"
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/70 ml-1">Track Link</label>
+                                <div className="relative group">
+                                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-400 transition-colors" />
+                                    <input
+                                        type="url"
+                                        name="link"
+                                        value={form.link}
+                                        onChange={handleChange}
+                                        placeholder="https://soundcloud.com/..."
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-white text-black font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                            >
+                                {loading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        Submit Track <Send className="w-5 h-5" />
+                                    </>
+                                )}
+                            </motion.button>
+                        </form>
+                    )}
                 </div>
 
-                <p className="mt-8 text-center text-muted-foreground text-sm">
-                    Powered by Kye Beezy
+                <p className="text-center text-white/20 text-sm mt-8">
+                    KyeBeezy Listening Party • Round {roundId}
                 </p>
-            </div>
+            </motion.div>
         </div>
     );
 }
