@@ -186,7 +186,7 @@ const defaultProducts = [
     }
 ];
 
-// --- Submissions Manager (NEW) ---
+// --- Submissions Manager (Enhanced) ---
 function SubmissionsManager() {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [loading, setLoading] = useState(true);
@@ -194,7 +194,7 @@ function SubmissionsManager() {
     const [filterRound, setFilterRound] = useState<number | "all">("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
-    const [currentRound, setCurrentRound] = useState<number>(1);
+    const [roundConfig, setRoundConfig] = useState<any>({ currentRoundId: 1, isOpen: true, isEventActive: true });
 
     useEffect(() => {
         // Listen to submissions
@@ -209,9 +209,12 @@ function SubmissionsManager() {
         });
 
         // Listen to round settings
-        const unsubSettings = onSnapshot(doc(db, "settings", "submission"), (doc) => {
-            if (doc.exists()) {
-                setCurrentRound(doc.data().currentRoundId);
+        const unsubSettings = onSnapshot(doc(db, "settings", "submission"), (docSnap) => {
+            if (docSnap.exists()) {
+                setRoundConfig(docSnap.data());
+            } else {
+                // Init if missing
+                setDoc(doc(db, "settings", "submission"), { currentRoundId: 1, isOpen: true, isEventActive: true });
             }
         });
 
@@ -221,17 +224,72 @@ function SubmissionsManager() {
         };
     }, [sortOrder]);
 
-    const handleNextRound = async () => {
-        if (!confirm("Are you sure you want to start the NEXT ROUND? Users will be able to submit again.")) return;
+    // --- Actions ---
 
+    const handleNextRound = async () => {
+        if (!confirm("Start NEXT ROUND? This will increment the round ID and UNLOCK submissions.")) return;
         try {
             await updateDoc(doc(db, "settings", "submission"), {
-                currentRoundId: increment(1)
+                currentRoundId: increment(1),
+                isOpen: true
             });
             toast.success("Round Updated! Users can now submit again.");
         } catch (error) {
-            console.error(error);
             toast.error("Failed to update round.");
+        }
+    };
+
+    const toggleRoundStatus = async () => {
+        try {
+            await updateDoc(doc(db, "settings", "submission"), {
+                isOpen: !roundConfig.isOpen
+            });
+            toast.success(roundConfig.isOpen ? "Round LOCKED." : "Round OPENED.");
+        } catch (error) {
+            toast.error("Failed to toggle status.");
+        }
+    };
+
+    const toggleEventActive = async () => {
+        const action = roundConfig.isEventActive ? "DISABLE" : "ENABLE";
+        if (!confirm(`Are you sure you want to ${action} the submission system?`)) return;
+        try {
+            await updateDoc(doc(db, "settings", "submission"), {
+                isEventActive: !roundConfig.isEventActive
+            });
+            toast.success(`Event is now ${!roundConfig.isEventActive ? "ONLINE" : "OFFLINE"}`);
+        } catch (error) {
+            toast.error("Failed to toggle event.");
+        }
+    };
+
+    const handleResetEvent = async () => {
+        const confirmation = prompt("?? DANGER ZONE ??\nType 'RESET' to wipe ALL submissions and reset to Round 1.");
+        if (confirmation !== "RESET") return;
+
+        try {
+            const batch = writeBatch(db);
+
+            // 1. Delete all submissions
+            const snapshot = await getDocs(collection(db, "submissions"));
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            // 2. Reset settings
+            batch.set(doc(db, "settings", "submission"), {
+                currentRoundId: 1,
+                isOpen: true,
+                isEventActive: false
+            });
+
+            await batch.commit();
+            toast.success("System RESET complete.");
+            setSubmissions([]);
+            setSelectedIds(new Set());
+        } catch (error) {
+            console.error(error);
+            toast.error("Reset failed.");
         }
     };
 
@@ -306,16 +364,81 @@ function SubmissionsManager() {
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
             <SectionHeader
                 title="Song Submissions"
-                subtitle={`Manage Round ${currentRound} submissions.`}
+                subtitle="Live request management center."
                 action={
-                    <button
-                        onClick={handleNextRound}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg hover:shadow-purple-500/25 text-white rounded-xl text-sm font-bold transition-all transform active:scale-95"
-                    >
-                        Next Round <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${roundConfig.isOpen ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
+                            {roundConfig.isOpen ? "ACCEPTING" : "LOCKED"}
+                        </div>
+                    </div>
                 }
             />
+
+            {/* CONTROL CENTER */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                {/* 1. Round Control */}
+                <div className="bg-neutral-900/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <ListMusic size={64} />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-bold text-lg mb-1">Round {roundConfig.currentRoundId}</h3>
+                        <p className="text-neutral-500 text-sm">Increment round to reset eligibility.</p>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <button
+                            onClick={handleNextRound}
+                            className="flex-1 bg-white text-black py-2 rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-lg shadow-white/5"
+                        >
+                            Start Round {roundConfig.currentRoundId + 1}
+                        </button>
+                        <button
+                            onClick={toggleRoundStatus}
+                            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors border ${roundConfig.isOpen ? "border-red-500/20 text-red-500 hover:bg-red-500/10" : "border-green-500/20 text-green-500 hover:bg-green-500/10"}`}
+                        >
+                            {roundConfig.isOpen ? "Lock" : "Open"}
+                        </button>
+                    </div>
+                </div>
+
+                {/* 2. Global Event Status */}
+                <div className="bg-neutral-900/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <MonitorPlay size={64} />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-bold text-lg mb-1">Event Status</h3>
+                        <p className="text-neutral-500 text-sm">{roundConfig.isEventActive ? "Event is LIVE. Users can access page." : "Event OFFLINE. 'Starting Soon' screen."}</p>
+                    </div>
+                    <div className="mt-4">
+                        <button
+                            onClick={toggleEventActive}
+                            className={`w-full py-2 rounded-lg font-bold text-sm transition-all shadow-lg ${roundConfig.isEventActive ? "bg-red-500 text-white shadow-red-500/20 hover:bg-red-600" : "bg-green-600 text-white shadow-green-500/20 hover:bg-green-500"}`}
+                        >
+                            {roundConfig.isEventActive ? "Stop Event (Go Offline)" : "Start Event (Go Live)"}
+                        </button>
+                    </div>
+                </div>
+
+                {/* 3. Danger Zone */}
+                <div className="bg-red-900/10 border border-red-500/10 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-10 text-red-500 group-hover:opacity-20 transition-opacity">
+                        <Trash2 size={64} />
+                    </div>
+                    <div>
+                        <h3 className="text-red-500 font-bold text-lg mb-1">Danger Zone</h3>
+                        <p className="text-red-400/60 text-sm">Irreversible actions.</p>
+                    </div>
+                    <div className="mt-4">
+                        <button
+                            onClick={handleResetEvent}
+                            className="w-full py-2 rounded-lg font-bold text-sm bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                        >
+                            Hard Reset Event
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div className="space-y-6">
                 {/* Toolbar */}
