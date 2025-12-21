@@ -186,6 +186,84 @@ const defaultProducts = [
     }
 ];
 
+// --- Modal System ---
+interface ModalState {
+    isOpen: boolean;
+    type: "confirm" | "danger" | "alert";
+    title: string;
+    message: string;
+    actionLabel?: string;
+    onConfirm: (inputValue?: string) => void;
+    requireInput?: string; // If set, user must type this to confirm
+}
+
+function ConfirmationModal({ state, onClose }: { state: ModalState; onClose: () => void }) {
+    const [input, setInput] = useState("");
+
+    if (!state.isOpen) return null;
+
+    const isDanger = state.type === "danger";
+
+    const handleConfirm = () => {
+        if (state.requireInput && input !== state.requireInput) {
+            toast.error(`Please type '${state.requireInput}' to confirm.`);
+            return;
+        }
+        state.onConfirm(input);
+        onClose();
+        setInput("");
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className={`bg-[#1e1e1e] border ${isDanger ? "border-red-500/30" : "border-white/10"} w-full max-w-md rounded-2xl p-6 shadow-2xl relative overflow-hidden`}
+            >
+                {/* Background Glow */}
+                {isDanger && <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/20 blur-[50px] pointer-events-none" />}
+
+                <h3 className={`text-xl font-bold mb-2 ${isDanger ? "text-red-500" : "text-white"}`}>{state.title}</h3>
+                <p className="text-neutral-400 mb-6 leading-relaxed">{state.message}</p>
+
+                {state.requireInput && (
+                    <div className="mb-6">
+                        <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 block">
+                            Type <span className="text-white select-all">{state.requireInput}</span> to confirm
+                        </label>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-red-500 transition-colors font-mono"
+                            placeholder={state.requireInput}
+                        />
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        className={`px-6 py-2 rounded-lg font-bold text-white transition-all shadow-lg ${isDanger
+                            ? "bg-red-600 hover:bg-red-500 shadow-red-900/20"
+                            : "bg-white text-black hover:bg-neutral-200 shadow-white/10"}`}
+                    >
+                        {state.actionLabel || "Confirm"}
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
 // --- Submissions Manager (Enhanced) ---
 function SubmissionsManager() {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -196,164 +274,172 @@ function SubmissionsManager() {
     const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
     const [roundConfig, setRoundConfig] = useState<any>({ currentRoundId: 1, isOpen: true, isEventActive: true });
 
+    // Modal State
+    const [modal, setModal] = useState<ModalState>({
+        isOpen: false,
+        type: "confirm",
+        title: "",
+        message: "",
+        onConfirm: () => { },
+    });
+
+    const openConfirm = (title: string, message: string, onConfirm: () => void, actionLabel = "Confirm") => {
+        setModal({ isOpen: true, type: "confirm", title, message, onConfirm, actionLabel });
+    };
+
+    const openDanger = (title: string, message: string, requireInput: string, onConfirm: () => void, actionLabel = "Execute") => {
+        setModal({ isOpen: true, type: "danger", title, message, requireInput, onConfirm, actionLabel });
+    };
+
     useEffect(() => {
-        // Listen to submissions
         const q = query(collection(db, "submissions"), orderBy("submittedAt", sortOrder));
         const unsubSubmissions = onSnapshot(q, (snapshot) => {
-            const subs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Submission[];
+            const subs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Submission[];
             setSubmissions(subs);
             setLoading(false);
         });
 
-        // Listen to round settings
         const unsubSettings = onSnapshot(doc(db, "settings", "submission"), (docSnap) => {
-            if (docSnap.exists()) {
-                setRoundConfig(docSnap.data());
-            } else {
-                // Init if missing
-                setDoc(doc(db, "settings", "submission"), { currentRoundId: 1, isOpen: true, isEventActive: true });
-            }
+            if (docSnap.exists()) setRoundConfig(docSnap.data());
+            else setDoc(doc(db, "settings", "submission"), { currentRoundId: 1, isOpen: true, isEventActive: true });
         });
 
-        return () => {
-            unsubSubmissions();
-            unsubSettings();
-        };
+        return () => { unsubSubmissions(); unsubSettings(); };
     }, [sortOrder]);
 
     // --- Actions ---
 
-    const handleNextRound = async () => {
-        if (!confirm("Start NEXT ROUND? This will increment the round ID and UNLOCK submissions.")) return;
-        try {
-            await updateDoc(doc(db, "settings", "submission"), {
-                currentRoundId: increment(1),
-                isOpen: true
-            });
-            toast.success("Round Updated! Users can now submit again.");
-        } catch (error) {
-            toast.error("Failed to update round.");
-        }
+    const handleNextRound = () => {
+        openConfirm(
+            "Start Next Round?",
+            "This will increment the round ID and UNLOCK submissions for everyone.",
+            async () => {
+                try {
+                    await updateDoc(doc(db, "settings", "submission"), {
+                        currentRoundId: increment(1),
+                        isOpen: true
+                    });
+                    toast.success("Round Updated successfully!");
+                } catch (error) {
+                    toast.error("Failed to update round.");
+                }
+            },
+            "Start Round"
+        );
     };
 
     const toggleRoundStatus = async () => {
         try {
-            await updateDoc(doc(db, "settings", "submission"), {
-                isOpen: !roundConfig.isOpen
-            });
+            await updateDoc(doc(db, "settings", "submission"), { isOpen: !roundConfig.isOpen });
             toast.success(roundConfig.isOpen ? "Round LOCKED." : "Round OPENED.");
-        } catch (error) {
-            toast.error("Failed to toggle status.");
-        }
+        } catch (error) { toast.error("Failed to toggle status."); }
     };
 
-    const toggleEventActive = async () => {
+    const toggleEventActive = () => {
         const action = roundConfig.isEventActive ? "DISABLE" : "ENABLE";
-        if (!confirm(`Are you sure you want to ${action} the submission system?`)) return;
-        try {
-            await updateDoc(doc(db, "settings", "submission"), {
-                isEventActive: !roundConfig.isEventActive
-            });
-            toast.success(`Event is now ${!roundConfig.isEventActive ? "ONLINE" : "OFFLINE"}`);
-        } catch (error) {
-            toast.error("Failed to toggle event.");
-        }
+        openConfirm(
+            `${action} Event?`,
+            `Are you sure you want to ${action} the submission system? This affects the public page immediately.`,
+            async () => {
+                try {
+                    await updateDoc(doc(db, "settings", "submission"), { isEventActive: !roundConfig.isEventActive });
+                    toast.success(`Event is now ${!roundConfig.isEventActive ? "ONLINE" : "OFFLINE"}`);
+                } catch (error) { toast.error("Failed to toggle event."); }
+            },
+            action === "DISABLE" ? "Stop Event" : "Go Live"
+        );
     };
 
-    const handleResetEvent = async () => {
-        const confirmation = prompt("?? DANGER ZONE ??\nType 'RESET' to wipe ALL submissions and reset to Round 1.");
-        if (confirmation !== "RESET") return;
+    const handleResetEvent = () => {
+        openDanger(
+            "HARD RESET EVENT",
+            "This will PERMANENTLY DELETE all submissions and reset the event to Round 1. This action cannot be undone.",
+            "RESET",
+            async () => {
+                try {
+                    const batch = writeBatch(db);
+                    const snapshot = await getDocs(collection(db, "submissions"));
+                    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
 
-        try {
-            const batch = writeBatch(db);
+                    // Generate new session version to force client reset
+                    const newSessionVersion = Date.now().toString();
 
-            // 1. Delete all submissions
-            const snapshot = await getDocs(collection(db, "submissions"));
-            snapshot.docs.forEach((doc) => {
-                batch.delete(doc.ref);
-            });
+                    batch.set(doc(db, "settings", "submission"), {
+                        currentRoundId: 1,
+                        isOpen: true,
+                        isEventActive: false,
+                        sessionVersion: newSessionVersion
+                    });
 
-            // 2. Reset settings
-            batch.set(doc(db, "settings", "submission"), {
-                currentRoundId: 1,
-                isOpen: true,
-                isEventActive: false
-            });
-
-            await batch.commit();
-            toast.success("System RESET complete.");
-            setSubmissions([]);
-            setSelectedIds(new Set());
-        } catch (error) {
-            console.error(error);
-            toast.error("Reset failed.");
-        }
+                    await batch.commit();
+                    toast.success("System RESET complete.");
+                    setSubmissions([]);
+                    setSelectedIds(new Set());
+                } catch (error) {
+                    toast.error("Reset failed.");
+                }
+            },
+            "Wipe Everything"
+        );
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Delete this submission?")) return;
-        try {
-            await deleteDoc(doc(db, "submissions", id));
-            toast.success("Deleted.");
-            setSelectedIds(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(id);
-                return newSet;
-            });
-        } catch (error) {
-            toast.error("Error deleting.");
-        }
+    const handleDelete = (id: string) => {
+        openConfirm(
+            "Delete Submission?",
+            "Are you sure you want to remove this track?",
+            async () => {
+                try {
+                    await deleteDoc(doc(db, "submissions", id));
+                    toast.success("Deleted.");
+                    setSelectedIds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(id);
+                        return newSet;
+                    });
+                } catch (error) { toast.error("Error deleting."); }
+            },
+            "Delete"
+        );
     };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = () => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`Delete ${selectedIds.size} submissions?`)) return;
-
-        try {
-            const batch = writeBatch(db);
-            selectedIds.forEach(id => {
-                batch.delete(doc(db, "submissions", id));
-            });
-            await batch.commit();
-            toast.success(`Deleted ${selectedIds.size} submissions.`);
-            setSelectedIds(new Set());
-        } catch (error) {
-            toast.error("Bulk delete failed.");
-        }
+        openConfirm(
+            `Delete ${selectedIds.size} Submissions?`,
+            "This action cannot be undone.",
+            async () => {
+                try {
+                    const batch = writeBatch(db);
+                    selectedIds.forEach(id => batch.delete(doc(db, "submissions", id)));
+                    await batch.commit();
+                    toast.success(`Deleted ${selectedIds.size} submissions.`);
+                    setSelectedIds(new Set());
+                } catch (error) { toast.error("Bulk delete failed."); }
+            },
+            "Delete All"
+        );
     };
 
     const handleCopyLinks = () => {
-        const links = submissions
-            .filter(s => selectedIds.has(s.id))
-            .map(s => s.link)
-            .join("\n");
+        const links = submissions.filter(s => selectedIds.has(s.id)).map(s => s.link).join("\n");
         navigator.clipboard.writeText(links);
-        toast.success(`Copied ${selectedIds.size} links to clipboard!`);
+        toast.success(`Copied ${selectedIds.size} links!`);
     };
 
     const toggleSelect = (id: string) => {
         const newSet = new Set(selectedIds);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
+        if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
         setSelectedIds(newSet);
     };
 
     const toggleSelectAll = () => {
-        if (selectedIds.size === filteredSubmissions.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(filteredSubmissions.map(s => s.id)));
-        }
+        if (selectedIds.size === filteredSubmissions.length) setSelectedIds(new Set());
+        else setSelectedIds(new Set(filteredSubmissions.map(s => s.id)));
     };
 
     // Derived state
     const filteredSubmissions = submissions.filter(s => {
-        const matchesSearch =
-            s.songName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.artistName.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = s.songName.toLowerCase().includes(searchTerm.toLowerCase()) || s.artistName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRound = filterRound === "all" || s.roundId === filterRound;
         return matchesSearch && matchesRound;
     });
@@ -362,9 +448,13 @@ function SubmissionsManager() {
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <AnimatePresence>
+                {modal.isOpen && <ConfirmationModal state={modal} onClose={() => setModal({ ...modal, isOpen: false })} />}
+            </AnimatePresence>
+
             <SectionHeader
                 title="Song Submissions"
-                subtitle="Live request management center."
+                subtitle={`Manage Round ${roundConfig.currentRoundId} submissions.`}
                 action={
                     <div className="flex items-center gap-3">
                         <div className={`px-3 py-1 rounded-full text-xs font-bold border ${roundConfig.isOpen ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>

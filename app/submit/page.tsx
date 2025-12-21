@@ -39,8 +39,18 @@ export default function SubmitPage() {
                         const currentRound = data.currentRoundId || 1;
                         const isOpen = data.isOpen !== false; // Default true
                         const isEventActive = data.isEventActive !== false; // Default true
+                        const remoteSessionVersion = data.sessionVersion || "v1";
 
                         setRoundId(currentRound);
+
+                        // 0. Check Session Version for Hard Resets
+                        const localSessionVersion = localStorage.getItem("sessionVersion");
+                        if (localSessionVersion !== remoteSessionVersion) {
+                            // Reset local state if version changed (Host did a Hard Reset)
+                            console.log("Session reset detected. Clearing local history.");
+                            localStorage.removeItem("lastSubmittedRound");
+                            localStorage.setItem("sessionVersion", remoteSessionVersion);
+                        }
 
                         // 1. Check Event Active
                         if (!isEventActive) {
@@ -65,7 +75,7 @@ export default function SubmitPage() {
                         }
                     } else {
                         // Initialize settings if not exists
-                        setDoc(settingsRef, { currentRoundId: 1, isOpen: true, isEventActive: true }, { merge: true });
+                        setDoc(settingsRef, { currentRoundId: 1, isOpen: true, isEventActive: true, sessionVersion: "v1" }, { merge: true });
                         setRoundId(1);
                         setStatus("idle");
                     }
@@ -121,7 +131,7 @@ export default function SubmitPage() {
     if (checkingStatus) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-[#121212] text-[#e3e3e3]">
-                <div animate-pulse className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-[#e3e3e3]/10 border-t-[#d0bcff] animate-spin" />
                 </div>
             </div>
