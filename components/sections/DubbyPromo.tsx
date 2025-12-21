@@ -155,11 +155,17 @@ export default function DubbyPromo() {
     const heroImages = [
         "/dubby/endorsement.jpg",
         "/dubby/endorsement-alt.jpg",
-        "/dubby/endorsement-3.jpg"
+        "/dubby/endorsement-3.jpg",
+        "/dubby/endorsement-4.jpg",
+        "/dubby/endorsement-5.jpg"
     ];
 
     const currentHeroImage = heroImages[heroImageIndex];
     const isAlt = heroImageIndex > 0;
+
+    // Cycle through colors for the badge dot
+    const badgeColors = ['bg-green-500', 'bg-pink-500', 'bg-yellow-500', 'bg-blue-500', 'bg-purple-500'];
+    const currentBadgeColor = badgeColors[heroImageIndex % badgeColors.length];
 
     return (
         <section id="dubby" className="py-20 relative overflow-hidden transition-colors duration-300">
@@ -223,7 +229,7 @@ export default function DubbyPromo() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="flex-1 relative w-full max-w-md lg:max-w-xl cursor-pointer"
-                        onClick={() => setHeroImageIndex(prev => (prev + 1) % 3)}
+                        onClick={() => setHeroImageIndex(prev => (prev + 1) % heroImages.length)}
                         whileTap={{ scale: 0.95 }}
                     >
                         <div className="relative aspect-square">
@@ -257,7 +263,7 @@ export default function DubbyPromo() {
                                     transition={{ delay: 1, duration: 0.5 }}
                                     className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 pointer-events-none z-10"
                                 >
-                                    <span className={`w-2 h-2 rounded-full ${heroImageIndex === 1 ? 'bg-pink-500' : heroImageIndex === 2 ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
+                                    <span className={`w-2 h-2 rounded-full ${currentBadgeColor} animate-pulse`} />
                                     OFFICIAL PARTNER
                                 </motion.div>
 
