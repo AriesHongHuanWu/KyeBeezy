@@ -139,11 +139,11 @@ export default function SubmitPage() {
                     <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                     {!canSubmit ? (
-                        <div className="flex flex-col items-center justify-center py-10 spaces-y-6 text-center">
+                        <div className="flex flex-col items-center justify-center py-10 space-y-6 text-center">
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                type="spring"
+                                transition={{ type: "spring" }}
                                 className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6"
                             >
                                 <CheckCircle2 className="w-10 h-10 text-green-500" />
