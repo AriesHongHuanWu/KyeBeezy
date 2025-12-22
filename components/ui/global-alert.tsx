@@ -11,6 +11,8 @@ interface AlertMessage {
     title: string;
     message: string;
     type: "info" | "live" | "warning" | "success";
+    targetAudience?: "all" | "subscribers";
+    eventId?: string;
     createdAt: Timestamp;
 }
 
@@ -36,6 +38,15 @@ export default function GlobalAlert() {
 
                 // Only show if created within the last 5 minutes to avoid stale alerts
                 if (createdAt && (now.getTime() - createdAt.getTime()) < 5 * 60 * 1000) {
+
+                    // Filter Logic
+                    if (data.targetAudience === 'subscribers' && data.eventId) {
+                        const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
+                        if (!subs.includes(data.eventId)) {
+                            return; // User is not subscribed
+                        }
+                    }
+
                     // Check if it's actually different from the current one to avoid react loop
                     setAlert({ ...data, id: snapshot.docs[0].id });
                     setVisible(true);

@@ -1,23 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Radio, Bell, AlertTriangle, CheckCircle } from "lucide-react";
+import { Radio, Bell, AlertTriangle, CheckCircle, Calendar, Users, Globe } from "lucide-react";
 import { SectionHeader } from "@/app/admin/page";
+import { format } from "date-fns";
 
 export default function BroadcastManager() {
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, reset, watch } = useForm();
     const [isSending, setIsSending] = useState(false);
+    const [events, setEvents] = useState<any[]>([]);
+
+    // Fetch upcoming events for target selection
+    useEffect(() => {
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        const q = query(
+            collection(db, "events"),
+            where("date", ">=", todayStr),
+            orderBy("date", "asc")
+        );
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        return () => unsubscribe();
+    }, []);
 
     const onSend = async (data: any) => {
         setIsSending(true);
         try {
             await addDoc(collection(db, "alerts"), {
                 ...data,
+                targetAudience: data.targetAudience || 'all',
+                eventId: data.eventId || null,
                 createdAt: serverTimestamp()
             });
             toast.success("Broadcast Sent!");
@@ -29,6 +47,8 @@ export default function BroadcastManager() {
         }
     };
 
+    const targetAudience = watch("targetAudience", "all");
+
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
             <SectionHeader
@@ -38,6 +58,38 @@ export default function BroadcastManager() {
 
             <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 max-w-2xl">
                 <form onSubmit={handleSubmit(onSend)} className="space-y-6">
+
+                    {/* Targeting Section */}
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                        <label className="text-xs font-bold text-neutral-500 uppercase block">Target Audience</label>
+                        <div className="flex gap-4">
+                            <label className={`flex-1 p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-all ${targetAudience === 'all' ? 'bg-purple-500/20 border-purple-500 text-purple-200' : 'bg-black/20 border-white/10 text-neutral-400'}`}>
+                                <input {...register("targetAudience")} type="radio" value="all" className="sr-only" defaultChecked />
+                                <Globe size={18} />
+                                <span className="font-bold text-sm">Everyone</span>
+                            </label>
+                            <label className={`flex-1 p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-all ${targetAudience === 'subscribers' ? 'bg-purple-500/20 border-purple-500 text-purple-200' : 'bg-black/20 border-white/10 text-neutral-400'}`}>
+                                <input {...register("targetAudience")} type="radio" value="subscribers" className="sr-only" />
+                                <Users size={18} />
+                                <span className="font-bold text-sm">Event Subscribers</span>
+                            </label>
+                        </div>
+
+                        {targetAudience === 'subscribers' && (
+                            <div className="pt-2">
+                                <label className="text-xs font-bold text-neutral-500 uppercase block mb-2">Select Event</label>
+                                <select {...register("eventId")} className="input-field" required>
+                                    <option value="">-- Choose an Event --</option>
+                                    {events.map(event => (
+                                        <option key={event.id} value={event.id}>
+                                            {event.date} - {event.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+
                     <div>
                         <label className="text-xs font-bold text-neutral-500 uppercase block mb-2">Message Type</label>
                         <div className="grid grid-cols-4 gap-4">

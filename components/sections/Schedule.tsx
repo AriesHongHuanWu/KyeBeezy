@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calendar, Clock, Radio, MapPin, ExternalLink, ArrowRight } from "lucide-react";
+import { Calendar, Clock, Radio, MapPin, ExternalLink, ArrowRight, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { collection, query, orderBy, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -118,15 +118,38 @@ export default function Schedule() {
                         const isLive = isLiveNow(item);
                         const dateObj = parseISO(item.date);
 
+                        // Check subscription (client-side only trick)
+                        const [subscribed, setSubscribed] = useState(false);
+
+                        useEffect(() => {
+                            const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
+                            setSubscribed(subs.includes(item.id));
+                        }, [item.id]);
+
+                        const toggleSub = (e: any) => {
+                            e.preventDefault();
+                            const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
+                            let newSubs;
+                            if (subs.includes(item.id)) {
+                                newSubs = subs.filter((id: string) => id !== item.id);
+                                setSubscribed(false);
+                            } else {
+                                newSubs = [...subs, item.id];
+                                setSubscribed(true);
+                            }
+                            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
+                        };
+
                         return (
                             <motion.div
                                 key={item.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
+                                whileHover={{ scale: 1.02, rotateX: 5 }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                                 className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[200px] ${isLive
                                         ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
-                                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10"
                                     }`}
                             >
                                 {/* Live Tag */}
@@ -135,6 +158,19 @@ export default function Schedule() {
                                         <Radio className="w-3 h-3 text-white" />
                                         <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
                                     </div>
+                                )}
+
+                                {/* Bell Subscription Button */}
+                                {!isLive && (
+                                    <button
+                                        onClick={toggleSub}
+                                        className={`absolute top-4 right-4 z-20 p-2 rounded-full transition-all duration-300 ${subscribed
+                                                ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/40 scale-110'
+                                                : 'bg-white/5 text-neutral-500 hover:bg-white/20 hover:text-white'
+                                            }`}
+                                    >
+                                        <Bell className={`w-4 h-4 ${subscribed ? 'fill-current animate-wiggle' : ''}`} />
+                                    </button>
                                 )}
 
                                 <div>
@@ -160,9 +196,14 @@ export default function Schedule() {
                                             'bg-blue-500'
                                     }`} />
 
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mt-2 text-right">
-                                    {item.type}
-                                </p>
+                                <div className="flex justify-between items-end mt-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                                        {subscribed ? "Reminder Set" : ""}
+                                    </p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 text-right">
+                                        {item.type}
+                                    </p>
+                                </div>
                             </motion.div>
                         );
                     })}
