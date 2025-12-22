@@ -55,6 +55,7 @@ import CustomCursor from "@/components/ui/custom-cursor";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
+import GlobalAlert from "@/components/ui/global-alert";
 
 export default function RootLayout({
   children,
@@ -77,6 +78,7 @@ export default function RootLayout({
             <Noise />
             <CustomCursor />
             <ScrollProgress />
+            <GlobalAlert />
             <Toaster theme="dark" position="top-right" />
           </ThemeProvider>
         </AuthProvider>

@@ -772,6 +772,8 @@ function SettingsManager() {
     );
 }
 
+import BroadcastManager from "@/components/admin/BroadcastManager";
+
 // --- Schedule Manager (NEW) ---
 interface CalendarEvent {
     id: string;
@@ -1034,7 +1036,7 @@ function TabButton({ active, onClick, icon, label }: any) {
     );
 }
 
-function SectionHeader({ title, subtitle, action }: any) {
+export function SectionHeader({ title, subtitle, action }: any) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
@@ -1509,7 +1511,7 @@ function AdminsManager({ currentUser }: { currentUser: string }) {
 
 // --- Main Dashboard Component --- (Updated)
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule">("submissions");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule" | "broadcast">("submissions");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -1625,6 +1627,7 @@ export default function AdminDashboard() {
                         {activeTab === "videos" && <VideosManager key="videos" />}
                         {activeTab === "music" && <MusicManager key="music" />}
                         {activeTab === "products" && <ProductsManager key="products" />}
+                        {activeTab === "broadcast" && <BroadcastManager key="broadcast" />}
                     </AnimatePresence>
                 </main>
             </div>
