@@ -158,8 +158,7 @@ function ScheduleCard({ item, index }: { item: CalendarEvent, index: number }) {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
                         const token = await getToken(messaging, {
-                            vapidKey: "BMw-8D52u-EaX5p7l6sR-x3K_yA8w-6W_7f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x7y8z9" // Replacing with a placeholder VAPID key is common or reading from env. For this user, I'll try without VAPID first or use a known public one if required, but usually getToken needs one. Wait, Firebase Gen 9+ usually requires a VAPID key. I will assume standard config or tell user to add it. For now, let's use a standard pattern. Actually, I should use the one from Project Settings -> Cloud Messaging -> Web Config. I don't have it. I'll rely on the default config which often works if `firebaseConfig` is good, but getToken usually demands it.
-                            // Actually, let's try WITHOUT vapidKey first, sometimes it works on autoconfig. If not, I'll log an error.
+                            vapidKey: "BCZyd7vxN07SCJjLE9XQZQcr64q0zPGOflsye2QHxMSKTXvd56nB90x3PWyLI3uBqJRH8tlF3yG9tWDqaleo8Bk"
                         });
                         if (token) {
                             console.log("FCM Token:", token);
