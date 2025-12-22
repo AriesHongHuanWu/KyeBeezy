@@ -29,4 +29,12 @@ if (typeof window !== "undefined") {
     });
 }
 
-export { app, auth, db, analytics, googleProvider };
+// Messaging (FCM)
+import { getMessaging } from "firebase/messaging";
+let messaging: any;
+
+if (typeof window !== "undefined") {
+    messaging = getMessaging(app);
+}
+
+export { app, auth, db, analytics, googleProvider, messaging };

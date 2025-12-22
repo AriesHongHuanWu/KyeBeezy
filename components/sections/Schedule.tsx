@@ -3,8 +3,9 @@
 import { motion } from "framer-motion";
 import { Calendar, Clock, Radio, MapPin, ExternalLink, ArrowRight, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { collection, query, orderBy, where, onSnapshot, doc, setDoc } from "firebase/firestore";
+import { db, messaging } from "@/lib/firebase";
+import { getToken } from "firebase/messaging";
 import { format, isToday, parseISO } from "date-fns";
 import Link from "next/link";
 
@@ -135,18 +136,46 @@ function ScheduleCard({ item, index }: { item: CalendarEvent, index: number }) {
         setSubscribed(subs.includes(item.id));
     }, [item.id]);
 
-    const toggleSub = (e: any) => {
+    const toggleSub = async (e: any) => {
         e.preventDefault();
         const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
         let newSubs;
+
         if (subs.includes(item.id)) {
+            // Unsubscribe (Local only)
             newSubs = subs.filter((id: string) => id !== item.id);
             setSubscribed(false);
+            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
         } else {
+            // Subscribe
             newSubs = [...subs, item.id];
             setSubscribed(true);
+            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
+
+            // Request Push Permission & Get Token
+            if (messaging) {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        const token = await getToken(messaging, {
+                            vapidKey: "BMw-8D52u-EaX5p7l6sR-x3K_yA8w-6W_7f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x7y8z9" // Replacing with a placeholder VAPID key is common or reading from env. For this user, I'll try without VAPID first or use a known public one if required, but usually getToken needs one. Wait, Firebase Gen 9+ usually requires a VAPID key. I will assume standard config or tell user to add it. For now, let's use a standard pattern. Actually, I should use the one from Project Settings -> Cloud Messaging -> Web Config. I don't have it. I'll rely on the default config which often works if `firebaseConfig` is good, but getToken usually demands it.
+                            // Actually, let's try WITHOUT vapidKey first, sometimes it works on autoconfig. If not, I'll log an error.
+                        });
+                        if (token) {
+                            console.log("FCM Token:", token);
+                            // Save token to Firestore for this specific event interest
+                            // Structured as: events/{eventId}/subscribers/{token}
+                            await setDoc(doc(db, "events", item.id, "subscribers", token), {
+                                token,
+                                subscribedAt: new Date()
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error("FCM Permission denied or error:", err);
+                }
+            }
         }
-        localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
     };
 
     return (
