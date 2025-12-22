@@ -1,26 +1,70 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calendar, Clock, Radio } from "lucide-react";
+import { Calendar, Clock, Radio, MapPin, ExternalLink, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { collection, query, orderBy, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { format, isToday, parseISO } from "date-fns";
+import Link from "next/link";
 
-interface ScheduleItem {
-    day: string;
-    time: string;
-    activity: string;
-    isLive?: boolean;
+interface CalendarEvent {
+    id: string;
+    date: string; // YYYY-MM-DD
+    title: string;
+    time: string; // HH:mm
+    type: "stream" | "release" | "event";
 }
 
-const scheduleData: ScheduleItem[] = [
-    { day: "Monday", time: "7:00 PM EST", activity: "Just Chatting & Vibes", isLive: false },
-    { day: "Tuesday", time: "OFF", activity: "Studio / Recording", isLive: false },
-    { day: "Wednesday", time: "7:00 PM EST", activity: "Gaming & Community Night", isLive: false },
-    { day: "Thursday", time: "7:00 PM EST", activity: "Music Production / Beat Cookup", isLive: true },
-    { day: "Friday", time: "8:00 PM EST", activity: "Freestyle Friday", isLive: false },
-    { day: "Saturday", time: "TBA", activity: "Special Events", isLive: false },
-    { day: "Sunday", time: "OFF", activity: "Rest & Reset", isLive: false },
-];
-
 export default function Schedule() {
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Query for events Today or in Future
+        // Note: Firestore string comparison works for ISO dates (YYYY-MM-DD)
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+
+        try {
+            const q = query(
+                collection(db, "events"),
+                where("date", ">=", todayStr),
+                orderBy("date", "asc")
+            );
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const fetchedEvents = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as CalendarEvent[];
+
+                // Secondary sort by time if needed (though strings sort ok)
+                setEvents(fetchedEvents);
+                setLoading(false);
+            }, (error) => {
+                console.error("Schedule fetch error:", error);
+                setLoading(false);
+            });
+            return () => unsubscribe();
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+        }
+    }, []);
+
+    // Helper to check if event is "Live Now" (simplified logic: if today and within 4 hours of start)
+    const isLiveNow = (event: CalendarEvent) => {
+        if (!isToday(parseISO(event.date))) return false;
+        const now = new Date();
+        const [hours, minutes] = event.time.split(':').map(Number);
+        const eventTime = new Date();
+        eventTime.setHours(hours, minutes, 0, 0);
+
+        // Assume live for 4 hours
+        const fourHoursLater = new Date(eventTime.getTime() + 4 * 60 * 60 * 1000);
+        return now >= eventTime && now <= fourHoursLater;
+    };
+
     return (
         <section id="schedule" className="py-20 relative">
             <div className="container mx-auto px-6 relative z-10">
@@ -30,74 +74,98 @@ export default function Schedule() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-center mb-16"
+                    className="flex flex-col md:flex-row items-end justify-between gap-6 mb-12"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-bold tracking-widest uppercase mb-4 text-purple-400">
-                        <Clock className="w-4 h-4" /> Weekly Schedule
+                    <div className="space-y-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-bold tracking-widest uppercase text-purple-400">
+                            <Clock className="w-4 h-4" /> Upcoming Events
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black text-foreground font-outfit tracking-tighter">
+                            THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AGENDA</span>
+                        </h2>
                     </div>
-                    <h2 className="text-4xl md:text-6xl font-black text-foreground font-outfit tracking-tighter mb-4">
-                        CATCH THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">WAVE</span>
-                    </h2>
-                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                        Tune in live for gaming, music production, and vibes. Schedule subject to change—join Discord for updates.
-                    </p>
+                    <Link href="https://discord.com/invite/JU3MNRGWXq" target="_blank" className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors group">
+                        <span className="text-sm font-bold uppercase tracking-wider">Join Discord for Updates</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                 </motion.div>
 
-                {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {scheduleData.map((item, index) => (
-                        <motion.div
-                            key={item.day}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 ${item.isLive
-                                    ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
-                                    : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-                                }`}
-                        >
-                            {/* Live Indicator */}
-                            {item.isLive && (
-                                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-lg shadow-red-500/40 animate-pulse">
-                                    <Radio className="w-3 h-3 text-white" />
-                                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Live Now</span>
-                                </div>
-                            )}
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex justify-center py-20">
+                        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                )}
 
-                            <div className="flex flex-col h-full justify-between gap-4">
-                                <div>
-                                    <h3 className={`text-2xl font-black font-outfit mb-1 ${item.isLive ? "text-purple-300" : "text-foreground"}`}>
-                                        {item.day}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-sm font-bold tracking-wider opacity-60 uppercase mb-4">
-                                        <Clock className="w-3 h-3" /> {item.time}
-                                    </div>
-                                    <p className={`text-lg font-medium leading-tight ${item.isLive ? "text-white" : "text-muted-foreground group-hover:text-foreground transition-colors"}`}>
-                                        {item.activity}
-                                    </p>
-                                </div>
-
-                                {item.time !== "OFF" && (
-                                    <div className={`h-1 w-full rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent ${item.isLive ? "via-purple-500" : ""}`} />
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-
-                    {/* Discord CTA Block */}
+                {/* Empty State */}
+                {!loading && events.length === 0 && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.8 }}
-                        className="col-span-1 md:col-span-2 lg:col-span-1 bg-[#5865F2] rounded-3xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:scale-[1.02] transition-transform"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center"
                     >
-                        <div className="absolute inset-0 bg-[url('https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png')] bg-center bg-cover opacity-10 bg-blend-overlay" />
-                        <div className="relative z-10 space-y-4">
-                            <Calendar className="w-10 h-10 text-white mx-auto opacity-80" />
-                            <h3 className="text-xl font-bold text-white">Full Schedule</h3>
-                            <p className="text-white/80 text-sm">Check Discord for specific game titles and impromptu streams.</p>
-                        </div>
+                        <Calendar className="w-16 h-16 text-neutral-600 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold text-white mb-2">No Scheduled Events</h3>
+                        <p className="text-neutral-400 max-w-md mx-auto">
+                            The calendar is currently clear. Follow on Twitch or Discord to catch unplanned streams!
+                        </p>
                     </motion.div>
+                )}
+
+                {/* Events Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {events.map((item, index) => {
+                        const isLive = isLiveNow(item);
+                        const dateObj = parseISO(item.date);
+
+                        return (
+                            <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: index * 0.1 }}
+                                className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[200px] ${isLive
+                                        ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
+                                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                                    }`}
+                            >
+                                {/* Live Tag */}
+                                {isLive && (
+                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-lg shadow-red-500/40 animate-pulse z-10">
+                                        <Radio className="w-3 h-3 text-white" />
+                                        <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
+                                    </div>
+                                )}
+
+                                <div>
+                                    {/* Date Badge */}
+                                    <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-xl mb-6 ${isLive ? 'bg-purple-500 text-white' : 'bg-white/10 text-neutral-300 group-hover:bg-white/20 group-hover:text-white transition-colors'}`}>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{format(dateObj, "MMM")}</span>
+                                        <span className="text-2xl font-black leading-none">{format(dateObj, "d")}</span>
+                                    </div>
+
+                                    <h3 className={`text-2xl font-black font-outfit mb-2 leading-tight ${isLive ? "text-white" : "text-foreground"}`}>
+                                        {item.title}
+                                    </h3>
+
+                                    <div className="flex items-center gap-2 text-sm font-bold tracking-wider opacity-60 uppercase">
+                                        <Clock className="w-3 h-3" />
+                                        {format(parseISO(`2000-01-01T${item.time}`), "h:mm a")}
+                                    </div>
+                                </div>
+
+                                {/* Type Strip */}
+                                <div className={`h-1.5 w-full rounded-full mt-6 ${item.type === 'stream' ? 'bg-purple-500' :
+                                        item.type === 'release' ? 'bg-green-500' :
+                                            'bg-blue-500'
+                                    }`} />
+
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mt-2 text-right">
+                                    {item.type}
+                                </p>
+                            </motion.div>
+                        );
+                    })}
                 </div>
 
             </div>

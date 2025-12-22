@@ -18,6 +18,7 @@ import {
     increment,
     serverTimestamp
 } from "firebase/firestore";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, addMonths, subMonths, isSameDay, parseISO } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -772,8 +773,6 @@ function SettingsManager() {
 }
 
 // --- Schedule Manager (NEW) ---
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, addMonths, subMonths, isSameDay, parseISO } from "date-fns";
-
 interface CalendarEvent {
     id: string;
     date: string; // ISO String YYYY-MM-DD
