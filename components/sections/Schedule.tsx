@@ -22,7 +22,6 @@ export default function Schedule() {
 
     useEffect(() => {
         // Query for events Today or in Future
-        // Note: Firestore string comparison works for ISO dates (YYYY-MM-DD)
         const todayStr = format(new Date(), "yyyy-MM-dd");
 
         try {
@@ -38,7 +37,6 @@ export default function Schedule() {
                     ...doc.data()
                 })) as CalendarEvent[];
 
-                // Secondary sort by time if needed (though strings sort ok)
                 setEvents(fetchedEvents);
                 setLoading(false);
             }, (error) => {
@@ -51,19 +49,6 @@ export default function Schedule() {
             setLoading(false);
         }
     }, []);
-
-    // Helper to check if event is "Live Now" (simplified logic: if today and within 4 hours of start)
-    const isLiveNow = (event: CalendarEvent) => {
-        if (!isToday(parseISO(event.date))) return false;
-        const now = new Date();
-        const [hours, minutes] = event.time.split(':').map(Number);
-        const eventTime = new Date();
-        eventTime.setHours(hours, minutes, 0, 0);
-
-        // Assume live for 4 hours
-        const fourHoursLater = new Date(eventTime.getTime() + 4 * 60 * 60 * 1000);
-        return now >= eventTime && now <= fourHoursLater;
-    };
 
     return (
         <section id="schedule" className="py-20 relative">
@@ -114,102 +99,119 @@ export default function Schedule() {
 
                 {/* Events Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {events.map((item, index) => {
-                        const isLive = isLiveNow(item);
-                        const dateObj = parseISO(item.date);
-
-                        // Check subscription (client-side only trick)
-                        const [subscribed, setSubscribed] = useState(false);
-
-                        useEffect(() => {
-                            const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
-                            setSubscribed(subs.includes(item.id));
-                        }, [item.id]);
-
-                        const toggleSub = (e: any) => {
-                            e.preventDefault();
-                            const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
-                            let newSubs;
-                            if (subs.includes(item.id)) {
-                                newSubs = subs.filter((id: string) => id !== item.id);
-                                setSubscribed(false);
-                            } else {
-                                newSubs = [...subs, item.id];
-                                setSubscribed(true);
-                            }
-                            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
-                        };
-
-                        return (
-                            <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                whileHover={{ scale: 1.02, rotateX: 5 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[200px] ${isLive
-                                        ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
-                                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10"
-                                    }`}
-                            >
-                                {/* Live Tag */}
-                                {isLive && (
-                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-lg shadow-red-500/40 animate-pulse z-10">
-                                        <Radio className="w-3 h-3 text-white" />
-                                        <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
-                                    </div>
-                                )}
-
-                                {/* Bell Subscription Button */}
-                                {!isLive && (
-                                    <button
-                                        onClick={toggleSub}
-                                        className={`absolute top-4 right-4 z-20 p-2 rounded-full transition-all duration-300 ${subscribed
-                                                ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/40 scale-110'
-                                                : 'bg-white/5 text-neutral-500 hover:bg-white/20 hover:text-white'
-                                            }`}
-                                    >
-                                        <Bell className={`w-4 h-4 ${subscribed ? 'fill-current animate-wiggle' : ''}`} />
-                                    </button>
-                                )}
-
-                                <div>
-                                    {/* Date Badge */}
-                                    <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-xl mb-6 ${isLive ? 'bg-purple-500 text-white' : 'bg-white/10 text-neutral-300 group-hover:bg-white/20 group-hover:text-white transition-colors'}`}>
-                                        <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{format(dateObj, "MMM")}</span>
-                                        <span className="text-2xl font-black leading-none">{format(dateObj, "d")}</span>
-                                    </div>
-
-                                    <h3 className={`text-2xl font-black font-outfit mb-2 leading-tight ${isLive ? "text-white" : "text-foreground"}`}>
-                                        {item.title}
-                                    </h3>
-
-                                    <div className="flex items-center gap-2 text-sm font-bold tracking-wider opacity-60 uppercase">
-                                        <Clock className="w-3 h-3" />
-                                        {format(parseISO(`2000-01-01T${item.time}`), "h:mm a")}
-                                    </div>
-                                </div>
-
-                                {/* Type Strip */}
-                                <div className={`h-1.5 w-full rounded-full mt-6 ${item.type === 'stream' ? 'bg-purple-500' :
-                                        item.type === 'release' ? 'bg-green-500' :
-                                            'bg-blue-500'
-                                    }`} />
-
-                                <div className="flex justify-between items-end mt-2">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-                                        {subscribed ? "Reminder Set" : ""}
-                                    </p>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 text-right">
-                                        {item.type}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
+                    {events.map((item, index) => (
+                        <ScheduleCard key={item.id} item={item} index={index} />
+                    ))}
                 </div>
 
             </div>
         </section>
+    );
+}
+
+// --- Sub Component: ScheduleCard (Fixes Hook Rule Violation) ---
+function ScheduleCard({ item, index }: { item: CalendarEvent, index: number }) {
+    // Helper to check if event is "Live Now"
+    const isLiveNow = (event: CalendarEvent) => {
+        if (!isToday(parseISO(event.date))) return false;
+        const now = new Date();
+        const [hours, minutes] = event.time.split(':').map(Number);
+        const eventTime = new Date();
+        eventTime.setHours(hours, minutes, 0, 0);
+
+        // Assume live for 4 hours
+        const fourHoursLater = new Date(eventTime.getTime() + 4 * 60 * 60 * 1000);
+        return now >= eventTime && now <= fourHoursLater;
+    };
+
+    const isLive = isLiveNow(item);
+    const dateObj = parseISO(item.date);
+
+    // Check subscription (client-side only)
+    const [subscribed, setSubscribed] = useState(false);
+
+    useEffect(() => {
+        const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
+        setSubscribed(subs.includes(item.id));
+    }, [item.id]);
+
+    const toggleSub = (e: any) => {
+        e.preventDefault();
+        const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
+        let newSubs;
+        if (subs.includes(item.id)) {
+            newSubs = subs.filter((id: string) => id !== item.id);
+            setSubscribed(false);
+        } else {
+            newSubs = [...subs, item.id];
+            setSubscribed(true);
+        }
+        localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02, rotateX: 5 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[200px] ${isLive
+                ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
+                : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10"
+                }`}
+        >
+            {/* Live Tag */}
+            {isLive && (
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-lg shadow-red-500/40 animate-pulse z-10">
+                    <Radio className="w-3 h-3 text-white" />
+                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
+                </div>
+            )}
+
+            {/* Bell Subscription Button */}
+            {!isLive && (
+                <button
+                    onClick={toggleSub}
+                    className={`absolute top-4 right-4 z-20 p-2 rounded-full transition-all duration-300 ${subscribed
+                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/40 scale-110'
+                        : 'bg-white/5 text-neutral-500 hover:bg-white/20 hover:text-white'
+                        }`}
+                >
+                    <Bell className={`w-4 h-4 ${subscribed ? 'fill-current animate-wiggle' : ''}`} />
+                </button>
+            )}
+
+            <div>
+                {/* Date Badge */}
+                <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-xl mb-6 ${isLive ? 'bg-purple-500 text-white' : 'bg-white/10 text-neutral-300 group-hover:bg-white/20 group-hover:text-white transition-colors'}`}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{format(dateObj, "MMM")}</span>
+                    <span className="text-2xl font-black leading-none">{format(dateObj, "d")}</span>
+                </div>
+
+                <h3 className={`text-2xl font-black font-outfit mb-2 leading-tight ${isLive ? "text-white" : "text-foreground"}`}>
+                    {item.title}
+                </h3>
+
+                <div className="flex items-center gap-2 text-sm font-bold tracking-wider opacity-60 uppercase">
+                    <Clock className="w-3 h-3" />
+                    {format(parseISO(`2000-01-01T${item.time}`), "h:mm a")}
+                </div>
+            </div>
+
+            {/* Type Strip */}
+            <div className={`h-1.5 w-full rounded-full mt-6 ${item.type === 'stream' ? 'bg-purple-500' :
+                item.type === 'release' ? 'bg-green-500' :
+                    'bg-blue-500'
+                }`} />
+
+            <div className="flex justify-between items-end mt-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                    {subscribed ? "Reminder Set" : ""}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 text-right">
+                    {item.type}
+                </p>
+            </div>
+        </motion.div>
     );
 }
