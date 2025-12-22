@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { collection, query, orderBy, limit, onSnapshot, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, messaging } from "@/lib/firebase";
+import { onMessage } from "firebase/messaging";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X, Radio, AlertTriangle, CheckCircle, Info } from "lucide-react";
 
@@ -13,7 +14,7 @@ interface AlertMessage {
     type: "info" | "live" | "warning" | "success";
     targetAudience?: "all" | "subscribers";
     eventId?: string;
-    createdAt: Timestamp;
+    createdAt: Timestamp | Date; // Allow Date for local FCM messages
 }
 
 export default function GlobalAlert() {
@@ -23,6 +24,7 @@ export default function GlobalAlert() {
     // Track seen alerts to prevent re-showing old ones on refresh (optional, but good UX)
     // For this implementation, we'll just show any alert created in the last 60 seconds
 
+    // 1. Listen for Firestore alerts (Admin Broadcasts)
     useEffect(() => {
         const q = query(
             collection(db, "alerts"),
@@ -33,7 +35,7 @@ export default function GlobalAlert() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
                 const data = snapshot.docs[0].data() as AlertMessage;
-                const createdAt = data.createdAt?.toDate();
+                const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt;
                 const now = new Date();
 
                 // Only show if created within the last 5 minutes to avoid stale alerts
@@ -56,6 +58,22 @@ export default function GlobalAlert() {
                 }
             }
         });
+
+        // 2. Listen for Foreground FCM Messages (Push Notifications while app is open)
+        if (messaging) {
+            onMessage(messaging, (payload) => {
+                console.log("Foreground Message:", payload);
+                setAlert({
+                    id: 'fcm-' + Date.now(),
+                    title: payload.notification?.title || "New Notification",
+                    message: payload.notification?.body || "",
+                    type: "info", // Default to info for FCM
+                    createdAt: new Date()
+                });
+                setVisible(true);
+                setTimeout(() => setVisible(false), 10000);
+            });
+        }
 
         return () => unsubscribe();
     }, []);
