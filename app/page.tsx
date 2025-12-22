@@ -7,6 +7,7 @@ import AboutSection from "@/components/sections/About";
 import MusicSection from "@/components/sections/Music";
 import StreamingSection from "@/components/sections/Streaming";
 import ContactSection from "@/components/sections/Contact";
+import Schedule from "@/components/sections/Schedule";
 import DubbyPromo from "@/components/sections/DubbyPromo";
 import SponsorsSection from "@/components/sections/Sponsors";
 import { motion } from "framer-motion";
@@ -100,6 +101,7 @@ export default function Home() {
                     <AboutSection />
                     <MusicSection />
                     <StreamingSection />
+                    <Schedule />
                 </div>
 
                 {/* 3. Promo & Monetization: Dubby -> Sponsors */}
