@@ -23,12 +23,20 @@ export async function POST(request: Request) {
         // 1. Direct Message (Test)
         if (token) {
             const message = {
+                token: token,
                 notification: {
-                    title,
-                    body,
-                    image: icon
+                    title: title,
+                    body: body,
                 },
-                token: token
+                webpush: {
+                    headers: {
+                        Urgency: "high"
+                    },
+                    notification: {
+                        icon: '/icon.svg',
+                        requireInteraction: true
+                    }
+                }
             };
 
             const response = await admin.messaging().send(message);
