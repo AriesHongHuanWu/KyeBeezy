@@ -72,10 +72,39 @@ export default function BroadcastManager() {
     };
 
     const handleTestNotification = () => {
-        new Notification("Test Notification", {
-            body: "This is how your notifications will look!",
+        new Notification("Local Test (Browser)", {
+            body: "This confirms your browser permission is working!",
             icon: "/icon.svg"
         });
+    };
+
+    const handleRealPushTest = async () => {
+        if (!myToken) {
+            toast.error("Get a token first!");
+            return;
+        }
+
+        const toastId = toast.loading("Sending via Backend...");
+        try {
+            const res = await fetch('/api/push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: myToken,
+                    title: "Backend Test",
+                    body: "This came from the Server! 🚀",
+                    icon: "/icon.svg"
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Server sent it!", { id: toastId });
+            } else {
+                toast.error("Server failed: " + data.error, { id: toastId });
+            }
+        } catch (e) {
+            toast.error("API Error", { id: toastId });
+        }
     };
 
     return (
@@ -100,8 +129,11 @@ export default function BroadcastManager() {
                                 <Copy size={12} /> Copy Token
                             </button>
                         )}
+                        <button onClick={handleRealPushTest} className="btn-secondary text-xs py-2 px-4 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500 rounded-lg text-purple-200">
+                            2. Send Real Push (Server)
+                        </button>
                         <button onClick={handleTestNotification} className="btn-secondary text-xs py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white">
-                            2. Send Local Test
+                            Local Check
                         </button>
                     </div>
                     {myToken && (
