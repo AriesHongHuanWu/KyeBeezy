@@ -771,120 +771,260 @@ function SettingsManager() {
     );
 }
 
-// --- Main Dashboard Component --- (Updated)
-export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions">("submissions");
-    const { user } = useAuth();
+// --- Schedule Manager (NEW) ---
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, addMonths, subMonths, isSameDay, parseISO } from "date-fns";
 
-    const handleLogout = () => { signOut(auth); };
-
-    return (
-        <div className="min-h-screen bg-black text-foreground font-sans selection:bg-purple-500/30">
-            {/* Top Navigation Bar */}
-            <nav className="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                            <ShieldCheck className="text-white w-6 h-6" />
-                        </div>
-                        <div>
-                            <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
-                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.2.0 ??ACCESS GRANTED</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="hidden md:flex items-center gap-3 bg-white/5 py-2 px-4 rounded-full border border-white/5">
-                            {user?.photoURL ? (
-                                <img src={user.photoURL} alt="Avatar" className="w-6 h-6 rounded-full" />
-                            ) : (
-                                <UserIcon className="w-5 h-5 text-neutral-400" />
-                            )}
-                            <span className="text-sm font-medium text-neutral-300">{user?.displayName || user?.email}</span>
-                        </div>
-
-                        {/* Theme Toggle Added Here */}
-                        <ThemeToggle />
-
-                        <button
-                            onClick={handleLogout}
-                            className="group relative px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:text-white hover:bg-red-500 transition-all duration-300 overflow-hidden"
-                        >
-                            <div className="relative z-10 flex items-center gap-2 text-sm font-bold">
-                                <LogOut size={16} /> <span className="hidden sm:inline">Logout</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="container mx-auto px-4 sm:px-6 py-8">
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Sidebar */}
-                    <aside className="lg:w-72 flex-shrink-0">
-                        <div className="sticky top-28 space-y-8">
-                            <div className="bg-neutral-900/40 backdrop-blur-md rounded-3xl p-4 border border-white/5 shadow-2xl">
-                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">Events</p>
-                                <div className="space-y-1">
-                                    <TabButton active={activeTab === 'submissions'} onClick={() => setActiveTab('submissions')} icon={<ListMusic size={20} />} label="Submissions" />
-                                </div>
-
-                                <div className="my-4 h-px bg-white/5 mx-4" />
-
-                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">Content</p>
-                                <div className="space-y-1">
-                                    <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={<Video size={20} />} label="Stream Highlights" />
-                                    <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} icon={<Music size={20} />} label="Music Embeds" />
-                                    <TabButton active={activeTab === 'products'} onClick={() => setActiveTab('products')} icon={<ShoppingBag size={20} />} label="Dubby Products" />
-                                </div>
-
-                                <div className="my-4 h-px bg-white/5 mx-4" />
-
-                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-4 mb-2">System</p>
-                                <div className="space-y-1">
-                                    <TabButton active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} icon={<Users size={20} />} label="Manage Admins" />
-                                    <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20} />} label="Global Settings" />
-                                </div>
-                            </div>
-
-                            {/* Status Card */}
-                            <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-3xl p-6 border border-white/5">
-                                <h3 className="text-white font-bold mb-1">System Status</h3>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-xs text-green-400 font-mono">ONLINE</span>
-                                </div>
-                                <p className="text-xs text-neutral-400 leading-relaxed">
-                                    Database connection is active. All systems operational.
-                                </p>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Main Content */}
-                    <main className="flex-1 min-w-0">
-                        <AnimatePresence mode="wait">
-                            {activeTab === 'videos' && <VideosManager key="videos" />}
-                            {activeTab === 'music' && <MusicManager key="music" />}
-                            {activeTab === 'products' && <ProductsManager key="products" />}
-                            {activeTab === 'admins' && <AdminsManager key="admins" currentUser={user?.email || ''} />}
-                            {activeTab === 'settings' && <SettingsManager key="settings" />}
-                            {activeTab === 'submissions' && <SubmissionsManager key="submissions" />}
-                        </AnimatePresence>
-                    </main>
-                </div>
-            </div>
-        </div>
-    );
+interface CalendarEvent {
+    id: string;
+    date: string; // ISO String YYYY-MM-DD
+    title: string;
+    time: string;
+    type: "stream" | "release" | "event";
 }
 
-// --- Helper Components ---
+function ScheduleManager() {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [nextStream, setNextStream] = useState<string>("");
+    const [loading, setLoading] = useState(true);
+
+    // Event Modal
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [newEventTitle, setNewEventTitle] = useState("");
+    const [newEventTime, setNewEventTime] = useState("20:00");
+    const [newEventType, setNewEventType] = useState<"stream" | "release" | "event">("stream");
+
+    // Fetch Data
+    useEffect(() => {
+        // Fetch Next Stream
+        const unsubSettings = onSnapshot(doc(db, "settings", "schedule"), (doc) => {
+            if (doc.exists()) {
+                setNextStream(doc.data().nextStream || "");
+            }
+        });
+
+        // Fetch Events
+        const q = query(collection(db, "events"));
+        const unsubEvents = onSnapshot(q, (snapshot) => {
+            const evs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CalendarEvent[];
+            setEvents(evs);
+            setLoading(false);
+        });
+
+        return () => { unsubSettings(); unsubEvents(); };
+    }, []);
+
+    const updateNextStream = async (val: string) => {
+        try {
+            await setDoc(doc(db, "settings", "schedule"), { nextStream: val }, { merge: true });
+            setNextStream(val);
+            toast.success("Next Stream Updated");
+        } catch (e) { toast.error("Failed to update"); }
+    };
+
+    const handleAddEvent = async () => {
+        if (!selectedDate || !newEventTitle) return;
+        try {
+            const dateStr = format(selectedDate, "yyyy-MM-dd");
+            await addDoc(collection(db, "events"), {
+                date: dateStr,
+                title: newEventTitle,
+                time: newEventTime,
+                type: newEventType,
+                createdAt: serverTimestamp()
+            });
+            toast.success("Event Added");
+            setSelectedDate(null);
+            setNewEventTitle("");
+        } catch (e) { toast.error("Failed to add event"); }
+    };
+
+    const handleDeleteEvent = async (id: string) => {
+        try {
+            await deleteDoc(doc(db, "events", id));
+            toast.success("Event Deleted");
+        } catch (e) { toast.error("Failed to delete"); }
+    };
+
+    // Calendar Logic
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    // Fill empty days for grid alignment
+    const startDay = monthStart.getDay(); // 0 is Sunday
+    const emptyDays = Array(startDay).fill(null);
+
+    return (
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+            <SectionHeader
+                title="Broadcast Schedule"
+                subtitle="Manage your streaming calendar and countdowns."
+                action={<div />}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* 1. Next Stream Setter */}
+                <div className="col-span-1 bg-neutral-900/40 border border-white/5 rounded-2xl p-6 h-fit">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-purple-500/20 text-purple-400 rounded-xl">
+                            <MonitorPlay size={24} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg text-white">Next Stream</h3>
+                            <p className="text-xs text-neutral-500">Global countdown target.</p>
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <input
+                            type="datetime-local"
+                            value={nextStream}
+                            onChange={(e) => updateNextStream(e.target.value)}
+                            className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        />
+                        <p className="text-xs text-center text-neutral-500">
+                            Updates homepage ticker automatically.
+                        </p>
+                    </div>
+                </div>
+
+                {/* 2. Calendar Manager */}
+                <div className="col-span-1 lg:col-span-2 bg-neutral-900/40 border border-white/5 rounded-2xl p-6 relative">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-white uppercase tracking-wider">
+                            {format(currentDate, "MMMM yyyy")}
+                        </h3>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 hover:bg-white/10 rounded-lg text-white"><ArrowRight className="rotate-180 w-5 h-5" /></button>
+                            <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-neutral-400">TODAY</button>
+                            <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2 hover:bg-white/10 rounded-lg text-white"><ArrowRight className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+
+                    {/* Grid */}
+                    <div className="grid grid-cols-7 gap-px bg-white/5 border border-white/5 rounded-2xl overflow-hidden mb-4">
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                            <div key={d} className="bg-black/40 p-2 text-center text-xs font-bold text-neutral-500 uppercase">{d}</div>
+                        ))}
+
+                        {emptyDays.map((_, i) => <div key={`empty-${i}`} className="bg-black/20 h-32" />)}
+
+                        {days.map(day => {
+                            const dateEvents = events.filter(e => e.date === format(day, "yyyy-MM-dd"));
+                            const isTodayDate = isToday(day);
+
+                            return (
+                                <div
+                                    key={day.toString()}
+                                    onClick={() => setSelectedDate(day)}
+                                    className={`bg-black/20 h-32 p-2 relative group hover:bg-white/5 transition-colors cursor-pointer border-t border-l border-white/5 ${isTodayDate ? 'bg-purple-900/10' : ''}`}
+                                >
+                                    <span className={`text-sm font-bold block mb-1 ${isTodayDate ? 'text-purple-400' : 'text-neutral-400'}`}>
+                                        {format(day, "d")}
+                                    </span>
+
+                                    <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
+                                        {dateEvents.map(ev => (
+                                            <div key={ev.id} className="group/ev relative text-[10px] bg-neutral-800 border border-white/5 p-1 rounded hover:bg-neutral-700">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold truncate text-white">{ev.time} {ev.title}</span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }}
+                                                        className="opacity-0 group-hover/ev:opacity-100 text-red-500 hover:text-white"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </div>
+                                                <div className={`h-0.5 w-full mt-1 rounded-full ${ev.type === 'stream' ? 'bg-purple-500' : ev.type === 'release' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Add Hint */}
+                                    <div className="absolute opacity-0 group-hover:opacity-100 bottom-2 right-2 text-white/20">
+                                        <Plus size={16} />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Add Event Modal */}
+            <AnimatePresence>
+                {selectedDate && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-[#111] border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative"
+                        >
+                            <button onClick={() => setSelectedDate(null)} className="absolute top-4 right-4 text-neutral-500 hover:text-white"><X size={20} /></button>
+
+                            <h3 className="text-xl font-bold text-white mb-1">Add Event</h3>
+                            <p className="text-neutral-400 text-sm mb-6">{format(selectedDate, "PPP")}</p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-neutral-500 uppercase block mb-1">Title</label>
+                                    <input
+                                        autoFocus
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
+                                        placeholder="Stream, Drop, etc."
+                                        value={newEventTitle}
+                                        onChange={e => setNewEventTitle(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-neutral-500 uppercase block mb-1">Time</label>
+                                        <input
+                                            type="time"
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
+                                            value={newEventTime}
+                                            onChange={e => setNewEventTime(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-neutral-500 uppercase block mb-1">Type</label>
+                                        <select
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
+                                            value={newEventType}
+                                            onChange={e => setNewEventType(e.target.value as any)}
+                                        >
+                                            <option value="stream">Stream</option>
+                                            <option value="release">Release</option>
+                                            <option value="event">Event</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleAddEvent}
+                                    className="w-full py-3 bg-white text-black font-bold rounded-xl mt-2 hover:bg-neutral-200 transition-colors"
+                                >
+                                    Create Event
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+        </motion.div>
+    );
+}
 
 function TabButton({ active, onClick, icon, label }: any) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-300 font-medium group relative overflow-hidden ${active
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium group relative overflow-hidden ${active
                 ? 'bg-white text-black shadow-lg shadow-white/10 scale-[1.02]'
                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
@@ -892,7 +1032,7 @@ function TabButton({ active, onClick, icon, label }: any) {
             <span className={`relative z-10 ${active ? 'text-black' : 'group-hover:scale-110 transition-transform duration-300'}`}>{icon}</span>
             <span className="relative z-10">{label}</span>
         </button>
-    )
+    );
 }
 
 function SectionHeader({ title, subtitle, action }: any) {
@@ -904,7 +1044,7 @@ function SectionHeader({ title, subtitle, action }: any) {
             </div>
             {action}
         </div>
-    )
+    );
 }
 
 function VideosManager() {
@@ -1366,4 +1506,129 @@ function AdminsManager({ currentUser }: { currentUser: string }) {
 
         </motion.div>
     )
+}
+
+// --- Main Dashboard Component --- (Updated)
+export default function AdminDashboard() {
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule">("submissions");
+    const { user } = useAuth();
+
+    const handleLogout = () => { signOut(auth); };
+
+    return (
+        <div className="min-h-screen bg-black text-foreground font-sans selection:bg-purple-500/30">
+            {/* Top Navigation Bar */}
+            <nav className="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                            <ShieldCheck className="text-white w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
+                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.2.0 ??ACCESS GRANTED</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex items-center gap-3 bg-white/5 py-2 px-4 rounded-full border border-white/5">
+                            {user?.photoURL ? (
+                                <img src={user.photoURL} alt="Avatar" className="w-6 h-6 rounded-full" />
+                            ) : (
+                                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                    <UserIcon size={14} className="text-purple-400" />
+                                </div>
+                            )}
+                            <span className="text-sm font-medium text-white">{user?.displayName || "Admin"}</span>
+                        </div>
+
+                        {/* Theme Toggle */}
+                        <ThemeToggle />
+
+                        <button
+                            onClick={handleLogout}
+                            className="p-2 hover:bg-white/10 rounded-xl text-neutral-400 hover:text-white transition-colors"
+                            title="Sign Out"
+                        >
+                            <LogOut size={20} />
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Sidebar & Content Layout */}
+            <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row gap-8">
+
+                {/* Sidebar Navigation */}
+                <aside className="w-full md:w-64 flex-shrink-0">
+                    <div className="sticky top-28 space-y-2">
+                        <button
+                            onClick={() => setActiveTab("submissions")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "submissions" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <ListMusic size={20} />
+                            Submissions
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("schedule")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "schedule" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Calendar size={20} />
+                            Schedule
+                        </button>
+                        <div className="h-px bg-white/10 my-2 mx-4" />
+                        <button
+                            onClick={() => setActiveTab("videos")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "videos" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Video size={20} />
+                            Videos
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("music")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "music" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Music size={20} />
+                            Music
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("products")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "products" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <ShoppingBag size={20} />
+                            Merch
+                        </button>
+                        <div className="h-px bg-white/10 my-2 mx-4" />
+                        <button
+                            onClick={() => setActiveTab("admins")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "admins" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Users size={20} />
+                            Admins
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("settings")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "settings" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Settings size={20} />
+                            Settings
+                        </button>
+                    </div>
+                </aside>
+
+                {/* Main Content Area */}
+                <main className="flex-1 min-w-0">
+                    <AnimatePresence mode="wait">
+                        {activeTab === "submissions" && <SubmissionsManager key="submissions" />}
+                        {activeTab === "schedule" && <ScheduleManager key="schedule" />}
+                        {activeTab === "settings" && <SettingsManager key="settings" />}
+                        {activeTab === "admins" && <AdminsManager key="admins" currentUser={user?.email || ''} />}
+                        {activeTab === "videos" && <VideosManager key="videos" />}
+                        {activeTab === "music" && <MusicManager key="music" />}
+                        {activeTab === "products" && <ProductsManager key="products" />}
+                    </AnimatePresence>
+                </main>
+            </div>
+        </div>
+    );
 }

@@ -215,16 +215,39 @@ export default function SubmitPage() {
         }
     };
 
-    if (checkingStatus) {
-        return (
-            <div className="h-screen w-full flex items-center justify-center bg-black text-white">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 rounded-full border-t-2 border-purple-500 animate-spin" />
-                    <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 animate-pulse">Initializing Uplink...</p>
-                </div>
-            </div>
-        )
-    }
+    // --- Link Preview Logic ---
+    const [preview, setPreview] = useState<{ title: string, image: string, domain: string } | null>(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+
+    // Debounce link input to fetch preview
+    useEffect(() => {
+        const fetchPreview = async () => {
+            if (!form.link || !form.link.startsWith("http")) {
+                setPreview(null);
+                return;
+            }
+
+            setLoadingPreview(true);
+            try {
+                const res = await fetch("/api/preview", {
+                    method: "POST",
+                    body: JSON.stringify({ url: form.link })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setPreview(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoadingPreview(false);
+            }
+        };
+
+        const timeoutId = setTimeout(fetchPreview, 1000); // 1s debounce
+        return () => clearTimeout(timeoutId);
+    }, [form.link]);
+
 
     return (
         <div
@@ -429,7 +452,41 @@ export default function SubmitPage() {
                                             placeholder="SoundCloud, YouTube, etc."
                                             className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-pink-500/50 focus:bg-black/60 focus:ring-1 focus:ring-pink-500/50 transition-all font-medium"
                                         />
+                                        {loadingPreview && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {/* Link Preview Card */}
+                                    <AnimatePresence>
+                                        {preview && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0, y: 10 }}
+                                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="mt-2"
+                                            >
+                                                <div className="flex gap-3 p-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm overflow-hidden hover:bg-white/10 transition-colors">
+                                                    {preview.image ? (
+                                                        <div className="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url(${preview.image})` }} />
+                                                    ) : (
+                                                        <div className="w-16 h-16 rounded-lg bg-neutral-800 flex items-center justify-center shrink-0">
+                                                            <Music2 className="text-neutral-600" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col justify-center min-w-0">
+                                                        <p className="text-sm font-bold text-white truncate pr-2 leading-tight">{preview.title}</p>
+                                                        <p className="text-xs text-neutral-400 font-mono mt-1 flex items-center gap-1">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                                            {preview.domain}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </motion.div>
 
                                 <motion.button
