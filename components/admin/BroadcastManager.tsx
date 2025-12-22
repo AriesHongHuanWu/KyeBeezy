@@ -6,9 +6,11 @@ import { addDoc, collection, serverTimestamp, query, where, orderBy, onSnapshot 
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Radio, Bell, AlertTriangle, CheckCircle, Calendar, Users, Globe } from "lucide-react";
+import { Radio, Bell, AlertTriangle, CheckCircle, Calendar, Users, Globe, Copy, Send } from "lucide-react";
 import { SectionHeader } from "@/app/admin/page";
 import { format } from "date-fns";
+import { messaging } from "@/lib/firebase";
+import { getToken } from "firebase/messaging";
 
 export default function BroadcastManager() {
     const { register, handleSubmit, reset, watch } = useForm();
@@ -48,6 +50,33 @@ export default function BroadcastManager() {
     };
 
     const targetAudience = watch("targetAudience", "all");
+    const [myToken, setMyToken] = useState("");
+
+    const handleGetToken = async () => {
+        if (!messaging) return;
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                const token = await getToken(messaging, {
+                    vapidKey: "BCZyd7vxN07SCJjLE9XQZQcr64q0zPGOflsye2QHxMSKTXvd56nB90x3PWyLI3uBqJRH8tlF3yG9tWDqaleo8Bk"
+                });
+                setMyToken(token);
+                toast.success("Token generated!");
+            } else {
+                toast.error("Permission denied");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error getting token");
+        }
+    };
+
+    const handleTestNotification = () => {
+        new Notification("Test Notification", {
+            body: "This is how your notifications will look!",
+            icon: "/icon.svg"
+        });
+    };
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
@@ -55,6 +84,36 @@ export default function BroadcastManager() {
                 title="Global Broadcast"
                 subtitle="Send a live popup message to all active users."
             />
+
+            {/* Testing Tools Panel */}
+            <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 mb-8">
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-purple-400" /> Push Notification Tester
+                </h3>
+                <div className="flex flex-col gap-4">
+                    <div className="flex gap-4">
+                        <button onClick={handleGetToken} className="btn-secondary text-xs py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white">
+                            1. Get My Device Token
+                        </button>
+                        {myToken && (
+                            <button onClick={() => { navigator.clipboard.writeText(myToken); toast.success("Copied!"); }} className="btn-secondary text-xs py-2 px-4 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500 rounded-lg text-purple-200 flex items-center gap-2">
+                                <Copy size={12} /> Copy Token
+                            </button>
+                        )}
+                        <button onClick={handleTestNotification} className="btn-secondary text-xs py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white">
+                            2. Send Local Test
+                        </button>
+                    </div>
+                    {myToken && (
+                        <code className="text-[10px] text-neutral-500 bg-black/50 p-2 rounded break-all font-mono">
+                            {myToken}
+                        </code>
+                    )}
+                    <p className="text-[10px] text-neutral-500">
+                        *Use "Copy Token" to send a test message to THIS device from the <a href="https://console.firebase.google.com/" target="_blank" className="underline hover:text-white">Firebase Console</a>.
+                    </p>
+                </div>
+            </div>
 
             <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 max-w-2xl">
                 <form onSubmit={handleSubmit(onSend)} className="space-y-6">
