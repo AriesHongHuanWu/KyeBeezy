@@ -31,10 +31,14 @@ if (typeof window !== "undefined") {
 
 // Messaging (FCM)
 import { getMessaging } from "firebase/messaging";
+import { getStorage } from "firebase/storage"; // Import Storage
+
 let messaging: any;
 
 if (typeof window !== "undefined") {
     messaging = getMessaging(app);
 }
 
-export { app, auth, db, analytics, googleProvider, messaging };
+const storage = getStorage(app); // Initialize Storage
+
+export { app, auth, db, analytics, googleProvider, messaging, storage };

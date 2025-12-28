@@ -9,12 +9,13 @@ import { toast } from "sonner";
 import {
     GraduationCap, Users, Newspaper, Plus, Trash2, Check, X,
     MoreHorizontal, ChevronRight, User, FileText,
-    Crown, Zap, Sparkles, MonitorPlay
+    Crown, Zap, Sparkles, MonitorPlay, BookOpen, Library, Key
 } from "lucide-react";
 import { format } from "date-fns";
+import { AccessKeyManager } from "./AccessKeyManager";
 
 export default function UniversityManager() {
-    const [subTab, setSubTab] = useState<"applications" | "faculty" | "news" | "curriculum" | "library">("applications");
+    const [subTab, setSubTab] = useState<"applications" | "faculty" | "news" | "curriculum" | "library" | "keys">("applications");
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="h-full flex flex-col">
@@ -29,7 +30,8 @@ export default function UniversityManager() {
                         { id: "faculty", icon: <GraduationCap size={16} />, label: "Faculty" },
                         { id: "news", icon: <Newspaper size={16} />, label: "News" },
                         { id: "curriculum", icon: <FileText size={16} />, label: "Majors" },
-                        { id: "library", icon: <FileText size={16} />, label: "Library" },
+                        { id: "library", icon: <Library size={16} />, label: "Library" },
+                        { id: "keys", icon: <Key size={16} />, label: "Keys" },
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -48,6 +50,7 @@ export default function UniversityManager() {
                 {subTab === "news" && <NewsPanel />}
                 {subTab === "curriculum" && <CurriculumPanel />}
                 {subTab === "library" && <LibraryPanel />}
+                {subTab === "keys" && <AccessKeyManager />}
             </div>
         </motion.div>
     );
@@ -69,8 +72,23 @@ function ApplicationsPanel() {
         fetchApps();
     }, []);
 
-    const updateStatus = async (id: string, status: string) => {
+    const updateStatus = async (id: string, status: string, appData?: any) => {
         try {
+            // If accepting a professor, create a faculty record automatically
+            if (status === 'accepted' && appData?.type === 'professor') {
+                await addDoc(collection(db, "university_professors"), {
+                    name: appData.name,
+                    title: appData.role || "Professor",
+                    role: appData.role || "Professor",
+                    department: appData.teachingStyle || "General",
+                    image: appData.photoUrl || "https://placehold.co/400",
+                    bio: appData.bio,
+                    order: 99,
+                    createdAt: serverTimestamp()
+                });
+                toast.success("Faculty profile created automatically!");
+            }
+
             await updateDoc(doc(db, "university_applications", id), { status });
             setApps(apps.map(a => a.id === id ? { ...a, status } : a));
             toast.success(`Application marked as ${status}`);
@@ -152,8 +170,12 @@ function ApplicationsPanel() {
                         <div className="p-6 flex flex-col md:flex-row gap-6">
                             {/* Left: Avatar & ID */}
                             <div className="flex-shrink-0 flex flex-col items-center gap-3 md:w-32 text-center md:border-r border-white/5 md:pr-6">
-                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black shadow-inner ${app.type === 'professor' ? 'bg-purple-900/30 text-purple-400' : 'bg-blue-900/30 text-blue-400'}`}>
-                                    {app.name.charAt(0).toUpperCase()}
+                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden text-3xl font-black shadow-inner ${app.type === 'professor' ? 'bg-purple-900/30 text-purple-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                    {app.photoUrl ? (
+                                        <img src={app.photoUrl} alt={app.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        app.name.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 <div>
                                     <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">{app.type}</div>
@@ -169,7 +191,7 @@ function ApplicationsPanel() {
                                     <div>
                                         <h3 className="text-xl font-bold text-white leading-tight mb-1">{app.name}</h3>
                                         <div className="flex flex-wrap gap-2 text-sm text-neutral-400 font-mono">
-                                            <span>{app.artistName}</span>
+                                            <span>{app.artistName || app.role}</span>
                                             <span className="text-neutral-700">•</span>
                                             <span>{app.email}</span>
                                         </div>
@@ -204,9 +226,16 @@ function ApplicationsPanel() {
                                             )}
                                         </>
                                     ) : (
-                                        <div className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 font-bold uppercase">
-                                            {app.specialization || "Professor"}
-                                        </div>
+                                        <>
+                                            <div className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 font-bold uppercase">
+                                                {app.role || app.specialization || "Professor"}
+                                            </div>
+                                            {app.teachingStyle && (
+                                                <div className="px-3 py-1.5 rounded-lg bg-neutral-800 border border-white/5 text-xs text-neutral-300 font-medium">
+                                                    Style: <span className="text-white">{app.teachingStyle}</span>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
@@ -254,7 +283,7 @@ function ApplicationsPanel() {
                             <div className="flex md:flex-col gap-2 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 justify-center">
                                 {app.status === 'pending' && (
                                     <>
-                                        <button onClick={() => updateStatus(app.id, 'accepted')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-black font-bold text-xs rounded-lg hover:bg-green-400 transition-colors shadow-lg shadow-green-900/20">
+                                        <button onClick={() => updateStatus(app.id, 'accepted', app)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-black font-bold text-xs rounded-lg hover:bg-green-400 transition-colors shadow-lg shadow-green-900/20">
                                             <Check size={14} /> Accept
                                         </button>
                                         <button onClick={() => updateStatus(app.id, 'rejected')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-neutral-800 text-neutral-400 font-bold text-xs rounded-lg hover:bg-neutral-700 hover:text-white transition-colors">

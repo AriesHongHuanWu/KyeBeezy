@@ -1,129 +1,285 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Check, ChevronRight, Loader2 } from "lucide-react";
+import { addDoc, collection, serverTimestamp, query, where, getDocs, updateDoc, increment, doc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
+import { Check, ChevronRight, Loader2, Lock, Upload, Key, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
-type ApplicationForm = {
+type FacultyForm = {
     type: "professor";
     name: string;
     email: string;
-    artistName?: string;
     links: string;
     bio: string;
-    specialization: string;
+    role: string;
+    teachingStyle: string;
+    keyId?: string; // Internal ID of the key used
 };
 
+const ROLES = [
+    "Professor", "Advisor", "Mentor", "Sound Engineer", "Visual Artist",
+    "Event Manager", "Scout", "Curriculum Developer", "Technical Director", "Guest Lecturer"
+];
+
 export default function FacultyApplyPage() {
-    const [step, setStep] = useState<"form" | "success">("form");
+    const [step, setStep] = useState<"gate" | "form" | "success">("gate");
     const [isLoading, setIsLoading] = useState(false);
-    const { register, handleSubmit, formState: { errors } } = useForm<ApplicationForm>({
+    const [accessKey, setAccessKey] = useState("");
+    const [validatedKeyId, setValidatedKeyId] = useState<string | null>(null);
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+    const { register, handleSubmit, formState: { errors } } = useForm<FacultyForm>({
         defaultValues: { type: "professor" }
     });
 
-    const onSubmit = async (data: ApplicationForm) => {
+    // --- KEY VALIDATION ---
+    const validateKey = async () => {
+        if (!accessKey) return;
         setIsLoading(true);
         try {
-            await addDoc(collection(db, "university_applications"), {
-                ...data,
-                status: "pending",
-                submittedAt: serverTimestamp()
-            });
-            setStep("success");
-            toast.success("Faculty Application Submitted!");
+            const q = query(collection(db, "university_access_keys"), where("key", "==", accessKey));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                toast.error("Invalid Access Key");
+                setIsLoading(false);
+                return;
+            }
+
+            const keyData = snap.docs[0].data();
+            const keyId = snap.docs[0].id;
+
+            if (keyData.currentUses >= keyData.maxUses) {
+                toast.error("This key has expired (Max uses reached)");
+                setIsLoading(false);
+                return;
+            }
+
+            setValidatedKeyId(keyId);
+            setStep("form");
+            toast.success("Access Granted.");
         } catch (error) {
             console.error(error);
-            toast.error("Failed to submit application");
+            toast.error("Validation failed");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // --- PHOTO HANDLING ---
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Image too large (Max 5MB)");
+                return;
+            }
+            setPhoto(file);
+            setPhotoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    // --- FORM SUBMISSION ---
+    const onSubmit = async (data: FacultyForm) => {
+        if (!photo) {
+            toast.error("Profile photo is required");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // 1. Upload Photo
+            const storageRef = ref(storage, `university/faculty/${Date.now()}_${photo.name}`);
+            await uploadBytes(storageRef, photo);
+            const photoUrl = await getDownloadURL(storageRef);
+
+            // 2. Submit Application
+            await addDoc(collection(db, "university_applications"), {
+                ...data,
+                status: "pending",
+                photoUrl,
+                type: "professor", // Enforce type
+                submittedAt: serverTimestamp(),
+                usedKey: accessKey
+            });
+
+            // 3. Mark Key as Used
+            if (validatedKeyId) {
+                await updateDoc(doc(db, "university_access_keys", validatedKeyId), {
+                    currentUses: increment(1)
+                });
+            }
+
+            setStep("success");
+            toast.success("Faculty Application Submitted!");
+        } catch (error) {
+            console.error(error);
+            toast.error("Submission failed");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const inputClass = "w-full bg-neutral-100 dark:bg-black/40 border border-neutral-200 dark:border-white/10 focus:border-purple-500 rounded-2xl p-4 outline-none transition-all font-medium text-black dark:text-white placeholder:text-neutral-500";
+
     return (
-        <div className="container mx-auto px-6 max-w-2xl mt-20">
-            <header className="mb-12 text-center">
-                <span className="text-purple-500 font-bold uppercase tracking-widest text-xs mb-2 block">Faculty Recruitment</span>
-                <h1 className="text-4xl md:text-5xl font-black text-black dark:text-white mb-4">
-                    Join the Leadership
-                </h1>
-                <p className="text-neutral-500">
-                    Apply to become a Professor or Mentor at BandLab University.
-                </p>
-            </header>
+        <div className="container mx-auto px-6 max-w-2xl mt-24 mb-20 min-h-[60vh] flex flex-col items-center justify-center">
 
             <AnimatePresence mode="wait">
-                {step === "form" && (
-                    <motion.form
-                        key="form"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        onSubmit={handleSubmit(onSubmit)}
-                        className="space-y-6 bg-white dark:bg-white/5 p-8 rounded-[2rem] border border-neutral-200 dark:border-white/5"
+                {/* --- GATE STEP --- */}
+                {step === "gate" && (
+                    <motion.div
+                        key="gate"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                        className="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-10 rounded-[2rem] shadow-2xl text-center"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Full Name</label>
-                                <input {...register("name", { required: true })} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" placeholder="Dr. Dre" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Artist Alias</label>
-                                <input {...register("artistName", { required: true })} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" />
-                            </div>
+                        <div className="w-20 h-20 bg-purple-500/10 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Lock size={32} />
                         </div>
+                        <h1 className="text-2xl font-black text-black dark:text-white mb-2 uppercase tracking-wide">
+                            Restricted Area
+                        </h1>
+                        <p className="text-neutral-500 mb-8 max-w-xs mx-auto">
+                            Faculty application requires a valid access key issued by BandLab University Admin.
+                        </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Email Address</label>
-                                <input {...register("email", { required: true, pattern: /^\S+@\S+$/i })} type="email" className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Specialization</label>
-                                <input {...register("specialization", { required: true })} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" placeholder="Mixing, Marketing, Vocals..." />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Portfolio & Credibility (Links)</label>
-                            <textarea {...register("links", { required: true })} rows={3} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" placeholder="SoundCloud, Spotify, Socials..." />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Teaching Philosophy</label>
-                            <textarea {...register("bio", { required: true })} rows={5} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-purple-500 rounded-xl p-4 outline-none transition-all" placeholder="Why do you want to teach?" />
+                        <div className="relative mb-6">
+                            <input
+                                type="text"
+                                value={accessKey}
+                                onChange={(e) => setAccessKey(e.target.value.toUpperCase())}
+                                placeholder="ENTER-ACCESS-KEY"
+                                className="w-full bg-neutral-100 dark:bg-black/50 border-2 border-dashed border-neutral-300 dark:border-white/20 rounded-xl p-4 text-center font-mono text-xl tracking-[0.2em] font-bold text-black dark:text-white uppercase focus:border-purple-500 focus:bg-purple-500/5 outline-none transition-all"
+                            />
                         </div>
 
                         <button
-                            disabled={isLoading}
-                            type="submit"
-                            className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            onClick={validateKey}
+                            disabled={!accessKey || isLoading}
+                            className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:pointer-events-none"
                         >
-                            {isLoading ? <Loader2 className="animate-spin" /> : <>Submit Faculty Application <ChevronRight /></>}
+                            {isLoading ? <Loader2 className="animate-spin" /> : <>Unlock Portal <Key size={16} /></>}
                         </button>
+                    </motion.div>
+                )}
+
+                {/* --- FORM STEP --- */}
+                {step === "form" && (
+                    <motion.form
+                        key="form"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="w-full bg-white dark:bg-neutral-900/80 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] border border-purple-500/20 shadow-2xl relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500" />
+
+                        <header className="mb-10 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-black text-black dark:text-white mb-1">Faculty Application</h1>
+                                <p className="text-neutral-500 text-sm">Join the teaching staff of BandLab University.</p>
+                            </div>
+                            <div className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-green-500/20">
+                                <ShieldCheck size={12} /> Verified
+                            </div>
+                        </header>
+
+                        <div className="space-y-8">
+                            {/* Photo Upload */}
+                            <div className="flex flex-col items-center gap-4">
+                                <label className="cursor-pointer group relative">
+                                    <div className={`w-32 h-32 rounded-full overflow-hidden border-4 transition-all bg-neutral-100 dark:bg-neutral-800 ${photoPreview ? 'border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]' : 'border-neutral-200 dark:border-white/10 border-dashed group-hover:border-purple-400'}`}>
+                                        {photoPreview ? (
+                                            <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 group-hover:text-purple-400">
+                                                <Upload size={24} />
+                                                <span className="text-[10px] font-bold uppercase mt-2">Upload Photo</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                                    <div className="absolute bottom-0 right-0 bg-purple-500 p-2 rounded-full text-white shadow-lg scale-75 group-hover:scale-100 transition-transform">
+                                        <Upload size={14} />
+                                    </div>
+                                </label>
+                                <p className="text-xs text-neutral-500">Professional headshot required. Max 5MB.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Full Name</label>
+                                    <input {...register("name", { required: true })} className={inputClass} placeholder="Dr. Dre (Just kidding)" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Target Role</label>
+                                    <div className="relative">
+                                        <select {...register("role", { required: true })} className={`${inputClass} appearance-none cursor-pointer text-black dark:text-white`}>
+                                            {ROLES.map(r => <option key={r} value={r} className="text-black">{r}</option>)}
+                                        </select>
+                                        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-neutral-500 pointer-events-none" size={20} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Email Address</label>
+                                <input {...register("email", { required: true })} type="email" className={inputClass} placeholder="faculty@bandlab.edu" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Professional Links</label>
+                                <input {...register("links")} className={inputClass} placeholder="LinkedIn, ArtStation, GitHub, etc." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Teaching Philosophy & Bio</label>
+                                <textarea {...register("bio", { required: true })} rows={4} className={inputClass} placeholder="Describe your experience and how you teach..." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Area of Specialization</label>
+                                <input {...register("teachingStyle", { required: true })} className={inputClass} placeholder="e.g. Mixing, Mastering, Branding, Music Theory" />
+                            </div>
+
+                            <button
+                                disabled={isLoading}
+                                type="submit"
+                                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-xl shadow-purple-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-xl mt-4"
+                            >
+                                {isLoading ? <Loader2 className="animate-spin" /> : <>Submit Application <ChevronRight /></>}
+                            </button>
+                        </div>
                     </motion.form>
                 )}
 
+                {/* --- SUCCESS STEP --- */}
                 {step === "success" && (
                     <motion.div
                         key="success"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="text-center bg-white dark:bg-white/5 p-12 rounded-[2rem] border border-green-500/20"
+                        className="text-center bg-white dark:bg-neutral-900 p-12 rounded-[2rem] border border-green-500/20 shadow-2xl max-w-lg"
                     >
                         <div className="w-24 h-24 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Check size={48} />
                         </div>
-                        <h2 className="text-3xl font-bold mb-4 text-black dark:text-white">Application Received</h2>
-                        <p className="text-neutral-500 mb-8">
-                            We will review your credentials and get back to you.
+                        <h2 className="text-3xl font-black mb-4 text-black dark:text-white">Application Received</h2>
+                        <p className="text-neutral-500 mb-8 max-w-md mx-auto">
+                            Thank you for your interest in joining BandLab University. Current faculty members will review your portfolio.
                         </p>
-                        <Link href="/university" className="px-8 py-3 bg-neutral-100 dark:bg-white/10 rounded-full font-bold text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-white/20 transition-colors">
-                            Back to Campus
+                        <Link href="/university" className="inline-block px-8 py-3 bg-neutral-100 dark:bg-white/10 rounded-full font-bold text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-white/20 transition-colors">
+                            Return to Campus
                         </Link>
                     </motion.div>
                 )}

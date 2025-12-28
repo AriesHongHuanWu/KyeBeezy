@@ -2,10 +2,109 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Star, Users, Globe, Zap, User, Music, Mic2, Briefcase } from "lucide-react";
+import { ArrowRight, Star, Users, Globe, Zap, User, Music, Mic2, Briefcase, Newspaper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+
+function MajorsSection() {
+    const [majors, setMajors] = useState<any[]>([]);
+
+    useEffect(() => {
+        getDocs(query(collection(db, "university_departments"), limit(6))).then(snap => {
+            setMajors(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+    }, []);
+
+    if (majors.length === 0) return null;
+
+    return (
+        <section className="py-24 border-t border-neutral-200 dark:border-white/5">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 px-4 md:px-0">
+                <div>
+                    <h2 className="text-4xl font-bold text-black dark:text-white mb-2">Departments</h2>
+                    <p className="text-neutral-500">Choose your specialization.</p>
+                </div>
+                <Link href="/university/majors" className="hidden md:flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
+                    View All Majors <ArrowRight size={16} />
+                </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {majors.map((major, i) => (
+                    <motion.div
+                        key={major.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="group relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 p-6 rounded-3xl overflow-hidden hover:border-blue-500/30 transition-all"
+                    >
+                        <div className={`absolute top-0 right-0 w-32 h-32 blur-[50px] rounded-full opacity-20 group-hover:opacity-40 transition-opacity ${major.color || 'bg-blue-500'}`} />
+                        <h3 className="text-xl font-bold text-black dark:text-white mb-2 relative z-10">{major.name}</h3>
+                        <p className="text-neutral-500 text-sm line-clamp-2 relative z-10 mb-4">{major.description}</p>
+                        <div className="flex flex-wrap gap-2 relative z-10">
+                            {major.courses?.slice(0, 3).map((c: string, idx: number) => (
+                                <span key={idx} className="bg-neutral-100 dark:bg-white/5 px-2 py-1 rounded-md text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400">
+                                    {c}
+                                </span>
+                            ))}
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+            <div className="mt-8 text-center md:hidden">
+                <Link href="/university/majors" className="text-blue-600 font-bold text-sm">View All Majors →</Link>
+            </div>
+        </section>
+    );
+}
+
+function NewsSection() {
+    const [news, setNews] = useState<any[]>([]);
+
+    useEffect(() => {
+        const q = query(collection(db, "university_news"), orderBy("publishedAt", "desc"), limit(3));
+        getDocs(q).then(snap => setNews(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    }, []);
+
+    if (news.length === 0) return null;
+
+    return (
+        <section className="py-24 border-t border-neutral-200 dark:border-white/5">
+            <h2 className="text-4xl font-bold text-black dark:text-white mb-12 text-center">Campus News</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {news.map((item, i) => (
+                    <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="group cursor-pointer"
+                    >
+                        <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-2xl overflow-hidden mb-4 relative">
+                            {item.image ? (
+                                <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-neutral-300 dark:text-neutral-700">
+                                    <Newspaper size={32} />
+                                </div>
+                            )}
+                            <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">
+                                NEWS
+                            </div>
+                        </div>
+                        <p className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wide">
+                            {item.publishedAt?.toDate ? item.publishedAt.toDate().toLocaleDateString() : "Recent"}
+                        </p>
+                        <h3 className="text-xl font-bold text-black dark:text-white leading-tight group-hover:text-blue-500 transition-colors">
+                            {item.title}
+                        </h3>
+                    </motion.div>
+                ))}
+            </div>
+        </section>
+    );
+}
 
 function LeadershipSection() {
     const [leaders, setLeaders] = useState<any[]>([]);
@@ -149,6 +248,12 @@ export default function UniversityPage() {
                     </div>
                 </div>
             </section>
+
+            {/* MAJORS PREVIEW */}
+            <MajorsSection />
+
+            {/* CAMPUS NEWS */}
+            <NewsSection />
 
             {/* LEADERSHIP SECTION (Dynamic) */}
             <LeadershipSection />
