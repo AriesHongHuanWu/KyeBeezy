@@ -8,7 +8,8 @@ import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import {
     GraduationCap, Users, Newspaper, Plus, Trash2, Check, X,
-    MoreHorizontal, ChevronRight, User, FileText
+    MoreHorizontal, ChevronRight, User, FileText,
+    Crown, Zap, Sparkles, MonitorPlay
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -187,8 +188,8 @@ function ApplicationsPanel() {
                                         <>
                                             {app.experienceLevel && (
                                                 <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold uppercase flex items-center gap-2 ${app.experienceLevel === 'elite' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
-                                                        app.experienceLevel === 'upcoming' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
-                                                            'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                                    app.experienceLevel === 'upcoming' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
+                                                        'bg-blue-500/10 border-blue-500/20 text-blue-400'
                                                     }`}>
                                                     {app.experienceLevel === 'elite' && <Crown size={12} />}
                                                     {app.experienceLevel === 'upcoming' && <Zap size={12} />}
