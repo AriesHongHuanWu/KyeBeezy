@@ -670,14 +670,30 @@ function CurriculumPanel() {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <button onClick={seedDefaults} className="text-neutral-500 hover:text-blue-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <Sparkles size={14} /> Seed Presets
-                </button>
+                <div>
+                    {majors.length > 0 && (
+                        <button onClick={seedDefaults} className="text-neutral-500 hover:text-blue-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Sparkles size={14} /> Reset Presets
+                        </button>
+                    )}
+                </div>
 
                 <button onClick={() => setIsAdding(!isAdding)} className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
                     <Plus size={16} /> Add Major
                 </button>
             </div>
+
+            {majors.length === 0 && !isAdding && (
+                <button onClick={seedDefaults} className="w-full py-12 border-2 border-dashed border-neutral-300 dark:border-white/10 rounded-3xl flex flex-col items-center justify-center gap-4 text-neutral-500 hover:text-blue-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all mb-8 group cursor-pointer">
+                    <div className="bg-neutral-100 dark:bg-white/5 p-6 rounded-full group-hover:scale-110 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-all">
+                        <Sparkles size={32} className="text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="font-black text-xl text-neutral-900 dark:text-white mb-1">Database is Empty</h3>
+                        <p className="text-sm font-medium">Click here to generate the 4 Default Majors instantly.</p>
+                    </div>
+                </button>
+            )}
 
             {isAdding && (
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-6 rounded-2xl mb-8 space-y-4">
