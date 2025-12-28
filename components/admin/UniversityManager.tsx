@@ -213,14 +213,34 @@ function ApplicationsPanel() {
                                 {/* Content Box */}
                                 <div className="grid grid-cols-1 gap-3">
                                     <div className="bg-black/40 rounded-lg p-3 border border-white/5">
-                                        <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Personal Statement</div>
+                                        <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Self Introduction</div>
                                         <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">{app.bio}</p>
                                     </div>
+
+                                    {/* BandLab Link */}
+                                    {app.bandlabUrl && (
+                                        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20 flex items-center gap-3 group/link hover:bg-orange-500/20 transition-colors cursor-pointer" onClick={() => window.open(app.bandlabUrl, '_blank')}>
+                                            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white">
+                                                <MonitorPlay size={16} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[9px] font-bold uppercase text-orange-500 mb-0.5">BandLab Profile</div>
+                                                <div className="text-sm text-white font-bold truncate underline decoration-orange-500/50 group-hover:decoration-orange-500">
+                                                    {app.bandlabUrl}
+                                                </div>
+                                            </div>
+                                            <div className="text-orange-500 opacity-50 group-hover:opacity-100">
+                                                <ChevronRight size={16} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Other Links */}
                                     {app.links && (
                                         <div className="bg-black/40 rounded-lg p-3 border border-white/5 flex items-start gap-2">
-                                            <div className="mt-0.5 text-neutral-600"><MonitorPlay size={12} /></div>
+                                            <div className="mt-0.5 text-neutral-600"><FileText size={12} /></div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Portfolio Links</div>
+                                                <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Other Links</div>
                                                 <a href={app.links.split(/\s+/)[0]} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline truncate block">
                                                     {app.links}
                                                 </a>

@@ -14,6 +14,7 @@ type ApplicationForm = {
     name: string;
     email: string;
     artistName: string;
+    bandlabUrl: string;
     links: string;
     bio: string;
     major: string;
@@ -152,14 +153,20 @@ export default function ApplyPage() {
 
                         {/* Additional Info */}
                         <div className="space-y-4">
+                            {/* BandLab URL - Specific Request */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase text-neutral-500">Portfolio / Links</label>
-                                <textarea {...register("links", { required: true })} rows={2} className="input-field-lg" placeholder="SoundCloud, BandLab, Spotify links..." />
+                                <label className="text-xs font-bold uppercase text-neutral-500">BandLab Profile Link (Required)</label>
+                                <input {...register("bandlabUrl", { required: true })} className="input-field-lg" placeholder="https://www.bandlab.com/username" />
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase text-neutral-500">Personal Statement</label>
-                                <textarea {...register("bio", { required: true })} rows={4} className="input-field-lg" placeholder="What are your goals at BandLab University?" />
+                                <label className="text-xs font-bold uppercase text-neutral-500">Other Portfolio Links (Optional)</label>
+                                <textarea {...register("links")} rows={2} className="input-field-lg" placeholder="SoundCloud, Spotify, Instagram, etc..." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500">Self Introduction</label>
+                                <textarea {...register("bio", { required: true })} rows={4} className="input-field-lg" placeholder="Who are you? What is your music journey? Why do you want to join?" />
                             </div>
                         </div>
 
