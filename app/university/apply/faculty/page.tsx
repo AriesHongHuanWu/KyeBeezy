@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { addDoc, collection, serverTimestamp, query, where, getDocs, updateDoc, increment, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { Check, ChevronRight, Loader2, Lock, Upload, Key, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, Loader2, Lock, Upload, Key, AlertTriangle, ShieldCheck, Briefcase, Mic2, Users, Radio, PenTool, Hash } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,25 +19,83 @@ type FacultyForm = {
     bio: string;
     role: string;
     teachingStyle: string;
-    keyId?: string; // Internal ID of the key used
+    keyId?: string;
 };
 
-const ROLES = [
-    "Professor", "Advisor", "Mentor", "Sound Engineer", "Visual Artist",
-    "Event Manager", "Scout", "Curriculum Developer", "Technical Director", "Guest Lecturer"
+// --- JOB DEFINITIONS ---
+const JOBS = [
+    {
+        id: "professor",
+        title: "Professor",
+        description: "Lead comprehensive courses on music production, mixing, or marketing.",
+        icon: Briefcase,
+        color: "bg-blue-500",
+        requirements: ["5+ Years Experience", "Published Discography", "Teaching Experience Preferred"]
+    },
+    {
+        id: "mentor",
+        title: "Mentor",
+        description: "Guide students 1-on-1, providing feedback and career advice.",
+        icon: Users,
+        color: "bg-purple-500",
+        requirements: ["Strong Communication Skills", "Active Industry Presence", "Patience"]
+    },
+    {
+        id: "engineer",
+        title: "Sound Engineer",
+        description: "Teach the technical arts of mixing and mastering.",
+        icon: Mic2,
+        color: "bg-orange-500",
+        requirements: ["Expert in DAW Workflow", "Acoustics Knowledge", "Portfolio of Mixed Tracks"]
+    },
+    {
+        id: "visual_artist",
+        title: "Visual Artist",
+        description: "Instruct on cover art design, branding, and visual identity.",
+        icon: PenTool,
+        color: "bg-pink-500",
+        requirements: ["Graphic Design Portfolio", "Brand Identity Experience"]
+    },
+    {
+        id: "scout",
+        title: "A&R / Scout",
+        description: "Identify and recruit top-tier talent for the University.",
+        icon: Radio,
+        color: "bg-green-500",
+        requirements: ["Deep Knowledge of Underground Scene", "Strong Network"]
+    },
+    {
+        id: "curriculum",
+        title: "Curriculum Developer",
+        description: "Design the course structure and educational materials.",
+        icon: Hash,
+        color: "bg-yellow-500",
+        requirements: ["Educational Background", "Structured Thinking"]
+    },
+    { id: "event_manager", title: "Event Manager", description: "Organize campus events and showcases.", icon: Users, color: "bg-red-500", requirements: ["Event Planning Exp.", "Logistics Management"] },
+    { id: "guest_lecturer", title: "Guest Lecturer", description: "One-off masterclasses on specialized topics.", icon: Mic2, color: "bg-cyan-500", requirements: ["Industry Expert Status", "Unique Insight"] },
+    { id: "technical_director", title: "Technical Director", description: "Manage the university's digital infrastructure.", icon: Briefcase, color: "bg-indigo-500", requirements: ["Systems Admin Exp.", "Web Development"] },
+    { id: "community_mod", title: "Community Mod", description: "Maintain order and engagement in student channels.", icon: ShieldCheck, color: "bg-neutral-500", requirements: ["Discord/Community Mgmt", "Conflict Resolution"] },
 ];
 
 export default function FacultyApplyPage() {
-    const [step, setStep] = useState<"gate" | "form" | "success">("gate");
+    const [step, setStep] = useState<"jobs" | "gate" | "form" | "success">("jobs");
+    const [selectedJob, setSelectedJob] = useState<typeof JOBS[0] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [accessKey, setAccessKey] = useState("");
     const [validatedKeyId, setValidatedKeyId] = useState<string | null>(null);
     const [photo, setPhoto] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-    const { register, handleSubmit, formState: { errors } } = useForm<FacultyForm>({
+    const { register, handleSubmit, setValue, formState: { errors } } = useForm<FacultyForm>({
         defaultValues: { type: "professor" }
     });
+
+    const selectJob = (job: typeof JOBS[0]) => {
+        setSelectedJob(job);
+        setValue("role", job.title); // Pre-fill role
+        setStep("gate");
+    };
 
     // --- KEY VALIDATION ---
     const validateKey = async () => {
@@ -130,26 +188,85 @@ export default function FacultyApplyPage() {
     const inputClass = "w-full bg-neutral-100 dark:bg-black/40 border border-neutral-200 dark:border-white/10 focus:border-purple-500 rounded-2xl p-4 outline-none transition-all font-medium text-black dark:text-white placeholder:text-neutral-500";
 
     return (
-        <div className="container mx-auto px-6 max-w-2xl mt-24 mb-20 min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="container mx-auto px-6 max-w-5xl mt-24 mb-20 min-h-[60vh] flex flex-col items-center justify-center">
 
             <AnimatePresence mode="wait">
-                {/* --- GATE STEP --- */}
-                {step === "gate" && (
+                {/* --- STATE 1: JOB LIST --- */}
+                {step === "jobs" && (
+                    <motion.div
+                        key="jobs"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="w-full"
+                    >
+                        <header className="text-center mb-16">
+                            <h1 className="text-5xl md:text-7xl font-black text-black dark:text-white mb-6">
+                                Join Our <span className="text-purple-600">Faculty</span>
+                            </h1>
+                            <p className="text-xl text-neutral-500 max-w-2xl mx-auto">
+                                We are looking for visionaries to shape the next generation of musical talent.
+                                Select a role to begin your application.
+                            </p>
+                        </header>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {JOBS.map((job, i) => (
+                                <motion.div
+                                    key={job.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    onClick={() => selectJob(job)}
+                                    className="group cursor-pointer bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-8 rounded-[2rem] hover:border-purple-500/50 hover:shadow-2xl hover:scale-[1.02] transition-all relative overflow-hidden"
+                                >
+                                    <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] rounded-full opacity-20 group-hover:opacity-40 transition-opacity ${job.color}`} />
+
+                                    <div className={`w-14 h-14 rounded-2xl mb-6 flex items-center justify-center ${job.color} text-white shadow-lg`}>
+                                        <job.icon size={28} />
+                                    </div>
+
+                                    <h3 className="text-2xl font-bold text-black dark:text-white mb-2">{job.title}</h3>
+                                    <p className="text-neutral-500 text-sm mb-6 min-h-[40px]">{job.description}</p>
+
+                                    <div className="space-y-2 mb-6">
+                                        {job.requirements.slice(0, 2).map((req, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 text-xs font-bold text-neutral-400">
+                                                <Check size={12} className="text-green-500" /> {req}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-purple-600 font-bold text-sm group-hover:gap-3 transition-all">
+                                        Apply Now <ChevronRight size={16} />
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* --- STATE 2: GATE STEP --- */}
+                {step === "gate" && selectedJob && (
                     <motion.div
                         key="gate"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                        className="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-10 rounded-[2rem] shadow-2xl text-center"
+                        className="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-10 rounded-[2rem] shadow-2xl text-center relative"
                     >
-                        <div className="w-20 h-20 bg-purple-500/10 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <button onClick={() => setStep("jobs")} className="absolute top-6 left-6 text-neutral-400 hover:text-black dark:hover:text-white transition-colors">
+                            <ChevronRight className="rotate-180" size={24} />
+                        </button>
+
+                        <div className={`w-20 h-20 ${selectedJob.color} bg-opacity-10 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-6`}>
                             <Lock size={32} />
                         </div>
                         <h1 className="text-2xl font-black text-black dark:text-white mb-2 uppercase tracking-wide">
-                            Restricted Area
+                            {selectedJob.title} Access
                         </h1>
                         <p className="text-neutral-500 mb-8 max-w-xs mx-auto">
-                            Faculty application requires a valid access key issued by BandLab University Admin.
+                            To apply for the <strong>{selectedJob.title}</strong> position, you need a valid faculty access key.
                         </p>
 
                         <div className="relative mb-6">
@@ -167,27 +284,27 @@ export default function FacultyApplyPage() {
                             disabled={!accessKey || isLoading}
                             className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:pointer-events-none"
                         >
-                            {isLoading ? <Loader2 className="animate-spin" /> : <>Unlock Portal <Key size={16} /></>}
+                            {isLoading ? <Loader2 className="animate-spin" /> : <>Unlock Application <Key size={16} /></>}
                         </button>
                     </motion.div>
                 )}
 
-                {/* --- FORM STEP --- */}
-                {step === "form" && (
+                {/* --- STATE 3: FORM STEP --- */}
+                {step === "form" && selectedJob && (
                     <motion.form
                         key="form"
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -50 }}
                         onSubmit={handleSubmit(onSubmit)}
-                        className="w-full bg-white dark:bg-neutral-900/80 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] border border-purple-500/20 shadow-2xl relative overflow-hidden"
+                        className="w-full max-w-2xl bg-white dark:bg-neutral-900/80 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] border border-purple-500/20 shadow-2xl relative overflow-hidden"
                     >
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500" />
+                        <div className={`absolute top-0 left-0 w-full h-2 ${selectedJob.color}`} />
 
                         <header className="mb-10 flex items-center justify-between">
                             <div>
-                                <h1 className="text-3xl font-black text-black dark:text-white mb-1">Faculty Application</h1>
-                                <p className="text-neutral-500 text-sm">Join the teaching staff of BandLab University.</p>
+                                <h1 className="text-3xl font-black text-black dark:text-white mb-1">Apply: {selectedJob.title}</h1>
+                                <p className="text-neutral-500 text-sm">Submit your credentials for review.</p>
                             </div>
                             <div className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-green-500/20">
                                 <ShieldCheck size={12} /> Verified
@@ -223,12 +340,8 @@ export default function FacultyApplyPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Target Role</label>
-                                    <div className="relative">
-                                        <select {...register("role", { required: true })} className={`${inputClass} appearance-none cursor-pointer text-black dark:text-white`}>
-                                            {ROLES.map(r => <option key={r} value={r} className="text-black">{r}</option>)}
-                                        </select>
-                                        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-neutral-500 pointer-events-none" size={20} />
-                                    </div>
+                                    <input value={selectedJob.title} disabled className={`${inputClass} opacity-50 cursor-not-allowed`} />
+                                    <input type="hidden" {...register("role")} />
                                 </div>
                             </div>
 
@@ -255,7 +368,7 @@ export default function FacultyApplyPage() {
                             <button
                                 disabled={isLoading}
                                 type="submit"
-                                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-xl shadow-purple-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-xl mt-4"
+                                className={`w-full ${selectedJob.color} hover:opacity-90 text-white font-bold py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-xl mt-4`}
                             >
                                 {isLoading ? <Loader2 className="animate-spin" /> : <>Submit Application <ChevronRight /></>}
                             </button>
@@ -263,7 +376,7 @@ export default function FacultyApplyPage() {
                     </motion.form>
                 )}
 
-                {/* --- SUCCESS STEP --- */}
+                {/* --- STATE 4: SUCCESS STEP --- */}
                 {step === "success" && (
                     <motion.div
                         key="success"
@@ -276,7 +389,7 @@ export default function FacultyApplyPage() {
                         </div>
                         <h2 className="text-3xl font-black mb-4 text-black dark:text-white">Application Received</h2>
                         <p className="text-neutral-500 mb-8 max-w-md mx-auto">
-                            Thank you for your interest in joining BandLab University. Current faculty members will review your portfolio.
+                            Thank you for applying to be a <strong>{selectedJob?.title}</strong>. We will review your portfolio shortly.
                         </p>
                         <Link href="/university" className="inline-block px-8 py-3 bg-neutral-100 dark:bg-white/10 rounded-full font-bold text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-white/20 transition-colors">
                             Return to Campus
