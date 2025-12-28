@@ -1609,6 +1609,13 @@ export default function AdminDashboard() {
                             <Bell size={20} />
                             Broadcast
                         </button>
+                        <button
+                            onClick={() => setActiveTab("university")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "university" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <GraduationCap size={20} />
+                            University
+                        </button>
                         <div className="h-px bg-white/10 my-2 mx-4" />
                         <button
                             onClick={() => setActiveTab("admins")}
