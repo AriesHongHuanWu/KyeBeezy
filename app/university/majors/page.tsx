@@ -60,7 +60,7 @@ export default function MajorsPage() {
                             const Icon = iconMap[major.icon] || BookOpen;
 
                             return (
-                                <Link href={`/university/majors/${major.id}`} key={major.id}>
+                                <Link href={`/university/majors/view?id=${major.id}`} key={major.id}>
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
