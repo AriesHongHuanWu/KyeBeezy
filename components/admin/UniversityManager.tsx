@@ -142,87 +142,110 @@ function ApplicationsPanel() {
             </div>
 
             {/* List */}
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-4">
                 {filteredApps.map(app => (
-                    <div key={app.id} className="bg-neutral-900/80 border border-white/5 p-6 rounded-2xl group hover:border-white/10 transition-all flex flex-col md:flex-row gap-6">
-                        {/* Status Stripe */}
-                        <div className={`w-full md:w-1 md:h-full rounded-full ${app.status === 'accepted' ? 'bg-green-500' : app.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                    <div key={app.id} className="relative bg-neutral-900 border border-white/10 rounded-xl overflow-hidden group hover:border-white/20 transition-all">
+                        {/* Status Bar */}
+                        <div className={`h-1 w-full ${app.status === 'accepted' ? 'bg-green-500' : app.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`} />
 
-                        <div className="flex-1 space-y-4">
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${app.type === 'professor' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                        {app.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-white text-xl flex items-center gap-2">
-                                            {app.name}
-                                            {app.experienceLevel === 'elite' && <span className="bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Elite</span>}
-                                        </h3>
-                                        <p className="text-neutral-500 text-sm font-mono flex items-center gap-2">
-                                            {app.artistName} <span className="text-neutral-700">•</span> {app.email}
-                                        </p>
-                                    </div>
+                        <div className="p-6 flex flex-col md:flex-row gap-6">
+                            {/* Left: Avatar & ID */}
+                            <div className="flex-shrink-0 flex flex-col items-center gap-3 md:w-32 text-center md:border-r border-white/5 md:pr-6">
+                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black shadow-inner ${app.type === 'professor' ? 'bg-purple-900/30 text-purple-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                    {app.name.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="text-right">
-                                    <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-1 ${app.status === 'accepted' ? 'bg-green-500/20 text-green-500' : app.status === 'rejected' ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                                <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">{app.type}</div>
+                                    <div className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${app.status === 'accepted' ? 'bg-green-500/10 text-green-500' : app.status === 'rejected' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
                                         {app.status}
                                     </div>
-                                    <div className="text-xs text-neutral-600">
-                                        {app.submittedAt?.toDate ? format(app.submittedAt.toDate(), "MMM dd, HH:mm") : "Just now"}
+                                </div>
+                            </div>
+
+                            {/* Middle: Info */}
+                            <div className="flex-1 space-y-4 min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white leading-tight mb-1">{app.name}</h3>
+                                        <div className="flex flex-wrap gap-2 text-sm text-neutral-400 font-mono">
+                                            <span>{app.artistName}</span>
+                                            <span className="text-neutral-700">•</span>
+                                            <span>{app.email}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right hidden md:block">
+                                        <div className="text-[10px] font-bold uppercase text-neutral-600 mb-1">Applied</div>
+                                        <div className="text-xs text-neutral-400 font-mono">
+                                            {app.submittedAt?.toDate ? format(app.submittedAt.toDate(), "MMM dd") : "Today"}
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Badges */}
+                                <div className="flex flex-wrap gap-2">
+                                    {app.type === 'student' ? (
+                                        <>
+                                            {app.experienceLevel && (
+                                                <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold uppercase flex items-center gap-2 ${app.experienceLevel === 'elite' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
+                                                        app.experienceLevel === 'upcoming' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
+                                                            'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                                    }`}>
+                                                    {app.experienceLevel === 'elite' && <Crown size={12} />}
+                                                    {app.experienceLevel === 'upcoming' && <Zap size={12} />}
+                                                    {app.experienceLevel === 'rookie' && <Sparkles size={12} />}
+                                                    {app.experienceLevel}
+                                                </div>
+                                            )}
+                                            {app.major && (
+                                                <div className="px-3 py-1.5 rounded-lg bg-neutral-800 border border-white/5 text-xs text-neutral-300 font-medium">
+                                                    Major: <span className="text-white">{app.major}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 font-bold uppercase">
+                                            {app.specialization || "Professor"}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Content Box */}
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="bg-black/40 rounded-lg p-3 border border-white/5">
+                                        <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Personal Statement</div>
+                                        <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">{app.bio}</p>
+                                    </div>
+                                    {app.links && (
+                                        <div className="bg-black/40 rounded-lg p-3 border border-white/5 flex items-start gap-2">
+                                            <div className="mt-0.5 text-neutral-600"><MonitorPlay size={12} /></div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[9px] font-bold uppercase text-neutral-600 mb-1">Portfolio Links</div>
+                                                <a href={app.links.split(/\s+/)[0]} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline truncate block">
+                                                    {app.links}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* New Fields: Major & Experience */}
-                            {app.type === 'student' && (
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-neutral-300">
-                                        <span className="text-neutral-500 mr-2 uppercase font-bold">Major</span>
-                                        {app.major || "Undecided"}
-                                    </span>
-                                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-neutral-300">
-                                        <span className="text-neutral-500 mr-2 uppercase font-bold">Level</span>
-                                        {app.experienceLevel || "N/A"}
-                                    </span>
-                                </div>
-                            )}
-
-                            {app.type === 'professor' && (
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-lg text-xs text-purple-300">
-                                        <span className="text-purple-500/50 mr-2 uppercase font-bold">Specialization</span>
-                                        {app.specialization}
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-black/30 p-4 rounded-xl text-sm text-neutral-300 font-mono whitespace-pre-wrap">
-                                    <span className="text-neutral-600 block text-[10px] uppercase mb-1 font-bold">Bio / Goals</span>
-                                    {app.bio}
-                                </div>
-                                <div className="bg-black/30 p-4 rounded-xl text-xs text-blue-400 font-mono break-all">
-                                    <span className="text-neutral-600 block text-[10px] uppercase mb-1 font-bold">Links</span>
-                                    {app.links}
-                                </div>
+                            {/* Right: Actions */}
+                            <div className="flex md:flex-col gap-2 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 justify-center">
+                                {app.status === 'pending' && (
+                                    <>
+                                        <button onClick={() => updateStatus(app.id, 'accepted')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-black font-bold text-xs rounded-lg hover:bg-green-400 transition-colors shadow-lg shadow-green-900/20">
+                                            <Check size={14} /> Accept
+                                        </button>
+                                        <button onClick={() => updateStatus(app.id, 'rejected')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-neutral-800 text-neutral-400 font-bold text-xs rounded-lg hover:bg-neutral-700 hover:text-white transition-colors">
+                                            <X size={14} /> Reject
+                                        </button>
+                                        <div className="w-full h-px bg-white/5 my-1 hidden md:block" />
+                                    </>
+                                )}
+                                <button onClick={() => deleteApp(app.id)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 font-bold text-xs rounded-lg hover:bg-red-500 hover:text-white transition-colors">
+                                    <Trash2 size={14} /> <span className="md:hidden">Delete</span>
+                                </button>
                             </div>
-                        </div>
-
-                        <div className="flex flex-row md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
-                            {app.status === 'pending' && (
-                                <>
-                                    <button onClick={() => updateStatus(app.id, 'accepted')} className="p-3 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded-xl transition-colors" title="Accept">
-                                        <Check size={20} />
-                                    </button>
-                                    <button onClick={() => updateStatus(app.id, 'rejected')} className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-colors" title="Reject">
-                                        <X size={20} />
-                                    </button>
-                                </>
-                            )}
-                            <button onClick={() => deleteApp(app.id)} className="p-3 bg-neutral-800 text-neutral-500 hover:bg-red-500 hover:text-white rounded-xl transition-colors" title="Delete">
-                                <Trash2 size={20} />
-                            </button>
                         </div>
                     </div>
                 ))}
