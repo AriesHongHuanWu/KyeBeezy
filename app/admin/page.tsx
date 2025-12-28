@@ -46,8 +46,10 @@ import {
     ExternalLink,
     CheckSquare,
     Square,
-    Bell
+    Bell,
+    GraduationCap
 } from "lucide-react";
+import UniversityManager from "@/components/admin/UniversityManager";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -1512,7 +1514,7 @@ function AdminsManager({ currentUser }: { currentUser: string }) {
 
 // --- Main Dashboard Component --- (Updated)
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule" | "broadcast">("submissions");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule" | "broadcast" | "university">("submissions");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -1636,6 +1638,7 @@ export default function AdminDashboard() {
                         {activeTab === "music" && <MusicManager key="music" />}
                         {activeTab === "products" && <ProductsManager key="products" />}
                         {activeTab === "broadcast" && <BroadcastManager key="broadcast" />}
+                        {activeTab === "university" && <UniversityManager key="university" />}
                     </AnimatePresence>
                 </main>
             </div>
