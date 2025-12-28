@@ -71,7 +71,12 @@ function NewsSection() {
 
     return (
         <section className="py-24 border-t border-neutral-200 dark:border-white/5">
-            <h2 className="text-4xl font-bold text-black dark:text-white mb-12 text-center">Campus News</h2>
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 px-4 md:px-0">
+                <h2 className="text-4xl font-bold text-black dark:text-white">Campus News</h2>
+                <Link href="/university/news" className="text-blue-600 font-bold hover:gap-3 transition-all flex items-center gap-2 mt-4 md:mt-0">
+                    View All News <ArrowRight size={16} />
+                </Link>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {news.map((item, i) => (
                     <motion.div

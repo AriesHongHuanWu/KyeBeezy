@@ -80,29 +80,29 @@ export const AccessKeyManager = () => {
     };
 
     return (
-        <div className="space-y-8 p-6 bg-black/40 rounded-3xl border border-white/5 min-h-[600px]">
+        <div className="space-y-8 p-6 bg-white dark:bg-black/40 rounded-3xl border border-neutral-200 dark:border-white/5 min-h-[600px]">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                         <Key className="w-6 h-6 text-yellow-500" /> Access Key Management
                     </h2>
-                    <p className="text-white/40 text-sm mt-1">
+                    <p className="text-neutral-500 dark:text-white/40 text-sm mt-1">
                         Control access to the Faculty Application portal.
                     </p>
                 </div>
 
                 {/* Create Key Control */}
-                <div className="flex items-center gap-4 bg-white/5 p-2 rounded-xl border border-white/10">
+                <div className="flex items-center gap-4 bg-neutral-100 dark:bg-white/5 p-2 rounded-xl border border-neutral-200 dark:border-white/10">
                     <div className="flex items-center gap-2 px-3">
-                        <span className="text-xs text-white/50 uppercase font-bold">Max Uses:</span>
+                        <span className="text-xs text-neutral-500 dark:text-white/50 uppercase font-bold">Max Uses:</span>
                         <input
                             type="number"
                             min="1"
                             max="100"
                             value={newKeyMaxUses}
                             onChange={(e) => setNewKeyMaxUses(parseInt(e.target.value) || 1)}
-                            className="w-16 bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-center focus:border-yellow-500 outline-none"
+                            className="w-16 bg-white dark:bg-black/50 border border-neutral-300 dark:border-white/10 rounded px-2 py-1 text-black dark:text-white text-center focus:border-yellow-500 outline-none"
                         />
                     </div>
                     <button
@@ -124,23 +124,23 @@ export const AccessKeyManager = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="flex flex-col md:flex-row items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-white/20 transition-colors group"
+                                className="flex flex-col md:flex-row items-center justify-between p-4 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl hover:border-blue-500/30 transition-colors group"
                             >
                                 <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <div className={`p-3 rounded-xl ${key.currentUses >= key.maxUses ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                                    <div className={`p-3 rounded-xl ${key.currentUses >= key.maxUses ? 'bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-500' : 'bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-500'}`}>
                                         <Key className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-3">
-                                            <code className="text-xl font-mono font-bold text-white tracking-wider">{key.key}</code>
-                                            <button onClick={() => copyToClipboard(key.key)} className="text-white/30 hover:text-white transition-colors">
+                                            <code className="text-xl font-mono font-bold text-neutral-900 dark:text-white tracking-wider">{key.key}</code>
+                                            <button onClick={() => copyToClipboard(key.key)} className="text-neutral-400 hover:text-white transition-colors">
                                                 <Copy className="w-4 h-4" />
                                             </button>
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1 text-xs text-white/40">
+                                        <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500 dark:text-white/40">
                                             <span>Created: {key.createdAt?.toDate().toLocaleDateString()}</span>
                                             <span>•</span>
-                                            <span className={key.currentUses >= key.maxUses ? "text-red-400 font-bold" : "text-green-400"}>
+                                            <span className={key.currentUses >= key.maxUses ? "text-red-500 font-bold" : "text-green-500"}>
                                                 Uses: {key.currentUses} / {key.maxUses}
                                             </span>
                                         </div>
@@ -149,13 +149,13 @@ export const AccessKeyManager = () => {
 
                                 <div className="flex items-center gap-2 mt-4 md:mt-0 w-full md:w-auto justify-end">
                                     {key.currentUses >= key.maxUses && (
-                                        <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider">
+                                        <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-500 text-xs font-bold uppercase tracking-wider">
                                             Exhausted
                                         </span>
                                     )}
                                     <button
                                         onClick={() => handleDeleteKey(key.id)}
-                                        className="p-2 hover:bg-red-500/20 text-white/30 hover:text-red-500 rounded-lg transition-colors"
+                                        className="p-2 hover:bg-red-100 dark:hover:bg-red-500/20 text-neutral-400 hover:text-red-500 rounded-lg transition-colors"
                                         title="Revoke Key"
                                     >
                                         <Trash2 className="w-5 h-5" />
@@ -164,7 +164,7 @@ export const AccessKeyManager = () => {
                             </motion.div>
                         ))
                     ) : (
-                        <div className="text-center py-20 text-white/20">
+                        <div className="text-center py-20 text-neutral-400 dark:text-white/20">
                             <Lock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                             <p>No active access keys found.</p>
                             <p className="text-sm">Generate one to allow faculty applications.</p>
