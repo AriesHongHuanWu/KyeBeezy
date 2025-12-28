@@ -1,31 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Check, ChevronRight, Loader2, User, GraduationCap } from "lucide-react";
+import { Check, ChevronRight, Loader2, Sparkles, Zap, Crown } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 type ApplicationForm = {
-    type: "student" | "professor";
+    type: "student";
     name: string;
     email: string;
-    artistName?: string;
+    artistName: string;
     links: string;
     bio: string;
-    specialization?: string; // For professors
+    major: string;
+    experienceLevel: "rookie" | "upcoming" | "elite";
 };
 
 export default function ApplyPage() {
-    const [step, setStep] = useState<"role" | "form" | "success">("role");
+    const [step, setStep] = useState<"form" | "success">("form");
     const [isLoading, setIsLoading] = useState(false);
+    const [majors, setMajors] = useState<any[]>([]);
+
     const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ApplicationForm>({
-        defaultValues: { type: "student" }
+        defaultValues: {
+            type: "student",
+            experienceLevel: "rookie"
+        }
     });
 
-    const selectedType = watch("type");
+    // Fetch Majors
+    useEffect(() => {
+        const fetchMajors = async () => {
+            const q = query(collection(db, "university_departments"), orderBy("createdAt", "asc"));
+            const snap = await getDocs(q);
+            setMajors(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        };
+        fetchMajors();
+    }, []);
+
+    const selectedLevel = watch("experienceLevel");
 
     const onSubmit = async (data: ApplicationForm) => {
         setIsLoading(true);
@@ -46,100 +63,119 @@ export default function ApplyPage() {
     };
 
     return (
-        <div className="container mx-auto px-6 max-w-2xl">
+        <div className="container mx-auto px-6 max-w-3xl mt-12 mb-20">
             <header className="mb-12 text-center">
                 <h1 className="text-4xl md:text-6xl font-black text-black dark:text-white mb-4">
-                    Apply Now
+                    Student Admission
                 </h1>
-                <p className="text-neutral-500">
-                    Take the first step towards your future in the underground.
+                <p className="text-neutral-500 text-lg">
+                    Define Your Legacy. Start Here.
                 </p>
             </header>
 
             <AnimatePresence mode="wait">
-                {step === "role" && (
-                    <motion.div
-                        key="role"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                        <button
-                            onClick={() => { setValue("type", "student"); setStep("form"); }}
-                            className="bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-8 rounded-3xl hover:border-black dark:hover:border-white hover:scale-[1.02] transition-all group text-left"
-                        >
-                            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                <GraduationCap size={32} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-black dark:text-white mb-2">Student</h3>
-                            <p className="text-neutral-500 text-sm">I want to learn, grow, and collaborate with other artists.</p>
-                        </button>
-
-                        <button
-                            onClick={() => { setValue("type", "professor"); setStep("form"); }}
-                            className="bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-8 rounded-3xl hover:border-purple-500 hover:scale-[1.02] transition-all group text-left"
-                        >
-                            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                <User size={32} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-black dark:text-white mb-2">Professor</h3>
-                            <p className="text-neutral-500 text-sm">I have experience and want to mentor the next generation.</p>
-                        </button>
-                    </motion.div>
-                )}
-
                 {step === "form" && (
                     <motion.form
                         key="form"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
                         onSubmit={handleSubmit(onSubmit)}
-                        className="space-y-6 bg-white dark:bg-white/5 p-8 rounded-[2rem] border border-neutral-200 dark:border-white/5"
+                        className="space-y-8 bg-white dark:bg-white/5 p-8 md:p-12 rounded-[2.5rem] border border-neutral-200 dark:border-white/5 shadow-2xl shadow-black/5"
                     >
-                        <div className="flex items-center gap-3 mb-8 pb-8 border-b border-neutral-100 dark:border-white/5">
-                            <button type="button" onClick={() => setStep("role")} className="text-neutral-400 hover:text-black dark:hover:text-white text-sm">
-                                ← Back
-                            </button>
-                            <span className="bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                Applying as {selectedType}
-                            </span>
-                        </div>
+                        {/* Personal Info */}
+                        <div className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 border-b border-neutral-100 dark:border-white/5 pb-2">Identify Yourself</h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Full Name</label>
-                                <input {...register("name", { required: true })} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-xl p-4 outline-none transition-all" placeholder="John Doe" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-neutral-500">Real Name</label>
+                                    <input {...register("name", { required: true })} className="input-field-lg" placeholder="John Doe" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-neutral-500">Artist Alias</label>
+                                    <input {...register("artistName", { required: true })} className="input-field-lg" placeholder="Lil Kye" />
+                                </div>
                             </div>
+
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Artist Name</label>
-                                <input {...register("artistName", { required: true })} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-xl p-4 outline-none transition-all" placeholder="Lil Kye" />
+                                <label className="text-xs font-bold uppercase text-neutral-500">Email Address</label>
+                                <input {...register("email", { required: true, pattern: /^\S+@\S+$/i })} type="email" className="input-field-lg" placeholder="you@example.com" />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Email Address</label>
-                            <input {...register("email", { required: true, pattern: /^\S+@\S+$/i })} type="email" className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-xl p-4 outline-none transition-all" placeholder="you@example.com" />
+                        {/* Academics */}
+                        <div className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 border-b border-neutral-100 dark:border-white/5 pb-2">Academic Path</h3>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500">Intended Major</label>
+                                <select {...register("major", { required: true })} className="input-field-lg cursor-pointer">
+                                    <option value="" disabled selected>Select a Major...</option>
+                                    {majors.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                                    <option value="General Studies">General Studies (Undecided)</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Links (SoundCloud, Spotify, IG)</label>
-                            <textarea {...register("links", { required: true })} rows={3} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-xl p-4 outline-none transition-all" placeholder="Paste your URLs here..." />
+                        {/* Experience Level */}
+                        <div className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 border-b border-neutral-100 dark:border-white/5 pb-2">Current Status</h3>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <label className={`relative flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedLevel === 'rookie' ? 'border-blue-500 bg-blue-500/5' : 'border-neutral-200 dark:border-white/5 hover:border-blue-500/50'}`}>
+                                    <input type="radio" value="rookie" {...register("experienceLevel")} className="mt-1" />
+                                    <div>
+                                        <div className="flex items-center gap-2 font-bold text-black dark:text-white mb-1"><Sparkles size={16} className="text-blue-500" /> Rookie</div>
+                                        <p className="text-xs text-neutral-500">Just started. Less than 1 year of experience.</p>
+                                    </div>
+                                </label>
+
+                                <label className={`relative flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedLevel === 'upcoming' ? 'border-purple-500 bg-purple-500/5' : 'border-neutral-200 dark:border-white/5 hover:border-purple-500/50'}`}>
+                                    <input type="radio" value="upcoming" {...register("experienceLevel")} className="mt-1" />
+                                    <div>
+                                        <div className="flex items-center gap-2 font-bold text-black dark:text-white mb-1"><Zap size={16} className="text-purple-500" /> Upcoming</div>
+                                        <p className="text-xs text-neutral-500">2-3 Years in the game. Serious regarding music production.</p>
+                                    </div>
+                                </label>
+
+                                <label className={`relative flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedLevel === 'elite' ? 'border-yellow-500 bg-yellow-500/5' : 'border-neutral-200 dark:border-white/5 hover:border-yellow-500/50'}`}>
+                                    <input type="radio" value="elite" {...register("experienceLevel")} className="mt-1" />
+                                    <div>
+                                        <div className="flex items-center gap-2 font-bold text-black dark:text-white mb-1"><Crown size={16} className="text-yellow-500" /> Elite</div>
+                                        <p className="text-xs text-neutral-500">1K+ Followers on BandLab. Proven track record.</p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Why do you want to join?</label>
-                            <textarea {...register("bio", { required: true })} rows={5} className="w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-xl p-4 outline-none transition-all" placeholder="Tell us about your goals and experience..." />
+
+                        {/* Additional Info */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500">Portfolio / Links</label>
+                                <textarea {...register("links", { required: true })} rows={2} className="input-field-lg" placeholder="SoundCloud, BandLab, Spotify links..." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-neutral-500">Personal Statement</label>
+                                <textarea {...register("bio", { required: true })} rows={4} className="input-field-lg" placeholder="What are your goals at BandLab University?" />
+                            </div>
                         </div>
 
                         <button
                             disabled={isLoading}
                             type="submit"
-                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg"
                         >
                             {isLoading ? <Loader2 className="animate-spin" /> : <>Submit Application <ChevronRight /></>}
                         </button>
+
+                        <div className="text-center pt-4">
+                            <Link href="/university/apply/faculty" className="text-xs font-bold text-neutral-400 hover:text-black dark:hover:text-white transition-colors">
+                                Are you an educator? Apply to join the Faculty.
+                            </Link>
+                        </div>
                     </motion.form>
                 )}
 
@@ -154,16 +190,21 @@ export default function ApplyPage() {
                             <Check size={48} />
                         </div>
                         <h2 className="text-3xl font-bold mb-4 text-black dark:text-white">Application Received</h2>
-                        <p className="text-neutral-500 mb-8">
-                            We have received your application. Our admissions team will review it shortly.
-                            Keep an eye on your email for updates.
+                        <p className="text-neutral-500 mb-8 max-w-md mx-auto">
+                            Welcome, candidate. Your journey to greatness begins now. We will review your <strong>{selectedLevel}</strong> application for the <strong>{watch('major')}</strong> program.
                         </p>
-                        <button onClick={() => window.location.href = '/university'} className="px-8 py-3 bg-neutral-100 dark:bg-white/10 rounded-full font-bold text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-white/20 transition-colors">
+                        <Link href="/university" className="px-8 py-3 bg-neutral-100 dark:bg-white/10 rounded-full font-bold text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-white/20 transition-colors">
                             Back to Campus
-                        </button>
+                        </Link>
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <style jsx global>{`
+                .input-field-lg {
+                    @apply w-full bg-neutral-100 dark:bg-black/50 border border-transparent focus:border-blue-500 rounded-2xl p-4 outline-none transition-all font-medium;
+                }
+            `}</style>
         </div>
     );
 }
