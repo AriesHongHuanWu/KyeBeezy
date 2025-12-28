@@ -25,6 +25,8 @@ export function UniversityNav() {
         { href: "/university/news", label: "News" },
     ];
 
+    const isApplyPage = pathname === "/university/apply";
+
     return (
         <>
             <motion.nav
@@ -38,11 +40,18 @@ export function UniversityNav() {
                             <img
                                 src="/bandlab-logo.png"
                                 alt="BandLab"
-                                className="w-10 h-10 object-contain group-hover:scale-110 transition-transform"
+                                className={`w-10 h-10 object-contain group-hover:scale-110 transition-transform ${isApplyPage ? "hue-rotate-[200deg] brightness-125 hover:brightness-150 saturate-150" : ""}`}
                             />
                             <div>
                                 <span className="font-bold text-lg leading-none block text-black dark:text-white">BANDLAB</span>
-                                <span className="text-xs font-medium tracking-widest text-neutral-500 uppercase">University</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium tracking-widest text-neutral-500 uppercase">University</span>
+                                    {isApplyPage && (
+                                        <span className="text-[10px] font-bold tracking-widest text-blue-500 uppercase border-l border-neutral-700 pl-2">
+                                            Student Admission
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </Link>
 
