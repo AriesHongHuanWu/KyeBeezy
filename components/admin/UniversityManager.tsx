@@ -513,8 +513,10 @@ function CurriculumPanel() {
         try {
             await addDoc(collection(db, "university_departments"), {
                 ...data,
-                // Split courses by comma and trim
+                // Split multi-line or comma fields
                 courses: data.courseString.split(',').map((s: string) => s.trim()).filter(Boolean),
+                highlights: data.highlightString ? data.highlightString.split('\n').filter(Boolean) : [],
+                activities: data.activityString ? data.activityString.split('\n').filter(Boolean) : [],
                 createdAt: serverTimestamp()
             });
             toast.success("Major Added");
@@ -530,9 +532,148 @@ function CurriculumPanel() {
         toast.success("Deleted");
     }
 
+    const seedDefaults = async () => {
+        if (!confirm("Overwrite with DETAILED default majors (Artist, Producer, Creator, Business)?")) return;
+
+        // Comprehensive Curriculum Data
+        const defaults = [
+            {
+                name: "Recording Artist",
+                icon: "mic",
+                description: "A complete 360° program designed to transform raw talent into a market-ready brand. Focuses on vocal mastery, songwriting, performance, and understanding the music business.",
+                color: "bg-purple-600",
+                courses: [
+                    "Vocal Physiology & Health",
+                    "Advanced Songwriting Structure",
+                    "Lyricism & Metaphor",
+                    "Stage Presence & Movement",
+                    "Studio Recording Techniques",
+                    "Personal Branding 101",
+                    "Media Training & Interviews",
+                    "Contract Negotiation Basics"
+                ],
+                highlights: [
+                    "Release a professionally mixed debut EP",
+                    "Headline the End-of-Year University Showcase",
+                    "Develop a complete Electronic Press Kit (EPK)",
+                    "Secure a feature with a verified artist"
+                ],
+                activities: [
+                    "Weekly 'Tiny Desk' Style Assessments",
+                    "Co-writing Camps with Producer Stream",
+                    "Mock Label Meetings",
+                    "Live Performance Reviews"
+                ]
+            },
+            {
+                name: "Music Producer",
+                icon: "music",
+                description: "Shape the sonic landscape. From sound design to mastering, this stream prepares you for the technical and creative demands of modern music production.",
+                color: "bg-blue-600",
+                courses: [
+                    "Digital Audio Workstations (FL/Ableton)",
+                    "Synthesis & Sound Design",
+                    "Sampling History & Ethics",
+                    "Advanced Mixing Techniques",
+                    "Mastering for Streaming Services",
+                    "Music Theory for Producers",
+                    "Collaborative Production Workflow",
+                    "Studio Acoustics & Hardware"
+                ],
+                highlights: [
+                    "Produce 3 full tracks for Artist Stream students",
+                    "Create and sell a custom Sample Pack",
+                    "Win the Semester Beat Battle Championship",
+                    "Placement credit on a University Release"
+                ],
+                activities: [
+                    "48-Hour Beat Creation Challenges",
+                    "Remix Contests",
+                    "Signal Flow & Hardware Labs",
+                    "Listening Parties & Critique Sessions"
+                ]
+            },
+            {
+                name: "Content Creator",
+                icon: "radio",
+                description: "Master the attention economy. Learn to shoot, edit, and strategize content that builds engaged communities and converts followers into superfans.",
+                color: "bg-green-600",
+                courses: [
+                    "Short-Form Storytelling (TikTok/Reels)",
+                    "Video Editing Mastery (Premiere/CapCut)",
+                    "Algorithm Psychology & SEO",
+                    "Graphic Design for Thumbnails",
+                    "Livestream Setup & Showrunning",
+                    "Community Management",
+                    "Monetization Strategies",
+                    "Crisis Management & PR"
+                ],
+                highlights: [
+                    "Grow a channel to 10k engaged followers",
+                    "Launch & monetize a weekly Podcast",
+                    "Direct a Music Video for an Artist student",
+                    "Secure first Brand Deal / Sponsorship"
+                ],
+                activities: [
+                    "Daily Content Vlogs (30-Day Challenge)",
+                    "Cross-Stream Collaboration Projects",
+                    "Analytics Review & Strategy Pivots",
+                    "Trend Forecasting Workshops"
+                ]
+            },
+            {
+                name: "Music Business",
+                icon: "business",
+                description: "The backbone of the industry. Understand royalties, copyright, artist management, and the future of music tech.",
+                color: "bg-neutral-800",
+                courses: [
+                    "Copyright Law & Publishing",
+                    "Artist Management Fundamentals",
+                    "Tour Booking & Logistics",
+                    "Streaming Economics",
+                    "Marketing & Release Strategies",
+                    "A&R (Artists and Repertoire)",
+                    "Music Tech & AI Landscape",
+                    "Financial Literacy for Creatives"
+                ],
+                highlights: [
+                    "Manage a rollout for an Artist student",
+                    "Draft a Standard 360 Deal Contract",
+                    "Organize a Sold-Out Campus Event",
+                    "Pitch a Music Tech Startup Idea"
+                ],
+                activities: [
+                    "Mock Label Drafting Sessions",
+                    "Event Planning Committee",
+                    "Contract Review Clinics",
+                    "Industry Networking Mixers"
+                ]
+            }
+        ];
+
+        try {
+            // Optional: Clear existing defaults to avoid duplicates if user wants fresh start
+            // For now, we just append/create new ones.
+            for (const maj of defaults) {
+                await addDoc(collection(db, "university_departments"), {
+                    ...maj,
+                    createdAt: serverTimestamp()
+                });
+            }
+            toast.success("Detailed Curriculum Seeded!");
+            setIsAdding(!isAdding); // Trigger refresh
+        } catch (e) {
+            toast.error("Failed to seed items.");
+        }
+    };
+
     return (
         <div>
-            <div className="flex justify-end mb-6">
+            <div className="flex justify-between items-center mb-6">
+                <button onClick={seedDefaults} className="text-neutral-500 hover:text-blue-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                    <Sparkles size={14} /> Seed Presets
+                </button>
+
                 <button onClick={() => setIsAdding(!isAdding)} className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
                     <Plus size={16} /> Add Major
                 </button>
@@ -557,6 +698,17 @@ function CurriculumPanel() {
                         <textarea {...register("courseString")} placeholder="Intro to FL Studio, Advanced Mixing, Mastering..." className="input-field" required />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-neutral-500 uppercase font-bold mb-1 block">Highlights (One per line)</label>
+                            <textarea {...register("highlightString")} placeholder="Release a debut EP..." className="input-field h-32" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-neutral-500 uppercase font-bold mb-1 block">Activities (One per line)</label>
+                            <textarea {...register("activityString")} placeholder="Weekly Open Mics..." className="input-field h-32" />
+                        </div>
+                    </div>
+
                     <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-500 text-sm hover:text-neutral-900 dark:hover:text-white">Cancel</button>
                         <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold text-sm hover:bg-blue-500">Save Major</button>
@@ -575,7 +727,7 @@ function CurriculumPanel() {
                             </div>
                             <p className="text-neutral-500 text-sm mb-4">{major.description}</p>
                             <div className="flex flex-wrap gap-2">
-                                {major.courses?.map((c: string, i: number) => (
+                                {major.courses?.slice(0, 5).map((c: string, i: number) => (
                                     <span key={i} className="bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/5 px-3 py-1 rounded-full text-xs text-neutral-600 dark:text-neutral-300">{c}</span>
                                 ))}
                             </div>

@@ -60,40 +60,44 @@ export default function MajorsPage() {
                             const Icon = iconMap[major.icon] || BookOpen;
 
                             return (
-                                <motion.div
-                                    key={major.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="group relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-8 md:p-12 rounded-[2.5rem] overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500"
-                                >
-                                    {/* Ambient Background Gradient */}
-                                    <div className={`absolute top-0 right-0 w-64 h-64 blur-[80px] rounded-full opacity-10 group-hover:opacity-20 transition-opacity ${major.color || 'bg-blue-500'}`} />
+                                <Link href={`/university/majors/${major.id}`} key={major.id}>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                        className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-8 md:p-12 rounded-[2.5rem] overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500"
+                                    >
+                                        {/* Ambient Background Gradient */}
+                                        <div className={`absolute top-0 right-0 w-64 h-64 blur-[80px] rounded-full opacity-10 group-hover:opacity-20 transition-opacity ${major.color || 'bg-blue-500'}`} />
 
-                                    <div className="relative z-10">
-                                        <div className={`w-16 h-16 rounded-2xl ${major.color ? major.color.replace('bg-', 'bg-').replace('500', '500/10').replace('600', '600/10') : 'bg-neutral-100 dark:bg-white/5'} flex items-center justify-center mb-8`}>
-                                            <Icon size={32} className={major.color?.replace('bg-', 'text-') || 'text-neutral-500'} />
-                                        </div>
+                                        <div className="relative z-10">
+                                            <div className={`w-16 h-16 rounded-2xl ${major.color ? major.color.replace('bg-', 'bg-').replace('500', '500/10').replace('600', '600/10') : 'bg-neutral-100 dark:bg-white/5'} flex items-center justify-center mb-8`}>
+                                                <Icon size={32} className={major.color?.replace('bg-', 'text-') || 'text-neutral-500'} />
+                                            </div>
 
-                                        <h2 className="text-3xl md:text-4xl font-black mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors">
-                                            {major.name}
-                                        </h2>
-                                        <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
-                                            {major.description}
-                                        </p>
+                                            <h2 className="text-3xl md:text-4xl font-black mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors">
+                                                {major.name}
+                                            </h2>
+                                            <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
+                                                {major.description}
+                                            </p>
 
-                                        <div>
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">Core Curriculum</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {major.courses?.map((course: string, idx: number) => (
-                                                    <span key={idx} className="bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/5 px-4 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                                        {course}
-                                                    </span>
-                                                ))}
+                                            <div>
+                                                <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">Core Curriculum</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {major.courses?.slice(0, 4).map((course: string, idx: number) => (
+                                                        <span key={idx} className="bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/5 px-4 py-2 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                            {course}
+                                                        </span>
+                                                    ))}
+                                                    {major.courses && major.courses.length > 4 && (
+                                                        <span className="bg-neutral-100 dark:bg-white/5 px-4 py-2 rounded-full text-sm font-medium text-neutral-500">+{major.courses.length - 4}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+                                </Link>
                             );
                         })}
                     </div>
