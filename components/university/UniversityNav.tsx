@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, GraduationCap, ArrowRight } from "lucide-react";
+import { Menu, X, GraduationCap, ArrowRight, ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function UniversityNav() {
     const pathname = usePathname();
@@ -36,6 +37,11 @@ export function UniversityNav() {
             >
                 <div className="container mx-auto px-6 flex items-center justify-between">
                     <div className="flex items-center gap-4 md:gap-6">
+                        {/* Back to Main Site */}
+                        <a href="/" className="p-2 -ml-2 rounded-full text-neutral-500 hover:text-black dark:hover:text-white transition-colors" title="Back to KyeBeezy.com">
+                            <ArrowLeft size={20} />
+                        </a>
+
                         <Link href="/university" className="flex items-center gap-3 group">
                             <img
                                 src="/bandlab-logo.png"
@@ -86,6 +92,7 @@ export function UniversityNav() {
 
                     {/* CTA */}
                     <div className="hidden md:flex items-center gap-4">
+                        <ThemeToggle />
                         <Link href="/university/apply" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-sm transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 flex items-center gap-2 group">
                             Apply Now
                             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -93,9 +100,12 @@ export function UniversityNav() {
                     </div>
 
                     {/* Mobile Toggle */}
-                    <button className="md:hidden p-2 text-black dark:text-white" onClick={() => setMobileOpen(true)}>
-                        <Menu size={24} />
-                    </button>
+                    <div className="flex items-center gap-4 md:hidden">
+                        <ThemeToggle />
+                        <button className="p-2 text-black dark:text-white" onClick={() => setMobileOpen(true)}>
+                            <Menu size={24} />
+                        </button>
+                    </div>
                 </div>
             </motion.nav>
 
@@ -109,7 +119,10 @@ export function UniversityNav() {
                         className="fixed inset-0 z-[60] bg-white dark:bg-black"
                     >
                         <div className="p-6">
-                            <div className="flex justify-end mb-8">
+                            <div className="flex justify-between items-center mb-8">
+                                <a href="/" className="flex items-center gap-2 text-neutral-500 font-bold text-sm">
+                                    <ArrowLeft size={16} /> Back to Main Site
+                                </a>
                                 <button onClick={() => setMobileOpen(false)} className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white">
                                     <X size={24} />
                                 </button>
