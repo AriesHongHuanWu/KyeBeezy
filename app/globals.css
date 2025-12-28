@@ -157,6 +157,12 @@
   }
 }
 
+@layer components {
+  .input-field {
+    @apply w-full bg-neutral-100 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl p-3 outline-none text-black dark:text-white placeholder:text-neutral-500 transition-all focus:border-purple-500 focus:bg-white dark:focus:bg-black/60;
+  }
+}
+
 @layer utilities {
   .animation-delay-2000 {
     animation-delay: 2s;

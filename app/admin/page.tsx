@@ -1520,18 +1520,12 @@ export default function AdminDashboard() {
     const handleLogout = () => { signOut(auth); };
 
     return (
-        <div className="min-h-screen bg-black text-foreground font-sans selection:bg-purple-500/30">
+        <div className="min-h-screen bg-neutral-50 dark:bg-black text-neutral-900 dark:text-white font-sans selection:bg-purple-500/30 transition-colors duration-300">
             {/* Top Navigation Bar */}
-            <nav className="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+            <nav className="border-b border-neutral-200 dark:border-white/10 bg-white/80 dark:bg-black/50 backdrop-blur-xl sticky top-0 z-50 transition-colors duration-300">
                 <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                            <ShieldCheck className="text-white w-6 h-6" />
-                        </div>
-                        <div>
-                            <h1 className="font-bold text-xl tracking-tight text-white leading-none">KYEBEEZY<span className="text-purple-400">.ADMIN</span></h1>
-                            <p className="text-xs text-neutral-500 font-mono mt-1">V2.2.0 ??ACCESS GRANTED</p>
-                        </div>
+                        <img src="/awbest-logo.png" alt="AWBEST" className="h-10 w-auto" />
                     </div>
 
                     <div className="flex items-center gap-6">
