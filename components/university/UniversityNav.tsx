@@ -33,18 +33,24 @@ export function UniversityNav() {
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/5 dark:border-white/5 py-3" : "bg-transparent py-5"}`}
             >
                 <div className="container mx-auto px-6 flex items-center justify-between">
-                    {/* Brand */}
-                    <Link href="/university" className="flex items-center gap-3 group">
-                        <img
-                            src="/awbest-logo.png"
-                            alt="Logo"
-                            className="w-12 h-12 object-contain group-hover:scale-110 transition-transform"
-                        />
-                        <div>
-                            <span className="font-bold text-lg leading-none block text-black dark:text-white">BANDLAB</span>
-                            <span className="text-xs font-medium tracking-widest text-neutral-500 uppercase">University</span>
+                    <div className="flex items-center gap-4 md:gap-6">
+                        <Link href="/university" className="flex items-center gap-3 group">
+                            <img
+                                src="/bandlab-logo.png"
+                                alt="BandLab"
+                                className="w-10 h-10 object-contain group-hover:scale-110 transition-transform"
+                            />
+                            <div>
+                                <span className="font-bold text-lg leading-none block text-black dark:text-white">BANDLAB</span>
+                                <span className="text-xs font-medium tracking-widest text-neutral-500 uppercase">University</span>
+                            </div>
+                        </Link>
+
+                        <div className="hidden md:flex items-center gap-2 border-l border-neutral-200 dark:border-white/10 pl-6">
+                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Sponsored by</span>
+                            <img src="/awbest-logo.png" alt="AWBest" className="h-5 w-auto opacity-70 hover:opacity-100 transition-opacity" />
                         </div>
-                    </Link>
+                    </div>
 
                     {/* Desktop Links */}
                     <div className="hidden md:flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
