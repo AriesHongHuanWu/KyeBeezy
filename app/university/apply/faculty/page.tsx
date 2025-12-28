@@ -286,6 +286,10 @@ export default function FacultyApplyPage() {
                         >
                             {isLoading ? <Loader2 className="animate-spin" /> : <>Unlock Application <Key size={16} /></>}
                         </button>
+
+                        <p className="text-xs text-neutral-400 mt-6 max-w-xs mx-auto leading-relaxed">
+                            Don't have a key? Request one on the <a href="https://discord.gg/kyebeezy" target="_blank" className="underline hover:text-purple-500 font-bold">KyeBeezy Discord</a> or via the <a href="https://kyebeezy.com/#contact" target="_blank" className="underline hover:text-purple-500 font-bold">Contact Form</a>.
+                        </p>
                     </motion.div>
                 )}
 
