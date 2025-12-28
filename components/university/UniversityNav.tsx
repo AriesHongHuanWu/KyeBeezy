@@ -34,10 +34,12 @@ export function UniversityNav() {
             >
                 <div className="container mx-auto px-6 flex items-center justify-between">
                     {/* Brand */}
-                    <Link href="/university" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-black transition-transform group-hover:scale-110">
-                            <GraduationCap size={24} />
-                        </div>
+                    <Link href="/university" className="flex items-center gap-3 group">
+                        <img
+                            src="/awbest-logo.png"
+                            alt="Logo"
+                            className="w-12 h-12 object-contain group-hover:scale-110 transition-transform"
+                        />
                         <div>
                             <span className="font-bold text-lg leading-none block text-black dark:text-white">BANDLAB</span>
                             <span className="text-xs font-medium tracking-widest text-neutral-500 uppercase">University</span>

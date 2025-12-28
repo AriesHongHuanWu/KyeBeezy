@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Star, Users, Globe, Zap, User } from "lucide-react";
+import { ArrowRight, Star, Users, Globe, Zap, User, Music, Mic2, Briefcase } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -70,18 +70,18 @@ export default function UniversityPage() {
     return (
         <div className="container mx-auto px-6">
 
-            {/* HERRO SECTION */}
-            <section className="min-h-[80vh] flex flex-col items-center justify-center text-center max-w-4xl mx-auto">
+            {/* HERO SECTION */}
+            <section className="min-h-[85vh] flex flex-col items-center justify-center text-center max-w-5xl mx-auto pt-20">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="mb-8 relative"
                 >
-                    <div className="absolute inset-0 bg-blue-500/20 blur-[80px] rounded-full pointer-events-none" />
-                    <h1 className="relative text-6xl md:text-8xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-black to-neutral-600 dark:from-white dark:to-neutral-500">
-                        THE FUTURE OF<br />
-                        <span className="text-blue-600 dark:text-blue-500">UNDERGROUND.</span>
+                    <div className="absolute inset-0 bg-blue-500/20 blur-[100px] rounded-full pointer-events-none" />
+                    <h1 className="relative text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-b from-black to-neutral-600 dark:from-white dark:to-neutral-500 leading-[0.9]">
+                        DEFINE YOUR<br />
+                        <span className="text-blue-600 dark:text-blue-500">LEGACY.</span>
                     </h1>
                 </motion.div>
 
@@ -89,9 +89,10 @@ export default function UniversityPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="text-xl md:text-2xl text-neutral-600 dark:text-neutral-400 font-light leading-relaxed mb-12 max-w-2xl"
+                    className="text-xl md:text-2xl text-neutral-600 dark:text-neutral-400 font-light leading-relaxed mb-12 max-w-3xl mx-auto"
                 >
-                    A next-generation institution designed to discover, cultivate, and launch the world's most promising musical talent.
+                    BandLab University is the world's premier incubator for underground talent.
+                    We provide the resources, mentorship, and platform you need to turn potential into professionalism.
                 </motion.p>
 
                 <motion.div
@@ -100,54 +101,66 @@ export default function UniversityPage() {
                     transition={{ delay: 0.4 }}
                     className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
                 >
-                    <Link href="/university/apply" className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-lg transition-all shadow-xl shadow-blue-500/30 hover:scale-105 flex items-center justify-center gap-2">
-                        Start Your Application
-                        <ArrowRight size={20} />
+                    <Link href="/university/apply" className="px-10 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-xl transition-all shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 flex items-center justify-center gap-3">
+                        Apply for Admission <ArrowRight size={20} />
                     </Link>
-                    <Link href="/university/news" className="px-8 py-4 bg-white dark:bg-white/10 hover:bg-neutral-100 dark:hover:bg-white/20 text-black dark:text-white border border-neutral-200 dark:border-white/10 rounded-full font-bold text-lg transition-all flex items-center justify-center">
-                        Explore News
+                    <Link href="/university/majors" className="px-10 py-5 bg-white dark:bg-white/10 hover:bg-neutral-100 dark:hover:bg-white/20 text-black dark:text-white border border-neutral-200 dark:border-white/10 rounded-full font-bold text-xl transition-all flex items-center justify-center">
+                        View Curriculum
                     </Link>
                 </motion.div>
+            </section>
+
+            {/* WHY JOIN SECTION */}
+            <section className="py-24">
+                <div className="mb-16 text-center">
+                    <h2 className="text-4xl md:text-5xl font-black mb-6 text-black dark:text-white">Why Apply?</h2>
+                    <p className="text-xl text-neutral-500 max-w-2xl mx-auto">Admission is competitive, but the rewards are career-changing.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="p-10 rounded-[3rem] bg-gradient-to-br from-purple-500/10 to-blue-500/5 border border-purple-500/10 dark:border-white/5 hover:border-purple-500/30 transition-all group">
+                        <div className="w-16 h-16 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <Mic2 size={32} />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-4 text-black dark:text-white">Elite Engineering</h3>
+                        <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-lg">
+                            Get direct feedback on your mixes from industry pros. We help you achieve that "radio-ready" sound using only BandLab.
+                        </p>
+                    </div>
+
+                    <div className="p-10 rounded-[3rem] bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/10 dark:border-white/5 hover:border-blue-500/30 transition-all group">
+                        <div className="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <Briefcase size={32} />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-4 text-black dark:text-white">Career Strategy</h3>
+                        <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-lg">
+                            It's not just about music; it's about the brand. Learn how to market yourself, build a fanbase, and monetize your art properly.
+                        </p>
+                    </div>
+
+                    <div className="p-10 rounded-[3rem] bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/10 dark:border-white/5 hover:border-green-500/30 transition-all group">
+                        <div className="w-16 h-16 rounded-2xl bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <Zap size={32} />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-4 text-black dark:text-white">Exclusive Access</h3>
+                        <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-lg">
+                            Unlock our private library of Drum Kits, Presets, and Vocal Chains that are unavailable to the public.
+                        </p>
+                    </div>
+                </div>
             </section>
 
             {/* LEADERSHIP SECTION (Dynamic) */}
             <LeadershipSection />
 
-            {/* VISION GRID */}
-            <section className="py-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[
-                        { icon: <Star size={32} />, title: "Elite Mentorship", desc: "Learn directly from professors who have shaped the underground scene.", color: "bg-yellow-500" },
-                        { icon: <Globe size={32} />, title: "Global Network", desc: "Connect with producers and artists from every corner of the world.", color: "bg-purple-500" },
-                        { icon: <Zap size={32} />, title: "Instant Exposure", desc: "Top graduates get featured directly on KyeBeezy's main platform.", color: "bg-blue-500" }
-                    ].map((item, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 40 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
-                            whileHover={{ y: -10 }}
-                            className="p-8 rounded-[2rem] bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 hover:border-black/5 dark:hover:border-white/20 hover:shadow-2xl transition-all duration-300 group"
-                        >
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:rotate-12 transition-transform ${item.color}`}>
-                                {item.icon}
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3 text-black dark:text-white">{item.title}</h3>
-                            <p className="text-neutral-500 leading-relaxed">{item.desc}</p>
-                        </motion.div>
-                    ))}
-                </div>
-            </section>
-
-            {/* STATS BANNER */}
+            {/* STATS BANNER (Simplified) */}
             <section className="py-20 my-20 rounded-[3rem] bg-black dark:bg-white text-white dark:text-black overflow-hidden relative">
                 <div className="absolute inset-0 opacity-20 dark:opacity-5 bg-[url('/noise.png')] mix-blend-overlay" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-around text-center gap-12 p-8">
                     {[
-                        { number: "2025", label: "Classes Begin" },
-                        { number: "10K+", label: "Applications" },
-                        { number: "100%", label: "Scholarships" }
+                        { number: "2025", label: "Enrollment Open" },
+                        { number: "OPEN", label: "Applications" },
+                        { number: "100%", label: "Free Tuition" }
                     ].map((stat, i) => (
                         <div key={i}>
                             <div className="text-6xl md:text-8xl font-black mb-2 tracking-tighter">{stat.number}</div>
