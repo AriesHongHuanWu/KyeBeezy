@@ -103,7 +103,7 @@ const OutroSlide = () => {
     useEffect(() => {
         // Redirect after 5 seconds
         const timer = setTimeout(() => {
-            router.push("/awards");
+            router.push("/events/bandlab2025");
         }, 6000);
         return () => clearTimeout(timer);
     }, [router]);
@@ -736,7 +736,7 @@ export default function LiveAwardsPage() {
             </div>
 
             <div className="fixed top-6 left-6 z-50">
-                <Link href="/awards/bandlab2025" className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white/30 hover:text-white transition-colors border border-white/5 hover:border-white/20">
+                <Link href="/events/bandlab2025" className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white/30 hover:text-white transition-colors border border-white/5 hover:border-white/20">
                     <ArrowLeft className="w-4 h-4" /> <span className="text-xs uppercase tracking-widest font-bold">Exit</span>
                 </Link>
             </div>

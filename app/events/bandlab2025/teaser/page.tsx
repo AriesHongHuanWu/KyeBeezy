@@ -291,7 +291,7 @@ const FinaleVisuals = () => (
                 transition={{ delay: 1.2, duration: 0.8 }}
                 className="mt-12"
             >
-                <Link href="/awards/bandlab2025/live">
+                <Link href="/events/bandlab2025/live">
                     <button className="group relative px-12 py-4 bg-white text-black font-bold text-lg tracking-widest uppercase overflow-hidden transition-all hover:scale-105">
                         <span className="relative z-10 transition-colors group-hover:text-white">Enter Experience</span>
                         <div className="absolute inset-0 bg-black translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[0.16,1,0.3,1]" />
