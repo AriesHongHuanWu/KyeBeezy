@@ -40,8 +40,9 @@ export default function FacultyPage() {
     }, []);
 
     const leaders = faculty.filter(f => f.role === 'leader');
-    const professors = faculty.filter(f => f.role === 'professor' || !f.role); // Default to professor
     const mentors = faculty.filter(f => f.role === 'mentor');
+    // Capture everyone else (Professors, Sound Engineers, Visual Artists, etc.)
+    const professors = faculty.filter(f => f.role !== 'leader' && f.role !== 'mentor');
 
     const container = {
         hidden: { opacity: 0 },
