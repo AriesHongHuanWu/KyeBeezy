@@ -66,7 +66,7 @@ export default function Home() {
                             transition={{ delay: 1.2, duration: 0.8 }}
                             className="flex space-x-8 mt-8 p-4 rounded-2xl bg-white/5 dark:bg-accent/5 backdrop-blur-sm border border-black/5 dark:border-white/10 shadow-lg hover:shadow-purple-500/20 transition-all items-center"
                         >
-                            <Link href="/awards" className="hover:text-yellow-400 text-foreground transition-colors transform hover:scale-110 duration-300" title="Kye Beezy Awards">
+                            <Link href="/events" className="hover:text-yellow-400 text-foreground transition-colors transform hover:scale-110 duration-300" title="Kye Beezy Events">
                                 <Trophy className="w-8 h-8" />
                             </Link>
                             <div className="w-px h-8 bg-white/10" />
