@@ -113,7 +113,7 @@ function LeadershipSection() {
         const fetchLeaders = async () => {
             const q = query(
                 collection(db, "university_professors"),
-                where("role", "==", "leader"),
+                // where("role", "==", "leader"),  <-- REMOVED: Show any top-ordered faculty
                 orderBy("order", "asc"),
                 limit(3)
             );
@@ -128,7 +128,7 @@ function LeadershipSection() {
     return (
         <section className="py-20 border-t border-neutral-200 dark:border-white/5">
             <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold mb-4 text-black dark:text-white">Leadership</h2>
+                <h2 className="text-4xl font-bold mb-4 text-black dark:text-white">Featured Faculty</h2>
                 <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full" />
             </div>
 

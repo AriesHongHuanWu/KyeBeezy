@@ -307,25 +307,52 @@ function ApplicationsPanel() {
 
 function FacultyPanel() {
     const [faculty, setFaculty] = useState<any[]>([]);
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, reset, setValue } = useForm();
     const [isAdding, setIsAdding] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
         const q = query(collection(db, "university_professors"), orderBy("order", "asc"));
         getDocs(q).then(snap => setFaculty(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    }, [isAdding]);
+    }, [isAdding, editingId]); // Refresh on change
 
     const onSubmit = async (data: any) => {
         try {
-            await addDoc(collection(db, "university_professors"), {
+            const payload = {
                 ...data,
                 order: parseInt(data.order || "99"),
-                createdAt: serverTimestamp()
-            });
-            toast.success("Professor Added");
+                updatedAt: serverTimestamp()
+            };
+
+            if (editingId) {
+                await updateDoc(doc(db, "university_professors", editingId), payload);
+                toast.success("Professor Updated");
+            } else {
+                await addDoc(collection(db, "university_professors"), {
+                    ...payload,
+                    createdAt: serverTimestamp()
+                });
+                toast.success("Professor Added");
+            }
+
             reset();
             setIsAdding(false);
+            setEditingId(null);
         } catch (e) { toast.error("Failed"); }
+    };
+
+    const handleEdit = (prof: any) => {
+        setEditingId(prof.id);
+        setIsAdding(true);
+        setValue("name", prof.name);
+        setValue("title", prof.title);
+        setValue("role", prof.role);
+        setValue("department", prof.department);
+        setValue("image", prof.image);
+        setValue("bio", prof.bio);
+        setValue("order", prof.order);
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id: string) => {
@@ -335,16 +362,27 @@ function FacultyPanel() {
         toast.success("Removed");
     }
 
+    const cancelEdit = () => {
+        setIsAdding(false);
+        setEditingId(null);
+        reset();
+    };
+
     return (
         <div>
             <div className="flex justify-end mb-6">
-                <button onClick={() => setIsAdding(!isAdding)} className="bg-white text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm hover:bg-neutral-200">
-                    <Plus size={16} /> Add Faculty
-                </button>
+                {!isAdding && (
+                    <button onClick={() => setIsAdding(true)} className="bg-white text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm hover:bg-neutral-200">
+                        <Plus size={16} /> Add Faculty
+                    </button>
+                )}
             </div>
 
             {isAdding && (
-                <form onSubmit={handleSubmit(onSubmit)} className="bg-neutral-900 border border-white/10 p-6 rounded-2xl mb-8 space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="bg-neutral-900 border border-white/10 p-6 rounded-2xl mb-8 space-y-4 relative">
+                    <div className="absolute top-6 right-6 text-xs font-bold text-neutral-500 uppercase">
+                        {editingId ? "Editing Function" : "New Entry"}
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <input {...register("name")} placeholder="Name" className="input-field" required />
                         <input {...register("title")} placeholder="Title (e.g. Dean of Audio)" className="input-field" required />
@@ -362,24 +400,31 @@ function FacultyPanel() {
                     <input {...register("order")} type="number" placeholder="Sort Order (1 = First)" className="input-field" />
 
                     <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-400 text-sm">Cancel</button>
-                        <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold text-sm">Save</button>
+                        <button type="button" onClick={cancelEdit} className="px-4 py-2 text-neutral-400 text-sm">Cancel</button>
+                        <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold text-sm">
+                            {editingId ? "Update Faculty" : "Save Faculty"}
+                        </button>
                     </div>
                 </form>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {faculty.map(prof => (
-                    <div key={prof.id} className="bg-neutral-900/30 border border-white/5 p-4 rounded-xl flex gap-4 group">
+                    <div key={prof.id} className="bg-neutral-900/30 border border-white/5 p-4 rounded-xl flex gap-4 group hover:border-white/20 transition-all">
                         <img src={prof.image} alt="" className="w-16 h-16 rounded-lg object-cover bg-neutral-800" />
                         <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-white truncate">{prof.name}</h4>
                             <p className="text-xs text-blue-400 font-bold uppercase">{prof.role || "Professor"} • {prof.title}</p>
                             <p className="text-xs text-neutral-500 line-clamp-1">{prof.bio}</p>
                         </div>
-                        <button onClick={() => handleDelete(prof.id)} className="text-neutral-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Trash2 size={18} />
-                        </button>
+                        <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleEdit(prof)} className="text-neutral-400 hover:text-white">
+                                <FileText size={18} />
+                            </button>
+                            <button onClick={() => handleDelete(prof.id)} className="text-neutral-600 hover:text-red-500">
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
