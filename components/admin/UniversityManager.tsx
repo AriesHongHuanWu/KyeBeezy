@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { AccessKeyManager } from "./AccessKeyManager";
+import NewsEditor from "./NewsEditor";
 
 // ... (Theme aware updates for UniversityManager to be applied)
 // Since the file is long and complex, I will apply these pattern replacements via a rewrite of the specific updated sections or the whole file if feasible. 
@@ -432,45 +433,19 @@ function NewsPanel() {
     const [news, setNews] = useState<any[]>([]);
     const { register, handleSubmit, reset, setValue, watch } = useForm();
     const [isAdding, setIsAdding] = useState(false);
-    const [uploading, setUploading] = useState(false);
+    const content = watch("content") || "";
 
     useEffect(() => {
         const q = query(collection(db, "university_news"), orderBy("publishedAt", "desc"));
         getDocs(q).then(snap => setNews(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     }, [isAdding]);
 
-    const handleImageUpload = async (e: any) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setUploading(true);
-        try {
-            const storageRef = ref(storage, `news/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(snapshot.ref);
-
-            // Insert markdown image syntax
-            const currentContent = watch("content") || "";
-            setValue("content", currentContent + `\n![Image](${url})\n`);
-            toast.success("Image uploaded & inserted!");
-        } catch (error) {
-            console.error(error);
-            toast.error("Upload failed");
-        } finally {
-            setUploading(false);
-        }
-    };
-
     const onSubmit = async (data: any) => {
         try {
-            // Extract first image from markdown as cover if not provided? 
-            // For now just keep manual cover image or use first match.
-            // Let's keep it simple: manual cover image URL field + markdown content.
-
             await addDoc(collection(db, "university_news"), {
                 ...data,
                 publishedAt: serverTimestamp(),
-                author: "Admin" // simplified
+                author: data.author || "Admin"
             });
             toast.success("News Posted");
             reset();
@@ -484,6 +459,11 @@ function NewsPanel() {
         setNews(news.filter(n => n.id !== id));
         toast.success("Deleted");
     }
+
+    // Register content field manually since NewsEditor is a custom input
+    useEffect(() => {
+        register("content", { required: true });
+    }, [register]);
 
     return (
         <div>
@@ -501,25 +481,14 @@ function NewsPanel() {
                     </div>
 
                     <input {...register("summary")} placeholder="Short Summary (appear in card)" className="input-field" required />
+                    <input {...register("image")} placeholder="Cover Image URL" className="input-field" />
 
-                    <div className="flex items-center gap-2">
-                        <input {...register("image")} placeholder="Cover Image URL" className="input-field flex-1" />
-                        <div className="relative">
-                            <input type="file" onChange={handleImageUpload} className="hidden" id="md-img-upload" />
-                            <label htmlFor="md-img-upload" className={`cursor-pointer px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 font-bold text-xs hover:bg-neutral-200 transition-colors ${uploading ? 'opacity-50' : ''}`}>
-                                {uploading ? "Uploading..." : "Insert Image"}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="relative">
-                        <textarea
-                            {...register("content")}
-                            placeholder="Article Content (Markdown Supported)... Use # for headers, - for lists, etc."
-                            className="input-field h-64 font-mono text-sm"
-                            required
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-neutral-500 ml-1">Content</label>
+                        <NewsEditor
+                            value={content}
+                            onChange={(val) => setValue("content", val)}
                         />
-                        <div className="absolute bottom-2 right-2 text-[10px] text-neutral-400">Markdown Enabled</div>
                     </div>
 
                     <div className="flex justify-end gap-2">
