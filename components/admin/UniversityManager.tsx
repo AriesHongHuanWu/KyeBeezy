@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import {
     GraduationCap, Users, Newspaper, Plus, Trash2, Check, X,
@@ -45,7 +46,7 @@ export default function UniversityManager() {
                         <button
                             key={tab.id}
                             onClick={() => setSubTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${subTab === tab.id ? "bg-blue-600 text-white shadow-lg" : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${subTab === tab.id ? "bg-blue-600 text-white shadow-lg" : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"} `}
                         >
                             {tab.icon} {tab.label}
                         </button>
@@ -429,20 +430,47 @@ function FacultyPanel() {
 
 function NewsPanel() {
     const [news, setNews] = useState<any[]>([]);
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, reset, setValue, watch } = useForm();
     const [isAdding, setIsAdding] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const q = query(collection(db, "university_news"), orderBy("publishedAt", "desc"));
         getDocs(q).then(snap => setNews(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     }, [isAdding]);
 
+    const handleImageUpload = async (e: any) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const storageRef = ref(storage, `news/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(snapshot.ref);
+
+            // Insert markdown image syntax
+            const currentContent = watch("content") || "";
+            setValue("content", currentContent + `\n![Image](${url})\n`);
+            toast.success("Image uploaded & inserted!");
+        } catch (error) {
+            console.error(error);
+            toast.error("Upload failed");
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const onSubmit = async (data: any) => {
         try {
+            // Extract first image from markdown as cover if not provided? 
+            // For now just keep manual cover image or use first match.
+            // Let's keep it simple: manual cover image URL field + markdown content.
+
             await addDoc(collection(db, "university_news"), {
                 ...data,
                 publishedAt: serverTimestamp(),
-                author: "Admin"
+                author: "Admin" // simplified
             });
             toast.success("News Posted");
             reset();
@@ -467,9 +495,32 @@ function NewsPanel() {
 
             {isAdding && (
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-6 rounded-2xl mb-8 space-y-4">
-                    <input {...register("title")} placeholder="News Title" className="input-field text-lg font-bold" required />
-                    <textarea {...register("summary")} placeholder="Summary / Content" className="input-field h-32" required />
-                    <input {...register("image")} placeholder="Cover Image URL" className="input-field" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input {...register("title")} placeholder="News Title" className="input-field text-lg font-bold" required />
+                        <input {...register("author")} placeholder="Author (Optional)" className="input-field" />
+                    </div>
+
+                    <input {...register("summary")} placeholder="Short Summary (appear in card)" className="input-field" required />
+
+                    <div className="flex items-center gap-2">
+                        <input {...register("image")} placeholder="Cover Image URL" className="input-field flex-1" />
+                        <div className="relative">
+                            <input type="file" onChange={handleImageUpload} className="hidden" id="md-img-upload" />
+                            <label htmlFor="md-img-upload" className={`cursor-pointer px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 font-bold text-xs hover:bg-neutral-200 transition-colors ${uploading ? 'opacity-50' : ''}`}>
+                                {uploading ? "Uploading..." : "Insert Image"}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="relative">
+                        <textarea
+                            {...register("content")}
+                            placeholder="Article Content (Markdown Supported)... Use # for headers, - for lists, etc."
+                            className="input-field h-64 font-mono text-sm"
+                            required
+                        />
+                        <div className="absolute bottom-2 right-2 text-[10px] text-neutral-400">Markdown Enabled</div>
+                    </div>
 
                     <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 text-neutral-500 text-sm hover:text-neutral-900 dark:hover:text-white">Cancel</button>
@@ -482,10 +533,11 @@ function NewsPanel() {
                 {news.map(item => (
                     <div key={item.id} className="bg-white dark:bg-neutral-900/30 border border-neutral-200 dark:border-white/5 p-4 rounded-xl flex gap-4 group hover:border-blue-500/30 transition-all">
                         <div className="w-24 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden flex-shrink-0">
-                            {item.image && <img src={item.image} className="w-full h-full object-cover" />}
+                            {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Newspaper className="w-full h-full p-4 text-neutral-300" />}
                         </div>
                         <div className="flex-1">
-                            <h4 className="font-bold text-neutral-900 dark:text-white">{item.title}</h4>
+                            <h4 className="font-bold text-neutral-900 dark:text-white line-clamp-1">{item.title}</h4>
+                            <p className="text-xs text-blue-600 font-bold mb-1">{item.author || "Admin"}</p>
                             <p className="text-xs text-neutral-500 line-clamp-2">{item.summary}</p>
                             <p className="text-[10px] text-neutral-400 mt-2">{item.publishedAt?.toDate ? format(item.publishedAt.toDate(), "MMM dd, yyyy") : "Just now"}</p>
                         </div>
