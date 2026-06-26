@@ -111,7 +111,7 @@ export default function MusicSection() {
     return (
         <section
             id="music"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glow only — the fixed background video (his face) stays
                 visible in the empty LEFT half for an editorial, page-by-page feel.
@@ -125,13 +125,13 @@ export default function MusicSection() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: intentional negative space — reveals the artist's face
                         in the fixed background video. Hidden on mobile (single column). */}
                     <div aria-hidden className="hidden lg:block" />
 
                     {/* RIGHT: the content column */}
-                    <div className="max-w-xl lg:ml-auto">
+                    <div className="max-w-lg lg:ml-auto">
                         <SectionHeading
                             eyebrow="Listen"
                             title="THE"
@@ -145,7 +145,7 @@ export default function MusicSection() {
                         {/* Compact stack of larger track cards: single column, two on xl.
                             Fewer, bigger cards read more premium than a wide grid. */}
                         <motion.ul
-                            className="mt-8 grid list-none grid-cols-1 gap-5 xl:grid-cols-2"
+                            className="mt-10 grid list-none grid-cols-1 gap-5 xl:grid-cols-2"
                             variants={reduced ? undefined : staggerContainer}
                             initial={reduced ? undefined : "hidden"}
                             whileInView={reduced ? undefined : "show"}
@@ -204,7 +204,7 @@ export default function MusicSection() {
                         </motion.ul>
 
                         {/* BandLab CTA — full-width on mobile, inline on desktop */}
-                        <Reveal direction="up" delay={0.1} className="mt-8">
+                        <Reveal direction="up" delay={0.1} className="mt-6">
                             <a
                                 href={SOCIALS.bandlab}
                                 target="_blank"

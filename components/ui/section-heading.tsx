@@ -28,7 +28,7 @@ export function SectionHeading({
             {eyebrow && (
                 <div
                     className={cn(
-                        "inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full text-xs font-bold uppercase tracking-[0.2em]",
+                        "inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full text-xs font-bold uppercase tracking-[0.2em]",
                         "bg-brand/10 text-brand border border-brand/20 backdrop-blur-md",
                     )}
                 >
@@ -36,10 +36,10 @@ export function SectionHeading({
                     {eyebrow}
                 </div>
             )}
-            <h2 className="text-4xl md:text-6xl font-black font-outfit tracking-tighter text-foreground leading-[0.95]">
+            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black font-outfit tracking-tighter text-foreground leading-[0.95]">
                 {title} {accent && <span className="text-gradient-brand">{accent}</span>}
             </h2>
-            {children && <div className="mt-5 text-lg text-muted-foreground font-light">{children}</div>}
+            {children && <div className="mt-6 text-lg text-muted-foreground font-light">{children}</div>}
         </Reveal>
     );
 }

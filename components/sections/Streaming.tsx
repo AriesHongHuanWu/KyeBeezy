@@ -98,7 +98,7 @@ export default function StreamingSection() {
     return (
         <section
             id="stream"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glow only — the fixed background video (his face) stays
                 visible in the empty right half for an editorial, page-by-page feel. */}
@@ -111,16 +111,16 @@ export default function StreamingSection() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: the content column */}
-                    <div className="max-w-xl">
+                    <div className="max-w-lg">
                         <SectionHeading eyebrow="Live" title="THE" accent="STREAM" align="left">
                             Tune in to the chaos. Catch Kye live on Twitch — drop in, hang out, and
                             get your track heard in real time.
                         </SectionHeading>
 
                         {/* ONE prominent Twitch embed in a glass frame */}
-                        <Reveal direction="up" delay={0.05} className="mt-8">
+                        <Reveal direction="up" delay={0.05} className="mt-10">
                             <GlassPanel className="relative overflow-hidden p-3 sm:p-4">
                                 <span
                                     aria-hidden
@@ -167,7 +167,7 @@ export default function StreamingSection() {
                         </Reveal>
 
                         {/* Compact row of actions */}
-                        <Reveal direction="up" delay={0.1} className="mt-5">
+                        <Reveal direction="up" delay={0.1} className="mt-6">
                             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                                 <a
                                     href={SOCIALS.twitch}

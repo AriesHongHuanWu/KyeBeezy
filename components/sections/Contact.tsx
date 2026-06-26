@@ -107,7 +107,7 @@ export default function ContactSection() {
     return (
         <section
             id="contact"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glows only — the background video (his face) stays visible
                 in the empty LEFT half for an editorial, page-by-page feel. */}
@@ -121,14 +121,14 @@ export default function ContactSection() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: intentional negative space — reveals the artist's face
                         in the fixed background video. Hidden on mobile (single column). */}
                     <div aria-hidden className="hidden lg:block" />
 
                     {/* RIGHT: the content column — heading at top, then email,
                         callouts, and the glass contact form below. */}
-                    <div className="max-w-xl lg:ml-auto">
+                    <div className="max-w-lg lg:ml-auto">
                         <SectionHeading eyebrow="Connect" title="LET'S" accent="WORK" align="left">
                             Got a record, a beat, or a vision? Pull up. I read every
                             message — let&apos;s make something the Bonnet Gang can&apos;t
@@ -136,7 +136,7 @@ export default function ContactSection() {
                         </SectionHeading>
 
                         {/* Email card */}
-                        <Reveal direction="up" delay={0.1} className="mt-8">
+                        <Reveal direction="up" delay={0.1} className="mt-10">
                             <a
                                 href={SOCIALS.email}
                                 className={cn(
@@ -161,7 +161,7 @@ export default function ContactSection() {
                         </Reveal>
 
                         {/* Prominent collab / join callout */}
-                        <Reveal direction="up" delay={0.18} className="mt-4">
+                        <Reveal direction="up" delay={0.18} className="mt-6">
                             <GlassPanel className="overflow-hidden p-6 sm:p-7" hover>
                                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">
                                     Make it official
@@ -205,7 +205,7 @@ export default function ContactSection() {
                         </Reveal>
 
                         {/* Glass contact form */}
-                        <Reveal direction="up" delay={0.24} className="mt-4">
+                        <Reveal direction="up" delay={0.24} className="mt-6">
                             <GlassPanel className="p-6 sm:p-8 rounded-[2rem]">
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid sm:grid-cols-2 gap-5">

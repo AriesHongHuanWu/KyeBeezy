@@ -146,7 +146,7 @@ export default function Schedule() {
     return (
         <section
             id="schedule"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glow only — the empty LEFT column lets the fixed
                 background video (his face) show through for an editorial feel. */}
@@ -156,20 +156,20 @@ export default function Schedule() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: intentional negative space — reveals the artist's face
                         in the fixed background video. Hidden on mobile (single column). */}
                     <div aria-hidden className="hidden lg:block" />
 
                     {/* RIGHT: the content column */}
-                    <div className="max-w-xl lg:ml-auto">
+                    <div className="max-w-lg lg:ml-auto">
                         <SectionHeading eyebrow="Upcoming" title="THE" accent="AGENDA" align="left">
                             Streams, drops and releases — locked in. Set a reminder and
                             never miss the Bonnet Gang moving.
                         </SectionHeading>
 
                         {/* Discord-updates link, top of the column */}
-                        <Reveal direction="up" delay={0.05} className="mt-7">
+                        <Reveal direction="up" delay={0.05} className="mt-10">
                             <a
                                 href={SOCIALS.discord}
                                 target="_blank"
@@ -390,13 +390,13 @@ function ScheduleCard({
                         {/* Type label */}
                         <div className="mb-1.5 flex items-center gap-2">
                             <span className={cn("size-2 rounded-full", meta.dot)} aria-hidden />
-                            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                 {meta.label}
                             </span>
                         </div>
 
                         {/* Title */}
-                        <h3 className="font-outfit text-lg font-black leading-tight tracking-tight text-foreground">
+                        <h3 className="font-outfit text-lg font-bold leading-tight tracking-tight text-foreground">
                             {event.title}
                         </h3>
 

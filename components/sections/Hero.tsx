@@ -24,7 +24,7 @@ export default function Hero() {
     return (
         <section
             id="hero"
-            className="relative min-h-[100svh] flex flex-col items-center justify-center pt-24 pb-20 overflow-hidden text-foreground text-center"
+            className="relative min-h-[100svh] flex flex-col items-center justify-center pt-28 pb-24 overflow-hidden text-foreground text-center"
         >
             {/* Soft centered scrim — keeps copy legible over the moving video */}
             <div
@@ -34,7 +34,7 @@ export default function Hero() {
             />
 
             <Parallax3D
-                className="container mx-auto px-5 sm:px-6 relative z-10 w-full"
+                className="container mx-auto max-w-6xl px-4 sm:px-6 relative z-10 w-full"
                 stageClassName="flex flex-col items-center"
                 max={6}
             >
@@ -44,8 +44,8 @@ export default function Hero() {
                         initial={reduced ? false : { opacity: 0, y: 12 }}
                         animate={reduced ? undefined : { opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                        className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 backdrop-blur-xl
-                            font-mono text-[0.65rem] sm:text-xs uppercase tracking-[0.3em] text-muted-foreground"
+                        className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 backdrop-blur-xl
+                            text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground"
                     >
                         <span className={cn("h-1.5 w-1.5 rounded-full bg-brand", !reduced && "animate-pulse")} />
                         Digital Creator &amp; Artist
@@ -73,7 +73,7 @@ export default function Hero() {
                                         morphTime={1.4}
                                         cooldownTime={1.1}
                                         className="font-outfit"
-                                        textClassName="text-5xl sm:text-6xl md:text-[78pt]"
+                                        textClassName="text-[clamp(2.25rem,11vw,3rem)] sm:text-6xl md:text-[78pt]"
                                     />
                                 </div>
                             </>
@@ -100,7 +100,7 @@ export default function Hero() {
                         initial={reduced ? false : { opacity: 0, y: 16 }}
                         animate={reduced ? undefined : { opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.3 }}
-                        className="mt-9 flex w-full flex-col sm:w-auto sm:flex-row items-stretch sm:items-center justify-center gap-3"
+                        className="mt-8 flex w-full flex-col sm:w-auto sm:flex-row items-stretch sm:items-center justify-center gap-3"
                     >
                         <Magnetic className="w-full sm:w-auto">
                             <Link

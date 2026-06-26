@@ -10,8 +10,8 @@ export default function SiteFooter() {
 
     return (
         <footer className="relative z-10 border-t border-border bg-background/60 backdrop-blur-xl">
-            <div className="container mx-auto px-6 py-16">
-                <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 py-16">
+                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
                     {/* Brand */}
                     <div>
                         <Link href="/" className="text-3xl font-black font-outfit">

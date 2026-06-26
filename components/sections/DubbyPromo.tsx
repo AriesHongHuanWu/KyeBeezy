@@ -150,7 +150,7 @@ export default function DubbyPromo() {
     return (
         <section
             id="dubby"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glow only — no full-bleed wash so the fixed background
                 video (his face) stays visible in the empty right half. */}
@@ -160,16 +160,16 @@ export default function DubbyPromo() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: the content column */}
-                    <div className="max-w-xl">
+                    <div className="max-w-lg">
                         <SectionHeading eyebrow="Fuel" title="POWERED BY" accent="DUBBY" align="left">
                             No crash. No jitters. The clean energy behind every late-night stream
                             and studio session — at a Bonnet Gang price.
                         </SectionHeading>
 
                         {/* Partner lockup + click-to-copy code + CTA */}
-                        <Reveal direction="up" delay={0.05} className="mt-8">
+                        <Reveal direction="up" delay={0.05} className="mt-10">
                             <Tilt3D max={5} scale={1.015}>
                             <GlassPanel className="relative overflow-hidden p-6 sm:p-8">
                                 <span
@@ -185,7 +185,7 @@ export default function DubbyPromo() {
                                         height={44}
                                         className="h-8 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                                     />
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
                                         <Zap className="size-3" aria-hidden />
                                         Official Partner
                                     </span>
@@ -211,7 +211,7 @@ export default function DubbyPromo() {
                                         )}
                                     >
                                         <span className="flex flex-col text-left leading-tight">
-                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                                            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                                 Discount Code
                                             </span>
                                             <span className="font-mono text-xl font-bold tracking-tight text-foreground">
@@ -268,7 +268,7 @@ export default function DubbyPromo() {
 
                         {/* Compact 2-up product grid — a taste of the catalog. */}
                         <motion.div
-                            className="mt-5 grid grid-cols-2 gap-3 sm:gap-4"
+                            className="mt-6 grid grid-cols-2 gap-3 sm:gap-4"
                             variants={staggerContainer}
                             initial="hidden"
                             whileInView="show"
@@ -296,7 +296,7 @@ export default function DubbyPromo() {
                                         {/* Tag badge */}
                                         <span
                                             className={cn(
-                                                "absolute right-2.5 top-2.5 z-10 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow",
+                                                "absolute right-2.5 top-2.5 z-10 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow",
                                                 product.tagColor,
                                             )}
                                         >
@@ -327,7 +327,7 @@ export default function DubbyPromo() {
                                         <div className="flex flex-1 flex-col p-4 pt-0">
                                             <h3
                                                 className={cn(
-                                                    "font-outfit text-sm font-bold leading-tight tracking-tight text-foreground transition-colors",
+                                                    "font-outfit text-base font-bold leading-tight tracking-tight text-foreground transition-colors",
                                                     product.hoverText,
                                                 )}
                                             >

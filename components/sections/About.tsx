@@ -96,7 +96,7 @@ export default function AboutSection() {
     return (
         <section
             id="about"
-            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+            className="relative isolate flex min-h-[100svh] flex-col justify-start lg:justify-center overflow-hidden py-24 text-foreground"
         >
             {/* Soft brand glows only — the background video (his face) stays visible
                 in the empty right half for an editorial, page-by-page feel. */}
@@ -106,14 +106,14 @@ export default function AboutSection() {
             />
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
-                <div className="grid items-center gap-10 lg:grid-cols-2">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
                     {/* LEFT: the content column */}
-                    <div className="max-w-xl">
+                    <div className="max-w-lg">
                         <SectionHeading eyebrow="The Story" title="THE" accent="STORY" align="left">
                             The frequency behind the bonnet — and the gang building it loud.
                         </SectionHeading>
 
-                        <Reveal direction="up" delay={0.05} className="mt-8">
+                        <Reveal direction="up" delay={0.05} className="mt-10">
                             <GlassPanel className="relative overflow-hidden p-7 sm:p-9">
                                 <span
                                     aria-hidden
@@ -139,7 +139,7 @@ export default function AboutSection() {
                             initial="hidden"
                             whileInView="show"
                             viewport={{ once: true, amount: 0.3 }}
-                            className="mt-5 grid grid-cols-3 gap-3"
+                            className="mt-6 grid grid-cols-3 gap-3"
                         >
                             {STATS.map((stat) => {
                                 const Icon = stat.icon;
@@ -159,7 +159,7 @@ export default function AboutSection() {
                                                     stat.text
                                                 )}
                                             </div>
-                                            <div className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                                            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                                 {stat.label}
                                             </div>
                                         </GlassPanel>
@@ -175,7 +175,8 @@ export default function AboutSection() {
                 </div>
             </div>
 
-            {/* Roles / keywords marquee */}
+            {/* Roles / keywords marquee — constrained to the page container */}
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <Reveal direction="up" delay={0.1} className="mt-16 lg:mt-20">
                 <div
                     className="group relative flex overflow-hidden border-y border-brand/15 bg-brand/[0.04] py-5"
@@ -213,6 +214,7 @@ export default function AboutSection() {
                     </div>
                 </div>
             </Reveal>
+            </div>
         </section>
     );
 }
