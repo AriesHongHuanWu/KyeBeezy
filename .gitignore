@@ -17,7 +17,9 @@
 /.next/
 /out/
 
-# production
+# production (static export output — rebuilt by CI/Cloudflare; not committed,
+# also prevents Tailwind from scanning stale generated class names)
+/dist/
 /build
 
 # misc

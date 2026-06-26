@@ -8,7 +8,7 @@ export default function EventsHubPage() {
     return (
         <main className="min-h-screen bg-black text-white font-sans selection:bg-yellow-500/30 overflow-hidden relative">
             {/* Ambient Background */}
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none" />
+            <div className="absolute inset-0 bg-[url(/noise.png)] opacity-[0.03] pointer-events-none" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-900/20 blur-[150px] rounded-full pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-900/10 blur-[150px] rounded-full pointer-events-none" />
 
@@ -51,7 +51,7 @@ export default function EventsHubPage() {
                             <div className="relative h-full bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden hover:border-yellow-500/50 transition-all duration-500 group-hover:transform group-hover:-translate-y-2 group-hover:shadow-2xl">
                                 {/* Banner Image Placeholder */}
                                 <div className="h-48 bg-gradient-to-br from-yellow-900/40 to-black relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20" />
+                                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-20" />
                                     <Trophy className="absolute bottom-4 right-4 w-24 h-24 text-yellow-500/10 rotate-12 group-hover:scale-110 transition-transform duration-700" />
                                     <div className="absolute top-4 left-4 px-3 py-1 bg-yellow-500 text-black text-xs font-black uppercase tracking-wider rounded-full">
                                         Live Now
@@ -94,7 +94,7 @@ export default function EventsHubPage() {
                             <div className="relative h-full bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/50 transition-all duration-500 group-hover:transform group-hover:-translate-y-2 group-hover:shadow-2xl">
                                 {/* Banner Image Placeholder */}
                                 <div className="h-48 bg-gradient-to-br from-blue-900/40 to-black relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20" />
+                                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-20" />
                                     <GraduationCap className="absolute bottom-4 right-4 w-24 h-24 text-blue-500/10 rotate-12 group-hover:scale-110 transition-transform duration-700" />
                                     <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-full">
                                         Open Admission

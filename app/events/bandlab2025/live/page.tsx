@@ -32,7 +32,7 @@ interface CategoryData {
 // 0. Waiting Room (Admin Locked)
 const WaitingRoom = () => (
     <div className="flex flex-col items-center justify-center h-screen text-center bg-black relative overflow-hidden font-sans z-50">
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[url(/noise.png)] opacity-10 mix-blend-overlay" />
         <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
 
         <motion.div
@@ -291,7 +291,7 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
 
                 {/* CARD BACK */}
                 <div className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "translateZ(2px)" }}>
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
+                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-30" />
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-yellow-900/40" />
 
                     {isCharging && <div className="absolute inset-0 bg-yellow-500/20 mix-blend-overlay animate-pulse" />}
@@ -311,7 +311,7 @@ const GachaCard = ({ winner, phase, onReveal }: { winner: Nominee, phase: Ritual
                 <div className="absolute inset-0 rounded-[30px] border-[6px] border-yellow-400 shadow-[0_0_100px_rgba(234,179,8,0.6)] bg-black z-20 overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg) translateZ(2px)" }}>
                     {/* ... (Existing Inner Content Refined) ... */}
                     <div className="absolute inset-0 bg-gradient-to-b from-yellow-500 via-yellow-900/50 to-black animate-pulse" />
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30 mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-30 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,223,0,0.4)_0%,transparent_70%)]" />
 
                     <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center" style={{ transformStyle: "preserve-3d" }}>
@@ -681,7 +681,7 @@ export default function LiveAwardsPage() {
 
     return (
         <div className="bg-black min-h-screen text-white overflow-hidden relative font-sans">
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
+            <div className="absolute inset-0 bg-[url(/noise.png)] opacity-[0.05] pointer-events-none z-50 mix-blend-overlay" />
 
             {/* Dynamic Background */}
             <motion.div

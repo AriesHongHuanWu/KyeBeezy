@@ -64,7 +64,7 @@ export const TeaserHeroCard = ({ isRevealed, onRevealComplete }: TeaserHeroCardP
                 {/* --- CARD BACK (The Mystery) --- */}
                 <div className="absolute inset-0 rounded-[30px] border-4 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)] bg-black z-20 overflow-hidden"
                     style={{ backfaceVisibility: "hidden" }}>
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-30" />
+                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-30" />
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-yellow-900/40" />
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center">

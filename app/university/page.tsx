@@ -265,7 +265,7 @@ export default function UniversityPage() {
 
             {/* STATS BANNER (Simplified) */}
             <section className="py-20 my-20 rounded-[3rem] bg-black dark:bg-white text-white dark:text-black overflow-hidden relative">
-                <div className="absolute inset-0 opacity-20 dark:opacity-5 bg-[url('/noise.png')] mix-blend-overlay" />
+                <div className="absolute inset-0 opacity-20 dark:opacity-5 bg-[url(/noise.png)] mix-blend-overlay" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-around text-center gap-12 p-8">
                     {[
                         { number: "2025", label: "Enrollment Open" },

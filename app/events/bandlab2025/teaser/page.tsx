@@ -404,7 +404,7 @@ export default function TeaserPageV19() {
                 <div onClick={handleStart} className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center cursor-pointer group transition-colors overflow-hidden">
                     {/* Ambient Background */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1a1a1a_0%,black_100%)] opacity-80" />
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-10 mix-blend-overlay" />
 
                     {/* Center Play Button */}
                     <div className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-full border-2 border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 ease-out bg-white/5 backdrop-blur-sm">
@@ -472,7 +472,7 @@ export default function TeaserPageV19() {
 
                     {/* GLOBAL VISUALS */}
                     <CRTScanline />
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-[url(/noise.png)] opacity-20 pointer-events-none mix-blend-overlay" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,red_120%)] pointer-events-none mix-blend-overlay opacity-50" />
 
                     {/* Letterbox Bars (Cinematic Feel) */}
