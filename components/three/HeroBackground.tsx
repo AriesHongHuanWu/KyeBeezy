@@ -101,9 +101,11 @@ export default function HeroBackground() {
             ) : null}
 
             {/* Modern purple tint — a soft glow from the bottom + a faint top
-                bloom (not a flat wash). Reads premium over the video. */}
-            <div className="absolute inset-0 pointer-events-none [background:radial-gradient(85%_55%_at_50%_120%,rgba(139,47,230,0.24),transparent_70%)]" />
-            <div className="absolute inset-0 pointer-events-none [background:radial-gradient(70%_42%_at_50%_-12%,rgba(139,47,230,0.12),transparent_60%)]" />
+                bloom (not a flat wash). Dark theme only: on the light theme these
+                dark purple washes read as an unwanted black gradient, so the
+                light-background clip is left clean. */}
+            <div className="absolute inset-0 pointer-events-none dark:[background:radial-gradient(85%_55%_at_50%_120%,rgba(139,47,230,0.24),transparent_70%)]" />
+            <div className="absolute inset-0 pointer-events-none dark:[background:radial-gradient(70%_42%_at_50%_-12%,rgba(139,47,230,0.12),transparent_60%)]" />
 
             {/* Scroll-driven readability scrim (kept light so the video stays visible) */}
             <div ref={dimRef} className="absolute inset-0 bg-background pointer-events-none" style={{ opacity: 0 }} />
