@@ -46,9 +46,38 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
+  /* Brand colors (purple / pink / indigo) — the actual KyeBeezy palette */
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
+
   /* Custom Animations */
   --animate-blob: blob 10s infinite;
   --animate-shimmer: shimmer 3s linear infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 4s ease-in-out infinite;
+  --animate-aurora: aurora 18s ease infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+
+  @keyframes glow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.06); }
+  }
+
+  @keyframes aurora {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
 
   @keyframes blob {
     0% {
@@ -80,7 +109,11 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.875rem;
+  /* Near-monochrome brand: faint cool tint, not loud purple */
+  --brand: oklch(0.66 0.045 300);
+  --brand-2: oklch(0.74 0.035 330);
+  --brand-3: oklch(0.6 0.05 270);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -115,6 +148,9 @@
 }
 
 .dark {
+  --brand: oklch(0.82 0.04 300);
+  --brand-2: oklch(0.88 0.03 330);
+  --brand-3: oklch(0.74 0.045 270);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -179,5 +215,60 @@
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  /* Brand gradient text — replaces repeated from-purple-x to-pink-x clip-text */
+  .text-gradient-brand {
+    background-image: linear-gradient(100deg, var(--brand-3), var(--brand), var(--brand-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-brand-gradient {
+    background-image: linear-gradient(100deg, var(--brand-3), var(--brand), var(--brand-2));
+  }
+
+  .bg-brand-aurora {
+    background-image: linear-gradient(110deg, var(--brand-3), var(--brand), var(--brand-2), var(--brand-3));
+    background-size: 200% 200%;
+  }
+
+  /* Primary brand button */
+  .btn-brand {
+    background-image: linear-gradient(100deg, var(--brand-3), var(--brand), var(--brand-2));
+    color: white;
+    box-shadow: 0 8px 30px -8px var(--brand);
+    transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.3s ease;
+  }
+  .btn-brand:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 12px 40px -8px var(--brand);
+    transform: translateY(-1px);
+  }
+  .btn-brand:active { transform: translateY(0) scale(0.99); }
+
+  /* Hide scrollbar but keep scroll (used by horizontal rails) */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 999px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Smooth scrolling for in-page anchor navigation */
+html { scroll-behavior: smooth; }
+
+/* Accessibility: honor the OS "reduce motion" setting for CSS-driven motion.
+   (framer-motion is handled separately via usePrefersReducedMotion.) */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

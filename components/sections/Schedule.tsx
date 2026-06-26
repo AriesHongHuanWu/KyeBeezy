@@ -1,245 +1,517 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Calendar, Clock, Radio, MapPin, ExternalLink, ArrowRight, Bell } from "lucide-react";
-import { useState, useEffect } from "react";
-import { collection, query, orderBy, where, onSnapshot, doc, setDoc } from "firebase/firestore";
-import { db, messaging } from "@/lib/firebase";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Calendar,
+    Clock,
+    Radio,
+    MapPin,
+    ExternalLink,
+    ArrowRight,
+    Bell,
+    BellRing,
+    CalendarX2,
+    Loader2,
+} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+    collection,
+    query,
+    orderBy,
+    where,
+    onSnapshot,
+    doc,
+    setDoc,
+} from "firebase/firestore";
 import { getToken } from "firebase/messaging";
 import { format, isToday, parseISO } from "date-fns";
-import Link from "next/link";
 
-interface CalendarEvent {
-    id: string;
-    date: string; // YYYY-MM-DD
-    title: string;
-    time: string; // HH:mm
-    type: "stream" | "release" | "event";
+import { db, messaging } from "@/lib/firebase";
+import { SOCIALS } from "@/lib/site";
+import { EVENT_TYPE_META, type CalendarEvent } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
+import { GlassPanel } from "@/components/ui/glass";
+import { Reveal } from "@/components/ui/reveal";
+import { SectionHeading } from "@/components/ui/section-heading";
+
+const VAPID_KEY =
+    "BCZyd7vxN07SCJjLE9XQZQcr64q0zPGOflsye2QHxMSKTXvd56nB90x3PWyLI3uBqJRH8tlF3yG9tWDqaleo8Bk";
+const SUBS_KEY = "kye_event_subs";
+
+/** Local-storage helpers for the per-card reminder state. */
+function readSubs(): string[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = window.localStorage.getItem(SUBS_KEY);
+        const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+        return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeSubs(ids: string[]): void {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.setItem(SUBS_KEY, JSON.stringify(ids));
+    } catch {
+        /* storage may be unavailable (private mode) — fail silently */
+    }
+}
+
+/** Parse "HH:mm" against a base date, returning a Date or null. */
+function timeToDate(base: Date, time: string | undefined): Date | null {
+    if (!time) return null;
+    const [h, m] = time.split(":").map((n) => Number(n));
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    const d = new Date(base);
+    d.setHours(h, m, 0, 0);
+    return d;
+}
+
+/** Pretty 12h label for an "HH:mm" string. */
+function formatTime(time: string | undefined): string {
+    if (!time) return "";
+    const parsed = timeToDate(new Date(), time);
+    return parsed ? format(parsed, "h:mm a") : time;
+}
+
+/**
+ * An event is LIVE if it's today and "now" sits inside its time window.
+ * Window = [start, endTime] when endTime exists, otherwise a 4-hour default.
+ */
+function isLiveNow(event: CalendarEvent): boolean {
+    let dateObj: Date;
+    try {
+        dateObj = parseISO(event.date);
+    } catch {
+        return false;
+    }
+    if (Number.isNaN(dateObj.getTime()) || !isToday(dateObj)) return false;
+
+    const start = timeToDate(new Date(), event.time);
+    if (!start) return false;
+
+    const end =
+        timeToDate(new Date(), event.endTime) ??
+        new Date(start.getTime() + 4 * 60 * 60 * 1000);
+
+    const now = new Date();
+    return now >= start && now <= end;
 }
 
 export default function Schedule() {
+    const reduced = usePrefersReducedMotion();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Query for events Today or in Future
         const todayStr = format(new Date(), "yyyy-MM-dd");
+        let unsubscribe: (() => void) | undefined;
 
         try {
             const q = query(
                 collection(db, "events"),
                 where("date", ">=", todayStr),
-                orderBy("date", "asc")
+                orderBy("date", "asc"),
             );
 
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const fetchedEvents = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as CalendarEvent[];
-
-                setEvents(fetchedEvents);
-                setLoading(false);
-            }, (error) => {
-                console.error("Schedule fetch error:", error);
-                setLoading(false);
-            });
-            return () => unsubscribe();
+            unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    const fetched = snapshot.docs.map((d) => ({
+                        id: d.id,
+                        ...(d.data() as Omit<CalendarEvent, "id">),
+                    })) as CalendarEvent[];
+                    setEvents(fetched);
+                    setLoading(false);
+                },
+                (error) => {
+                    console.error("Schedule fetch error:", error);
+                    setLoading(false);
+                },
+            );
         } catch (error) {
             console.error(error);
             setLoading(false);
         }
+
+        return () => {
+            unsubscribe?.();
+        };
     }, []);
 
     return (
-        <section id="schedule" className="py-20 relative">
-            <div className="container mx-auto px-6 relative z-10">
+        <section
+            id="schedule"
+            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+        >
+            {/* Soft brand glow only — the empty LEFT column lets the fixed
+                background video (his face) show through for an editorial feel. */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute -right-32 top-1/4 -z-10 size-[28rem] rounded-full bg-brand/12 blur-[130px]"
+            />
 
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="flex flex-col md:flex-row items-end justify-between gap-6 mb-12"
-                >
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-bold tracking-widest uppercase text-purple-400">
-                            <Clock className="w-4 h-4" /> Upcoming Events
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-foreground font-outfit tracking-tighter">
-                            THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AGENDA</span>
-                        </h2>
+            {/* Directional scrim: darkens the content (right) half; the left
+                half stays open to reveal the face. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-l from-background via-background/55 to-transparent" />
+
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
+                <div className="grid items-center gap-10 lg:grid-cols-2">
+                    {/* LEFT: intentional negative space — reveals the artist's face
+                        in the fixed background video. Hidden on mobile (single column). */}
+                    <div aria-hidden className="hidden lg:block" />
+
+                    {/* RIGHT: the content column */}
+                    <div className="max-w-xl lg:ml-auto">
+                        <SectionHeading eyebrow="Upcoming" title="THE" accent="AGENDA" align="left">
+                            Streams, drops and releases — locked in. Set a reminder and
+                            never miss the Bonnet Gang moving.
+                        </SectionHeading>
+
+                        {/* Discord-updates link, top of the column */}
+                        <Reveal direction="up" delay={0.05} className="mt-7">
+                            <a
+                                href={SOCIALS.discord}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                    "group inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full px-5 py-3 sm:w-auto",
+                                    "border border-brand/30 bg-brand/5 text-sm font-bold uppercase tracking-wider text-foreground",
+                                    "backdrop-blur-md transition-colors hover:border-brand/60 hover:bg-brand/10",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                )}
+                            >
+                                <span>Join Discord for updates</span>
+                                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                            </a>
+                        </Reveal>
+
+                        {/* Loading */}
+                        {loading && (
+                            <GlassPanel
+                                className="mt-8 flex flex-col items-center justify-center gap-4 px-6 py-16 text-muted-foreground"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                <Loader2
+                                    className={cn(
+                                        "size-8 text-brand",
+                                        !reduced && "animate-spin",
+                                    )}
+                                    aria-hidden
+                                />
+                                <span className="text-sm font-medium tracking-wide">
+                                    Loading the agenda…
+                                </span>
+                            </GlassPanel>
+                        )}
+
+                        {/* Empty */}
+                        {!loading && events.length === 0 && (
+                            <Reveal direction="up" delay={0.1} className="mt-8">
+                                <GlassPanel className="px-7 py-14 text-center sm:px-8">
+                                    <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+                                        <CalendarX2 className="size-8" aria-hidden />
+                                    </div>
+                                    <h3 className="font-outfit text-2xl font-black tracking-tighter text-foreground">
+                                        Nothing on the calendar
+                                    </h3>
+                                    <p className="mx-auto mt-3 max-w-md text-sm font-light leading-relaxed text-muted-foreground">
+                                        The agenda&rsquo;s clear right now. Follow on Discord or
+                                        Twitch to catch surprise streams the second they go live.
+                                    </p>
+                                    <a
+                                        href={SOCIALS.discord}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={cn(
+                                            "mt-6 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full px-6 py-3 sm:w-auto",
+                                            "btn-brand text-sm font-bold",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        )}
+                                    >
+                                        Join the Bonnet Gang
+                                        <ArrowRight className="size-4" />
+                                    </a>
+                                </GlassPanel>
+                            </Reveal>
+                        )}
+
+                        {/* Compact vertical list of upcoming events — single column */}
+                        {!loading && events.length > 0 && (
+                            <div className="mt-8 flex flex-col gap-4">
+                                {events.map((event, i) => (
+                                    <ScheduleCard
+                                        key={event.id}
+                                        event={event}
+                                        index={i}
+                                        reduced={reduced}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <Link href="https://discord.com/invite/JU3MNRGWXq" target="_blank" className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors group">
-                        <span className="text-sm font-bold uppercase tracking-wider">Join Discord for Updates</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                </motion.div>
-
-                {/* Loading State */}
-                {loading && (
-                    <div className="flex justify-center py-20">
-                        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                )}
-
-                {/* Empty State */}
-                {!loading && events.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center"
-                    >
-                        <Calendar className="w-16 h-16 text-neutral-600 mx-auto mb-4" />
-                        <h3 className="text-2xl font-bold text-white mb-2">No Scheduled Events</h3>
-                        <p className="text-neutral-400 max-w-md mx-auto">
-                            The calendar is currently clear. Follow on Twitch or Discord to catch unplanned streams!
-                        </p>
-                    </motion.div>
-                )}
-
-                {/* Events Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {events.map((item, index) => (
-                        <ScheduleCard key={item.id} item={item} index={index} />
-                    ))}
                 </div>
-
             </div>
         </section>
     );
 }
 
-// --- Sub Component: ScheduleCard (Fixes Hook Rule Violation) ---
-function ScheduleCard({ item, index }: { item: CalendarEvent, index: number }) {
-    // Helper to check if event is "Live Now"
-    const isLiveNow = (event: CalendarEvent) => {
-        if (!isToday(parseISO(event.date))) return false;
-        const now = new Date();
-        const [hours, minutes] = event.time.split(':').map(Number);
-        const eventTime = new Date();
-        eventTime.setHours(hours, minutes, 0, 0);
+// ---------------------------------------------------------------------------
 
-        // Assume live for 4 hours
-        const fourHoursLater = new Date(eventTime.getTime() + 4 * 60 * 60 * 1000);
-        return now >= eventTime && now <= fourHoursLater;
-    };
+function ScheduleCard({
+    event,
+    index,
+    reduced,
+}: {
+    event: CalendarEvent;
+    index: number;
+    reduced: boolean;
+}) {
+    const meta = EVENT_TYPE_META[event.type] ?? EVENT_TYPE_META.event;
+    const live = isLiveNow(event);
 
-    const isLive = isLiveNow(item);
-    const dateObj = parseISO(item.date);
+    let dateObj: Date | null = null;
+    try {
+        const parsed = parseISO(event.date);
+        dateObj = Number.isNaN(parsed.getTime()) ? null : parsed;
+    } catch {
+        dateObj = null;
+    }
 
-    // Check subscription (client-side only)
     const [subscribed, setSubscribed] = useState(false);
+    const [busy, setBusy] = useState(false);
 
     useEffect(() => {
-        const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
-        setSubscribed(subs.includes(item.id));
-    }, [item.id]);
+        setSubscribed(readSubs().includes(event.id));
+    }, [event.id]);
 
-    const toggleSub = async (e: any) => {
-        e.preventDefault();
-        const subs = JSON.parse(localStorage.getItem("kye_event_subs") || "[]");
-        let newSubs;
+    const toggleSub = useCallback(
+        async (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (busy) return;
 
-        if (subs.includes(item.id)) {
-            // Unsubscribe (Local only)
-            newSubs = subs.filter((id: string) => id !== item.id);
-            setSubscribed(false);
-            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
-        } else {
-            // Subscribe
-            newSubs = [...subs, item.id];
-            setSubscribed(true);
-            localStorage.setItem("kye_event_subs", JSON.stringify(newSubs));
+            const current = readSubs();
 
-            // Request Push Permission & Get Token
-            if (messaging) {
-                try {
+            // Unsubscribe — local only (token already stored server-side).
+            if (current.includes(event.id)) {
+                const next = current.filter((id) => id !== event.id);
+                writeSubs(next);
+                setSubscribed(false);
+                return;
+            }
+
+            // Subscribe — request push permission, store token under the event.
+            setBusy(true);
+            try {
+                if (
+                    typeof window !== "undefined" &&
+                    "Notification" in window &&
+                    messaging
+                ) {
                     const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                        const token = await getToken(messaging, {
-                            vapidKey: "BCZyd7vxN07SCJjLE9XQZQcr64q0zPGOflsye2QHxMSKTXvd56nB90x3PWyLI3uBqJRH8tlF3yG9tWDqaleo8Bk"
-                        });
+                    if (permission === "granted") {
+                        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
                         if (token) {
-                            console.log("FCM Token:", token);
-                            // Save token to Firestore for this specific event interest
-                            // Structured as: events/{eventId}/subscribers/{token}
-                            await setDoc(doc(db, "events", item.id, "subscribers", token), {
+                            await setDoc(doc(db, "events", event.id, "subscribers", token), {
                                 token,
-                                subscribedAt: new Date()
+                                subscribedAt: new Date(),
                             });
                         }
                     }
-                } catch (err) {
-                    console.error("FCM Permission denied or error:", err);
                 }
+                const next = [...current, event.id];
+                writeSubs(next);
+                setSubscribed(true);
+            } catch (err) {
+                console.error("FCM subscribe error:", err);
+            } finally {
+                setBusy(false);
             }
-        }
-    };
+        },
+        [busy, event.id],
+    );
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.02, rotateX: 5 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className={`group relative p-6 rounded-3xl border backdrop-blur-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[200px] ${isLive
-                ? "bg-purple-900/20 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.15)]"
-                : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10"
-                }`}
+            initial={reduced ? false : { opacity: 0, y: 24 }}
+            whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{
+                duration: 0.6,
+                delay: Math.min(index * 0.06, 0.4),
+                ease: [0.22, 1, 0.36, 1],
+            }}
         >
-            {/* Live Tag */}
-            {isLive && (
-                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-lg shadow-red-500/40 animate-pulse z-10">
-                    <Radio className="w-3 h-3 text-white" />
-                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
+            <GlassPanel
+                hover
+                className={cn(
+                    "group relative overflow-hidden p-4 sm:p-5",
+                    live && "border-brand/50 bg-brand/[0.06]",
+                )}
+            >
+                {/* Type strip — left edge accent */}
+                <div
+                    className={cn(
+                        "pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b",
+                        meta.color,
+                    )}
+                    aria-hidden
+                />
+
+                <div className="relative z-10 flex items-start gap-4 pl-2">
+                    {/* Date badge */}
+                    <div
+                        className={cn(
+                            "flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl border text-center transition-colors",
+                            live
+                                ? "border-transparent bg-brand text-white"
+                                : "border-white/10 bg-white/[0.06] text-foreground group-hover:border-brand/30",
+                        )}
+                    >
+                        {dateObj ? (
+                            <>
+                                <span className="text-[10px] font-bold uppercase leading-none tracking-wider opacity-80">
+                                    {format(dateObj, "MMM")}
+                                </span>
+                                <span className="font-outfit text-2xl font-black leading-none">
+                                    {format(dateObj, "d")}
+                                </span>
+                            </>
+                        ) : (
+                            <Calendar className="size-5" aria-hidden />
+                        )}
+                    </div>
+
+                    {/* Center: type, title, meta */}
+                    <div className="min-w-0 flex-1">
+                        {/* Type label */}
+                        <div className="mb-1.5 flex items-center gap-2">
+                            <span className={cn("size-2 rounded-full", meta.dot)} aria-hidden />
+                            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                                {meta.label}
+                            </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="font-outfit text-lg font-black leading-tight tracking-tight text-foreground">
+                            {event.title}
+                        </h3>
+
+                        {/* Description */}
+                        {event.description && (
+                            <p className="mt-1 line-clamp-2 text-sm font-light leading-relaxed text-muted-foreground">
+                                {event.description}
+                            </p>
+                        )}
+
+                        {/* Meta: time + location */}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
+                            <span className="inline-flex items-center gap-1.5">
+                                {live ? (
+                                    <Radio className="size-3.5 text-brand" aria-hidden />
+                                ) : (
+                                    <Clock className="size-3.5" aria-hidden />
+                                )}
+                                <span className="uppercase tracking-wide">
+                                    {formatTime(event.time)}
+                                    {event.endTime && ` – ${formatTime(event.endTime)}`}
+                                </span>
+                            </span>
+                            {event.location && (
+                                <span className="inline-flex min-w-0 items-center gap-1.5">
+                                    <MapPin className="size-3.5 shrink-0" aria-hidden />
+                                    <span className="truncate">{event.location}</span>
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Detail / Watch link */}
+                        {event.url && (
+                            <a
+                                href={event.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                    "mt-3 inline-flex min-h-[36px] items-center gap-1.5 text-sm font-bold text-brand",
+                                    "transition-colors hover:text-foreground",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md",
+                                )}
+                            >
+                                {live ? "Watch now" : "Details"}
+                                <ExternalLink className="size-3.5" aria-hidden />
+                            </a>
+                        )}
+
+                        <AnimatePresence initial={false}>
+                            {subscribed && !live && (
+                                <motion.p
+                                    key="reminder"
+                                    initial={reduced ? false : { opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={reduced ? undefined : { opacity: 0, height: 0 }}
+                                    className="overflow-hidden text-[10px] font-bold uppercase tracking-widest text-brand"
+                                >
+                                    <span className="mt-2 inline-flex items-center gap-1.5">
+                                        <BellRing className="size-3" aria-hidden /> Reminder set
+                                    </span>
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Right: live pulse OR bell-subscribe */}
+                    <div className="shrink-0">
+                        {live ? (
+                            <span
+                                className="inline-flex items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-red-500/40"
+                                aria-label="Live now"
+                            >
+                                <span className="relative flex size-2">
+                                    {!reduced && (
+                                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75" />
+                                    )}
+                                    <span className="relative inline-flex size-2 rounded-full bg-white" />
+                                </span>
+                                Live
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={toggleSub}
+                                disabled={busy}
+                                aria-pressed={subscribed}
+                                aria-label={
+                                    subscribed
+                                        ? `Remove reminder for ${event.title}`
+                                        : `Set a reminder for ${event.title}`
+                                }
+                                className={cn(
+                                    "inline-flex size-11 items-center justify-center rounded-full transition-all",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    "disabled:cursor-not-allowed disabled:opacity-60",
+                                    subscribed
+                                        ? "bg-brand text-white shadow-lg shadow-brand/40"
+                                        : "bg-white/[0.06] text-muted-foreground hover:bg-brand/15 hover:text-foreground",
+                                )}
+                            >
+                                {busy ? (
+                                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                                ) : subscribed ? (
+                                    <BellRing className="size-4" aria-hidden />
+                                ) : (
+                                    <Bell className="size-4" aria-hidden />
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
-            )}
-
-            {/* Bell Subscription Button */}
-            {!isLive && (
-                <button
-                    onClick={toggleSub}
-                    className={`absolute top-4 right-4 z-20 p-2 rounded-full transition-all duration-300 ${subscribed
-                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/40 scale-110'
-                        : 'bg-white/5 text-neutral-500 hover:bg-white/20 hover:text-white'
-                        }`}
-                >
-                    <Bell className={`w-4 h-4 ${subscribed ? 'fill-current animate-wiggle' : ''}`} />
-                </button>
-            )}
-
-            <div>
-                {/* Date Badge */}
-                <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-xl mb-6 ${isLive ? 'bg-purple-500 text-white' : 'bg-white/10 text-neutral-300 group-hover:bg-white/20 group-hover:text-white transition-colors'}`}>
-                    <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{format(dateObj, "MMM")}</span>
-                    <span className="text-2xl font-black leading-none">{format(dateObj, "d")}</span>
-                </div>
-
-                <h3 className={`text-2xl font-black font-outfit mb-2 leading-tight ${isLive ? "text-white" : "text-foreground"}`}>
-                    {item.title}
-                </h3>
-
-                <div className="flex items-center gap-2 text-sm font-bold tracking-wider opacity-60 uppercase">
-                    <Clock className="w-3 h-3" />
-                    {format(parseISO(`2000-01-01T${item.time}`), "h:mm a")}
-                </div>
-            </div>
-
-            {/* Type Strip */}
-            <div className={`h-1.5 w-full rounded-full mt-6 ${item.type === 'stream' ? 'bg-purple-500' :
-                item.type === 'release' ? 'bg-green-500' :
-                    'bg-blue-500'
-                }`} />
-
-            <div className="flex justify-between items-end mt-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-                    {subscribed ? "Reminder Set" : ""}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 text-right">
-                    {item.type}
-                </p>
-            </div>
+            </GlassPanel>
         </motion.div>
     );
 }

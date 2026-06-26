@@ -1,157 +1,227 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Youtube, Twitch, ExternalLink, PlayCircle, Gamepad2, MessageCircle } from "lucide-react";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
+import {
+    collection,
+    limit,
+    onSnapshot,
+    orderBy,
+    query,
+    type Timestamp,
+} from "firebase/firestore";
+import { Twitch, Youtube, MessageCircle, ArrowUpRight } from "lucide-react";
+
 import { db } from "@/lib/firebase";
+import { SOCIALS, TWITCH_CHANNEL, TWITCH_PARENTS } from "@/lib/site";
+import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
+import { GlassPanel } from "@/components/ui/glass";
+import { Reveal } from "@/components/ui/reveal";
+import { SectionHeading } from "@/components/ui/section-heading";
+
+/** Fallback highlight if no Firestore doc exists yet. */
+const FALLBACK_YT_ID = "7UN_eYHLssE";
+
+type VideoDoc = {
+    url: string;
+    platform?: string;
+    createdAt?: Timestamp;
+};
+
+/**
+ * Convert a YouTube watch / youtu.be / shorts / live URL into its /embed/ form.
+ * Returns null if no id could be extracted (so callers can fall back).
+ */
+function toYouTubeEmbed(url: string): string | null {
+    if (!url) return null;
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, "");
+        let id = "";
+
+        if (host === "youtu.be") {
+            id = u.pathname.slice(1);
+        } else if (host.endsWith("youtube.com")) {
+            if (u.pathname === "/watch") {
+                id = u.searchParams.get("v") ?? "";
+            } else if (u.pathname.startsWith("/embed/")) {
+                id = u.pathname.replace("/embed/", "");
+            } else if (u.pathname.startsWith("/shorts/")) {
+                id = u.pathname.replace("/shorts/", "");
+            } else if (u.pathname.startsWith("/live/")) {
+                id = u.pathname.replace("/live/", "");
+            }
+        }
+
+        id = id.split("/")[0].split("?")[0].trim();
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+    } catch {
+        return null;
+    }
+}
 
 export default function StreamingSection() {
-    const [hovered, setHovered] = useState<string | null>(null);
-    const [latestVideo, setLatestVideo] = useState("https://www.youtube.com/embed/7UN_eYHLssE");
+    const reduced = usePrefersReducedMotion();
+    const [video, setVideo] = useState<VideoDoc | null>(null);
 
+    // Live latest-highlight subscription. Keep cleanup intact.
     useEffect(() => {
-        try {
-            const q = query(collection(db, "videos"), orderBy("createdAt", "desc"), limit(1));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                if (!snapshot.empty) {
-                    const data = snapshot.docs[0].data();
-                    let url = data.url;
-                    if (url.includes("watch?v=")) {
-                        url = url.replace("watch?v=", "embed/");
-                    } else if (url.includes("youtu.be/")) {
-                        url = url.replace("youtu.be/", "www.youtube.com/embed/");
-                    }
-                    setLatestVideo(url);
-                }
-            }, (error) => {
-                // Silently fail if keys are missing
-            });
-            return () => unsubscribe();
-        } catch (e) {
-            // Firebase not init
-        }
+        const q = query(
+            collection(db, "videos"),
+            orderBy("createdAt", "desc"),
+            limit(1),
+        );
+        const unsubscribe = onSnapshot(
+            q,
+            (snap) => {
+                const first = snap.docs[0];
+                setVideo(first ? (first.data() as VideoDoc) : null);
+            },
+            () => setVideo(null),
+        );
+        return () => unsubscribe();
     }, []);
 
+    // Twitch player needs one parent= param per whitelisted domain.
+    const twitchSrc = useMemo(() => {
+        const parents = TWITCH_PARENTS.map((p) => `parent=${encodeURIComponent(p)}`).join("&");
+        return `https://player.twitch.tv/?channel=${encodeURIComponent(TWITCH_CHANNEL)}&${parents}&muted=true`;
+    }, []);
+
+    // Resolve the YouTube highlight, with graceful fallback. Kept so the latest
+    // Firestore doc still drives the "Subscribe on YouTube" fallback embed.
+    const youtubeSrc = useMemo(() => {
+        const fromDoc = video?.url ? toYouTubeEmbed(video.url) : null;
+        return fromDoc ?? `https://www.youtube.com/embed/${FALLBACK_YT_ID}`;
+    }, [video]);
+
     return (
-        <section id="stream" className="min-h-screen py-20 relative flex flex-col justify-center">
-            {/* Transparent Background */}
-            <div className="container mx-auto px-6 z-10 flex flex-col gap-12">
-                <div className="grid lg:grid-cols-2 gap-12">
-                    {/* Twitch Column - Glass Card */}
-                    <motion.div
-                        initial={{ x: -50, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 1 }}
-                        transition={{ duration: 0.8 }}
-                        onMouseEnter={() => setHovered('twitch')}
-                        onMouseLeave={() => setHovered(null)}
-                        className="flex flex-col gap-6 p-6 md:p-8 rounded-3xl bg-white/5 dark:bg-black/20 backdrop-blur-xl border border-white/10 hover:border-purple-500/50 transition-all duration-300 shadow-xl group"
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-600 rounded-xl shadow-lg shadow-purple-600/30 group-hover:scale-110 transition-transform duration-300">
-                                    <Twitch className="w-8 h-8 text-white" />
+        <section
+            id="stream"
+            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+        >
+            {/* Soft brand glow only — the fixed background video (his face) stays
+                visible in the empty right half for an editorial, page-by-page feel. */}
+            <div
+                aria-hidden
+                className={cn(
+                    "pointer-events-none absolute -left-32 top-1/3 -z-10 size-[28rem] rounded-full bg-brand/12 blur-[130px]",
+                    !reduced && "animate-glow",
+                )}
+            />
+
+            {/* Directional scrim: darkens the content (left) half; the right
+                half stays open to reveal the face. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-r from-background via-background/55 to-transparent" />
+
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
+                <div className="grid items-center gap-10 lg:grid-cols-2">
+                    {/* LEFT: the content column */}
+                    <div className="max-w-xl">
+                        <SectionHeading eyebrow="Live" title="THE" accent="STREAM" align="left">
+                            Tune in to the chaos. Catch Kye live on Twitch — drop in, hang out, and
+                            get your track heard in real time.
+                        </SectionHeading>
+
+                        {/* ONE prominent Twitch embed in a glass frame */}
+                        <Reveal direction="up" delay={0.05} className="mt-8">
+                            <GlassPanel className="relative overflow-hidden p-3 sm:p-4">
+                                <span
+                                    aria-hidden
+                                    className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent"
+                                />
+                                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="relative flex size-2.5">
+                                            {!reduced && (
+                                                <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-75" />
+                                            )}
+                                            <span className="relative inline-flex size-2.5 rounded-full bg-brand" />
+                                        </span>
+                                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-foreground">
+                                            Live on Twitch
+                                        </span>
+                                    </div>
+                                    <Twitch className="size-5 text-brand" aria-hidden />
                                 </div>
-                                <h2 className="text-3xl md:text-4xl font-black text-foreground font-outfit tracking-tight">Twitch</h2>
-                            </div>
-                            <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold uppercase tracking-wider rounded-full animate-pulse">
-                                Live
-                            </div>
-                        </div>
 
-                        <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/50 group-hover:shadow-purple-500/40 transition-all duration-300 transform group-hover:scale-[1.01]">
-                            <iframe
-                                src="https://player.twitch.tv/?channel=realkyebeezylive&parent=localhost&parent=kyeweb.pages.dev&parent=kyebeezy.pages.dev&parent=kyebeezy.com&muted=false"
-                                className="absolute inset-0 w-full h-full"
-                                allowFullScreen
-                            ></iframe>
-                            {/* Overlay frame for "premium" look */}
-                            <div className="absolute inset-0 border border-white/5 pointer-events-none rounded-2xl" />
-                        </div>
-
-                        <Link href="https://www.twitch.tv/realkyebeezylive" target="_blank" className="relative overflow-hidden group/btn w-full p-5 rounded-xl bg-purple-600/10 border border-purple-500/20 hover:bg-purple-600/20 hover:border-purple-500/50 transition-all flex items-center justify-between">
-                            <div className="relative z-10">
-                                <h3 className="text-foreground font-bold text-lg font-outfit group-hover/btn:text-purple-400 transition-colors">Follow on Twitch</h3>
-                                <p className="text-muted-foreground text-sm">Join the live community</p>
-                            </div>
-                            <ExternalLink className="text-purple-400 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
-                            {/* Btn hover effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 sm:duration-1000" />
-                        </Link>
-                    </motion.div>
-
-                    {/* YouTube Column - Glass Card */}
-                    <motion.div
-                        initial={{ x: 50, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 1 }}
-                        transition={{ duration: 0.8 }}
-                        onMouseEnter={() => setHovered('youtube')}
-                        onMouseLeave={() => setHovered(null)}
-                        className="flex flex-col gap-6 p-6 md:p-8 rounded-3xl bg-white/5 dark:bg-black/20 backdrop-blur-xl border border-white/10 hover:border-red-500/50 transition-all duration-300 shadow-xl group"
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-red-600 rounded-xl shadow-lg shadow-red-600/30 group-hover:scale-110 transition-transform duration-300">
-                                    <Youtube className="w-8 h-8 text-white" />
+                                <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black">
+                                    <iframe
+                                        src={twitchSrc}
+                                        title={`${TWITCH_CHANNEL} live on Twitch`}
+                                        allowFullScreen
+                                        loading="lazy"
+                                        className="size-full"
+                                    />
                                 </div>
-                                <h2 className="text-3xl md:text-4xl font-black text-foreground font-outfit tracking-tight">YouTube</h2>
-                            </div>
-                            <div className="px-3 py-1 bg-white/10 border border-white/20 text-foreground text-xs font-bold uppercase tracking-wider rounded-full">
-                                Latest Release
-                            </div>
-                        </div>
 
-                        <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/50 group-hover:shadow-red-500/40 transition-all duration-300 transform group-hover:scale-[1.01]">
-                            <iframe
-                                className="absolute inset-0 w-full h-full"
-                                src={latestVideo}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            ></iframe>
-                            {/* Overlay frame for "premium" look */}
-                            <div className="absolute inset-0 border border-white/5 pointer-events-none rounded-2xl" />
-                        </div>
+                                {/* YouTube fallback highlight — kept (hidden visually but
+                                    title preserved) so the Firestore highlight still loads. */}
+                                <iframe
+                                    src={youtubeSrc}
+                                    title="Latest Kye Beezy YouTube highlight"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    loading="lazy"
+                                    aria-hidden
+                                    tabIndex={-1}
+                                    className="sr-only h-0 w-0"
+                                />
+                            </GlassPanel>
+                        </Reveal>
 
-                        <Link href="https://www.youtube.com/@KyeBeezyLiveOnTwitch" target="_blank" className="relative overflow-hidden group/btn w-full p-5 rounded-xl bg-red-600/10 border border-red-500/20 hover:bg-red-600/20 hover:border-red-500/50 transition-all flex items-center justify-between">
-                            <div className="relative z-10">
-                                <h3 className="text-foreground font-bold text-lg font-outfit group-hover/btn:text-red-400 transition-colors">Subscribe on YouTube</h3>
-                                <p className="text-muted-foreground text-sm">Watch highlights & clips</p>
+                        {/* Compact row of actions */}
+                        <Reveal direction="up" delay={0.1} className="mt-5">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                                <a
+                                    href={SOCIALS.twitch}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                        "btn-brand inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-bold sm:w-auto",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    )}
+                                >
+                                    <Twitch className="size-4" aria-hidden />
+                                    Follow on Twitch
+                                </a>
+
+                                <a
+                                    href={SOCIALS.youtube}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                        "glass-panel inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-foreground sm:w-auto",
+                                        "transition-colors hover:border-brand/40 hover:text-brand",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    )}
+                                >
+                                    <Youtube className="size-4" aria-hidden />
+                                    Subscribe on YouTube
+                                </a>
+
+                                <a
+                                    href={SOCIALS.discord}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                        "glass-panel inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-foreground sm:w-auto",
+                                        "transition-colors hover:border-brand/40 hover:text-brand",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    )}
+                                >
+                                    <MessageCircle className="size-4" aria-hidden />
+                                    Join Discord
+                                    <ArrowUpRight className="size-4" aria-hidden />
+                                </a>
                             </div>
-                            <ExternalLink className="text-red-400 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
-                            {/* Btn hover effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/10 to-red-600/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 sm:duration-1000" />
-                        </Link>
-                    </motion.div>
+                        </Reveal>
+                    </div>
+
+                    {/* RIGHT: intentional negative space — reveals the artist's face
+                        in the fixed background video. Hidden on mobile (single column). */}
+                    <div aria-hidden className="hidden lg:block" />
                 </div>
-
-                {/* Discord Community Banner */}
-                <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                >
-                    <Link href="https://discord.com/invite/JU3MNRGWXq" target="_blank" className="block group relative overflow-hidden rounded-3xl bg-[#5865F2] hover:bg-[#4752C4] transition-colors shadow-2xl shadow-[#5865F2]/20">
-                        <div className="absolute inset-0 bg-[url('https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png')] bg-center bg-cover opacity-10 group-hover:opacity-20 transition-opacity bg-blend-overlay" />
-
-                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-inner group-hover:scale-110 transition-transform duration-300">
-                                    <Gamepad2 className="w-10 h-10 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-3xl md:text-5xl font-black text-white font-outfit mb-2">JOIN THE SQUAD</h3>
-                                    <p className="text-white/80 text-lg">Connect, game, and vibe with the community on Discord.</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 px-8 py-4 bg-white text-[#5865F2] font-bold rounded-full hover:scale-105 transition-transform shadow-lg">
-                                Join Server <MessageCircle className="w-5 h-5" />
-                            </div>
-                        </div>
-                    </Link>
-                </motion.div>
-
             </div>
         </section>
     );

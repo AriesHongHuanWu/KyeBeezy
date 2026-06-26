@@ -47,9 +47,13 @@ import {
     CheckSquare,
     Square,
     Bell,
-    GraduationCap
+    GraduationCap,
+    Handshake
 } from "lucide-react";
 import UniversityManager from "@/components/admin/UniversityManager";
+import CollabsManager from "@/components/admin/CollabsManager";
+import ScheduleManagerPro from "@/components/admin/ScheduleManagerPro";
+import SubmissionsManagerPro from "@/components/admin/SubmissionsManagerPro";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -1514,7 +1518,7 @@ function AdminsManager({ currentUser }: { currentUser: string }) {
 
 // --- Main Dashboard Component --- (Updated)
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule" | "broadcast" | "university">("submissions");
+    const [activeTab, setActiveTab] = useState<"videos" | "music" | "products" | "admins" | "settings" | "submissions" | "schedule" | "collabs" | "broadcast" | "university">("submissions");
     const { user } = useAuth();
 
     const handleLogout = () => { signOut(auth); };
@@ -1574,6 +1578,13 @@ export default function AdminDashboard() {
                             <Calendar size={20} />
                             Schedule
                         </button>
+                        <button
+                            onClick={() => setActiveTab("collabs")}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "collabs" ? "bg-white text-black font-bold shadow-lg shadow-white/10" : "text-neutral-400 hover:bg-white/5 hover:text-white"}`}
+                        >
+                            <Handshake size={20} />
+                            Collabs
+                        </button>
                         <div className="h-px bg-white/10 my-2 mx-4" />
                         <button
                             onClick={() => setActiveTab("videos")}
@@ -1631,8 +1642,9 @@ export default function AdminDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 min-w-0">
                     <AnimatePresence mode="wait">
-                        {activeTab === "submissions" && <SubmissionsManager key="submissions" />}
-                        {activeTab === "schedule" && <ScheduleManager key="schedule" />}
+                        {activeTab === "submissions" && <SubmissionsManagerPro key="submissions" />}
+                        {activeTab === "schedule" && <ScheduleManagerPro key="schedule" />}
+                        {activeTab === "collabs" && <CollabsManager key="collabs" />}
                         {activeTab === "settings" && <SettingsManager key="settings" />}
                         {activeTab === "admins" && <AdminsManager key="admins" currentUser={user?.email || ''} />}
                         {activeTab === "videos" && <VideosManager key="videos" />}

@@ -1,13 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Copy, ExternalLink } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Copy, Check, ExternalLink, Zap } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { toast } from "sonner";
 import { db } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
+import { GlassPanel } from "@/components/ui/glass";
+import { Reveal, staggerContainer, staggerItem } from "@/components/ui/reveal";
+import { SectionHeading } from "@/components/ui/section-heading";
 
+/** A single affiliate product card, mirrored from the Firestore `products` collection. */
 interface Product {
     id: string;
     title: string;
@@ -15,351 +21,340 @@ interface Product {
     image: string;
     link: string;
     tag: string;
-    tagColor: string; // Tailwind class for tag bg
-    gradient: string; // Tailwind classes for card gradient
-    glowColor: string; // Hex for glow effects
+    /** Tailwind bg-* class for the tag badge. */
+    tagColor: string;
+    /** Tailwind gradient classes for the card surface. */
+    gradient: string;
+    /** Hex/rgba glow used in the image drop-shadow. */
+    glowColor: string;
+    /** Tailwind text-* class applied to title on hover. */
     hoverText: string;
     buttonText: string;
-    buttonColor: string; // Tailwind text color class
+    /** Tailwind text-* class for the buy affordance. */
+    buttonColor: string;
+    order: number;
 }
 
-const products: Product[] = [
+const DISCOUNT_CODE = "KYEBEEZY";
+const DUBBY_HOME = "https://www.dubby.gg?ref=gvqslrbj";
+
+/** Fallback catalog used until Firestore streams in real data (or if it errors / is empty). */
+const DEFAULT_PRODUCTS: Product[] = [
     {
         id: "chefs-choice",
         title: "Chef's Choice Energy Tub",
-        description: "Can't decide? Let us surprise you! The staff picks a flavor they think you'll love.",
+        description: "Can't decide? Let the staff surprise you with a flavor they think you'll love.",
         image: "/dubby/chef-choice.png",
         link: "https://www.dubby.gg/products/chefs-choice-energy-tub-we-surprise-you?ref=gvqslrbj",
         tag: "MYSTERY FLAVOR",
-        tagColor: "bg-purple-500",
-        gradient: "from-purple-500/10 to-blue-500/10 dark:from-purple-900/20 dark:to-blue-900/20",
+        tagColor: "bg-brand",
+        gradient: "from-brand/15 to-brand-3/10",
         glowColor: "rgba(168,85,247,0.5)",
-        hoverText: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+        hoverText: "group-hover:text-brand",
         buttonText: "GET SURPRISED",
-        buttonColor: "text-purple-600 dark:text-purple-400"
+        buttonColor: "text-brand",
+        order: 0,
     },
     {
         id: "hydro-sampler",
         title: "Hydro Sampler Pack",
-        description: "6 caffeine-free refreshing drinks. Hydrate with flavor and electrolytes.",
+        description: "6 caffeine-free refreshers. Hydrate with flavor and electrolytes, zero crash.",
         image: "/dubby/hydro-sampler.png",
         link: "https://www.dubby.gg/products/hydro-sampler-pack-6-caffeine-free-drinks?ref=gvqslrbj",
         tag: "CAFFEINE FREE",
-        tagColor: "bg-blue-500",
-        gradient: "from-blue-500/10 to-cyan-500/10 dark:from-blue-900/20 dark:to-cyan-900/20",
-        glowColor: "rgba(59,130,246,0.5)",
-        hoverText: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+        tagColor: "bg-brand-3",
+        gradient: "from-brand-3/15 to-brand/10",
+        glowColor: "rgba(99,102,241,0.5)",
+        hoverText: "group-hover:text-brand-3",
         buttonText: "HYDRATE NOW",
-        buttonColor: "text-blue-600 dark:text-blue-400"
+        buttonColor: "text-brand-3",
+        order: 1,
     },
     {
         id: "pushin-punch",
         title: "Pushin Punch",
-        description: "A refreshing fruit punch kick. The perfect daily driver without the crash.",
+        description: "A refreshing fruit-punch kick. The perfect daily driver without the jitters.",
         image: "/dubby/PushinPunch_Front.png",
         link: "https://www.dubby.gg/products/pushin-punch-energy-drink-tub?ref=gvqslrbj",
         tag: "BEST SELLER",
-        tagColor: "bg-red-500",
-        gradient: "from-red-500/10 to-orange-500/10 dark:from-red-900/20 dark:to-orange-900/20",
-        glowColor: "rgba(239,68,68,0.5)",
-        hoverText: "group-hover:text-red-600 dark:group-hover:text-red-400",
+        tagColor: "bg-brand-2",
+        gradient: "from-brand-2/15 to-brand/10",
+        glowColor: "rgba(236,72,153,0.5)",
+        hoverText: "group-hover:text-brand-2",
         buttonText: "GET PUNCHED",
-        buttonColor: "text-red-600 dark:text-red-400"
+        buttonColor: "text-brand-2",
+        order: 2,
     },
     {
         id: "japanese-soda",
         title: "Japanese Soda",
-        description: "Sweet, bubbly, and unique. Experience the iconic Ramune flavor with a kick.",
+        description: "Sweet, bubbly, and unique. The iconic Ramune flavor with a clean kick.",
         image: "/dubby/Dubby_JapaneseSoda_Front.png",
         link: "https://www.dubby.gg/products/japanese-soda-flavor-energy-drink-tub?ref=gvqslrbj",
         tag: "FAN FAVORITE",
-        tagColor: "bg-pink-500",
-        gradient: "from-pink-500/10 to-cyan-500/10 dark:from-pink-900/20 dark:to-cyan-900/20",
-        glowColor: "rgba(236,72,153,0.5)", // Pink-500
-        hoverText: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
+        tagColor: "bg-brand-2",
+        gradient: "from-brand-2/15 to-brand-3/10",
+        glowColor: "rgba(236,72,153,0.5)",
+        hoverText: "group-hover:text-brand-2",
         buttonText: "TASTE JAPAN",
-        buttonColor: "text-pink-600 dark:text-pink-400"
+        buttonColor: "text-brand-2",
+        order: 3,
     },
-    {
-        id: "grandmas-lemonade",
-        title: "Grandma's Lemonade",
-        description: "Classic, tart, and sweet. The ultimate caffeine-free hydration refresher.",
-        image: "/dubby/gRandma_lemon.png",
-        link: "https://www.dubby.gg/products/grandmas-lemonade-hydro-hydration-drink-tub-caffeine-free?ref=gvqslrbj",
-        tag: "CAFFEINE FREE",
-        tagColor: "bg-yellow-500",
-        gradient: "from-yellow-500/10 to-green-500/10 dark:from-yellow-900/20 dark:to-green-900/20",
-        glowColor: "rgba(234,179,8,0.5)", // Yellow-500
-        hoverText: "group-hover:text-yellow-600 dark:group-hover:text-yellow-400",
-        buttonText: "GET LEMONADE",
-        buttonColor: "text-yellow-600 dark:text-yellow-400"
-    },
-    {
-        id: "smores",
-        title: "Smores Flavor",
-        description: "Toasted marshmallow and chocolate. A campfire treat in a tub.",
-        image: "/dubby/Dubby_Smores_Front.png",
-        link: "https://www.dubby.gg/products/smores-flavor-energy-drink-tub?ref=gvqslrbj",
-        tag: "LIMITED EDITION",
-        tagColor: "bg-orange-600",
-        gradient: "from-orange-600/10 to-amber-600/10 dark:from-orange-900/20 dark:to-amber-900/20",
-        glowColor: "rgba(234,88,12,0.5)", // Orange-600
-        hoverText: "group-hover:text-orange-600 dark:group-hover:text-orange-400",
-        buttonText: "GET TOASTY",
-        buttonColor: "text-orange-600 dark:text-orange-400"
-    },
-    {
-        id: "hydro-surge",
-        title: "Dubby Hydro Surge",
-        description: "Power Up Your Hydration with Electric Lemonade Flavor!",
-        image: "/dubby-promo-3.jpg",
-        link: "https://www.dubby.gg?ref=gvqslrbj",
-        tag: "NEW ARRIVAL",
-        tagColor: "bg-yellow-400",
-        gradient: "from-yellow-400/10 to-yellow-600/10 dark:from-yellow-400/20 dark:to-yellow-600/20",
-        glowColor: "rgba(250,204,21,0.5)",
-        hoverText: "group-hover:text-yellow-500 dark:group-hover:text-yellow-400",
-        buttonText: "POWER UP",
-        buttonColor: "text-yellow-500 dark:text-yellow-400"
-    }
 ];
 
 export default function DubbyPromo() {
+    const reduced = usePrefersReducedMotion();
     const [copied, setCopied] = useState(false);
-    const [heroImageIndex, setHeroImageIndex] = useState(0); // 0: Main, 1: Alt, 2: New
-    const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
+    const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
 
+    // Live products from Firestore, ordered ascending. Falls back to defaults on
+    // empty/error so the section always renders something.
     useEffect(() => {
+        let unsubscribe: (() => void) | undefined;
         try {
             const q = query(collection(db, "products"), orderBy("order", "asc"));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                if (!snapshot.empty) {
-                    const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-                    setDisplayProducts(fetchedProducts);
-                }
-            }, (error) => {
-                // Keep default products if error or no permission
+            unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    if (!snapshot.empty) {
+                        const fetched = snapshot.docs.map(
+                            (d) => ({ id: d.id, ...d.data() }) as Product,
+                        );
+                        setProducts(fetched);
+                    }
+                },
+                () => {
+                    // Permission denied / offline — keep defaults silently.
+                },
+            );
+        } catch {
+            // Firebase not initialised — keep defaults.
+        }
+        return () => unsubscribe?.();
+    }, []);
+
+    const copyCode = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(DISCOUNT_CODE);
+            setCopied(true);
+            toast.success("Code copied — paste it at checkout", {
+                description: `${DISCOUNT_CODE} unlocks your Bonnet Gang discount.`,
             });
-            return () => unsubscribe();
-        } catch (e) {
-            // Firebase not initialized
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("Couldn't copy — long-press the code to copy it manually.");
         }
     }, []);
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText("BONNET-ENERGY");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const heroImages = [
-        "/dubby/endorsement.jpg",
-        "/dubby/endorsement-alt.jpg",
-        "/dubby/endorsement-3.jpg",
-        "/dubby/endorsement-4.jpg",
-        "/dubby/endorsement-5.jpg"
-    ];
-
-    const currentHeroImage = heroImages[heroImageIndex];
-    const isAlt = heroImageIndex > 0;
-
-    // Cycle through colors for the badge dot
-    const badgeColors = ['bg-green-500', 'bg-pink-500', 'bg-yellow-500', 'bg-blue-500', 'bg-purple-500'];
-    const currentBadgeColor = badgeColors[heroImageIndex % badgeColors.length];
-
     return (
-        <section id="dubby" className="py-20 relative overflow-hidden transition-colors duration-300">
-            {/* Background elements - Subtle in light mode, dark in dark mode */}
-            {/* REMOVED opaque bg-background, adjusted gradient to be very subtle overlay */}
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-100/20 to-transparent dark:from-purple-900/10 dark:to-transparent z-0 pointer-events-none" />
+        <section
+            id="dubby"
+            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+        >
+            {/* Soft brand glow only — no full-bleed wash so the fixed background
+                video (his face) stays visible in the empty right half. */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute -left-24 top-1/3 -z-10 size-[28rem] rounded-full bg-brand/12 blur-[130px]"
+            />
 
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="mb-20 flex flex-col lg:flex-row items-center gap-12 max-w-7xl mx-auto">
-                    {/* Text Section */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="flex-1 text-center lg:text-left z-10"
-                    >
-                        <h2 className="text-4xl md:text-6xl font-black font-outfit mb-6 text-foreground leading-tight drop-shadow-xl">
-                            POWER UP WITH <br className="hidden lg:block" />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 animate-gradient-x">DUBBY</span>
-                        </h2>
-                        <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
-                            Focus better. React faster. <br />
-                            <span className="text-foreground font-semibold">No crash. No jitters.</span> Just pure performance.
-                        </p>
+            {/* Directional scrim: darkens the content (left) half; the right
+                half stays open to reveal the face. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-r from-background via-background/55 to-transparent" />
 
-                        {/* Discount Code */}
-                        <motion.div
-                            whileHover={{ scale: 1.02, translateY: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="mt-10 inline-flex flex-col sm:flex-row items-center gap-6 bg-white/5 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 p-2 pr-6 rounded-[2rem] cursor-pointer group shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 mx-auto lg:mx-0 max-w-fit"
-                            onClick={handleCopy}
-                        >
-                            <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white px-6 py-4 rounded-[1.5rem] font-bold shadow-lg">
-                                10% OFF
-                            </div>
-                            <div className="text-center sm:text-left py-2">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold mb-1">Discount Code</p>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl font-mono font-bold text-foreground tracking-tight">BONNET-ENERGY</span>
-                                    <Copy className="w-5 h-5 text-muted-foreground group-hover:text-purple-400 transition-colors" />
-                                </div>
-                            </div>
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
+                <div className="grid items-center gap-10 lg:grid-cols-2">
+                    {/* LEFT: the content column */}
+                    <div className="max-w-xl">
+                        <SectionHeading eyebrow="Fuel" title="POWERED BY" accent="DUBBY" align="left">
+                            No crash. No jitters. The clean energy behind every late-night stream
+                            and studio session — at a Bonnet Gang price.
+                        </SectionHeading>
 
-                            {copied && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    className="absolute -top-12 left-1/2 -translate-x-1/2 lg:left-20 lg:translate-x-0 bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2"
-                                >
-                                    <span>COPIED!</span>
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    </motion.div>
+                        {/* Partner lockup + click-to-copy code + CTA */}
+                        <Reveal direction="up" delay={0.05} className="mt-8">
+                            <GlassPanel className="relative overflow-hidden p-6 sm:p-8">
+                                <span
+                                    aria-hidden
+                                    className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent"
+                                />
 
-                    {/* Image Section */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 50, rotate: 5 }}
-                        whileInView={{ opacity: 1, x: 0, rotate: 3 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="flex-1 relative w-full max-w-md lg:max-w-xl cursor-pointer"
-                        onClick={() => setHeroImageIndex(prev => (prev + 1) % heroImages.length)}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <div className="relative aspect-square">
-                            {/* Decorative Elements */}
-                            <div className={`absolute -inset-4 bg-gradient-to-tr ${isAlt ? 'from-pink-500 to-yellow-500' : 'from-purple-500 to-cyan-500'} rounded-[2.5rem] blur-2xl opacity-30 animate-pulse transition-colors duration-1000`} />
-                            <div className="absolute -inset-1 bg-gradient-to-tr from-purple-500/50 to-cyan-500/50 rounded-[2.5rem] backdrop-blur-sm" />
-
-                            {/* Main Image */}
-                            <div className="relative h-full w-full rounded-[2rem] overflow-hidden shadow-2xl isolate transform-gpu group">
-                                <motion.div
-                                    key={heroImageIndex}
-                                    initial={{ opacity: 0, scale: 1.1 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.5 }}
-                                    className="absolute inset-0 w-full h-full"
-                                >
-                                    <Image
-                                        src={currentHeroImage}
-                                        alt="Kye Beezy with Dubby"
-                                        fill
-                                        className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out will-change-transform"
-                                        priority
-                                    />
-                                </motion.div>
-
-                                {/* Floating Badge - Moved to Bottom Left */}
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 1, duration: 0.5 }}
-                                    className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 pointer-events-none z-10"
-                                >
-                                    <span className={`w-2 h-2 rounded-full ${currentBadgeColor} animate-pulse`} />
-                                    OFFICIAL PARTNER
-                                </motion.div>
-
-                                {/* Dubby Logo Overlay - Bottom Right */}
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 0.5 }}
-                                    className="absolute bottom-4 right-4 w-32 h-auto z-10 opacity-90 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"
-                                >
+                                <div className="flex flex-wrap items-center gap-3">
                                     <Image
                                         src="/dubby/dubby-logo.webp"
-                                        alt="Dubby Logo"
-                                        width={150}
-                                        height={50}
-                                        className="object-contain"
+                                        alt="Dubby Energy"
+                                        width={132}
+                                        height={44}
+                                        className="h-8 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                                     />
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand">
+                                        <Zap className="size-3" aria-hidden />
+                                        Official Partner
+                                    </span>
+                                </div>
+
+                                <p className="mt-5 text-base font-light leading-relaxed text-muted-foreground">
+                                    Use my code at checkout for a discount on every tub. Same fuel
+                                    I run on — grab a flavor and power up.
+                                </p>
+
+                                {/* Click-to-copy code chip + CTA. Full-width on mobile. */}
+                                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                                    <button
+                                        type="button"
+                                        onClick={copyCode}
+                                        aria-label={`Copy discount code ${DISCOUNT_CODE}`}
+                                        className={cn(
+                                            "group inline-flex min-h-[44px] flex-1 items-center justify-between gap-3 rounded-2xl",
+                                            "border border-brand/30 bg-brand/10 px-5 py-2.5 backdrop-blur-md",
+                                            "transition-all duration-300 hover:border-brand/60 hover:bg-brand/15",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                            !reduced && "hover:-translate-y-0.5",
+                                        )}
+                                    >
+                                        <span className="flex flex-col text-left leading-tight">
+                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                                                Discount Code
+                                            </span>
+                                            <span className="font-mono text-xl font-bold tracking-tight text-foreground">
+                                                {DISCOUNT_CODE}
+                                            </span>
+                                        </span>
+                                        <span
+                                            className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-lg"
+                                            aria-hidden
+                                        >
+                                            <AnimatePresence mode="wait" initial={false}>
+                                                {copied ? (
+                                                    <motion.span
+                                                        key="check"
+                                                        initial={reduced ? false : { scale: 0.4, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        exit={reduced ? undefined : { scale: 0.4, opacity: 0 }}
+                                                        transition={{ duration: 0.18 }}
+                                                    >
+                                                        <Check className="size-4" />
+                                                    </motion.span>
+                                                ) : (
+                                                    <motion.span
+                                                        key="copy"
+                                                        initial={reduced ? false : { scale: 0.4, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        exit={reduced ? undefined : { scale: 0.4, opacity: 0 }}
+                                                        transition={{ duration: 0.18 }}
+                                                    >
+                                                        <Copy className="size-4" />
+                                                    </motion.span>
+                                                )}
+                                            </AnimatePresence>
+                                        </span>
+                                    </button>
+
+                                    <a
+                                        href={DUBBY_HOME}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={cn(
+                                            "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl px-6 py-2.5",
+                                            "btn-brand text-sm font-bold",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        )}
+                                    >
+                                        Shop Dubby
+                                        <ExternalLink className="size-4" aria-hidden />
+                                    </a>
+                                </div>
+                            </GlassPanel>
+                        </Reveal>
+
+                        {/* Compact 2-up product grid — a taste of the catalog. */}
+                        <motion.div
+                            className="mt-5 grid grid-cols-2 gap-3 sm:gap-4"
+                            variants={staggerContainer}
+                            initial="hidden"
+                            whileInView="show"
+                            viewport={{ once: true, margin: "-80px" }}
+                        >
+                            {products.slice(0, 4).map((product) => (
+                                <motion.div key={product.id} variants={staggerItem}>
+                                    <a
+                                        href={product.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={`Buy ${product.title} on Dubby (opens in a new tab)`}
+                                        className={cn(
+                                            "group relative flex h-full flex-col overflow-hidden rounded-2xl",
+                                            "border border-white/10 bg-gradient-to-br",
+                                            product.gradient,
+                                            "backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)]",
+                                            "transition-all duration-300",
+                                            "hover:border-brand/40 hover:shadow-[0_16px_48px_rgba(168,85,247,0.22)]",
+                                            !reduced && "hover:-translate-y-1.5",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        )}
+                                    >
+                                        {/* Tag badge */}
+                                        <span
+                                            className={cn(
+                                                "absolute right-2.5 top-2.5 z-10 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow",
+                                                product.tagColor,
+                                            )}
+                                        >
+                                            {product.tag}
+                                        </span>
+
+                                        {/* Product image */}
+                                        <div className="relative flex aspect-square items-center justify-center p-4">
+                                            <span
+                                                aria-hidden
+                                                className="absolute inset-5 rounded-full opacity-25 blur-3xl transition-opacity duration-500 group-hover:opacity-50"
+                                                style={{ backgroundColor: product.glowColor }}
+                                            />
+                                            <Image
+                                                src={product.image}
+                                                alt={product.title}
+                                                width={200}
+                                                height={200}
+                                                className={cn(
+                                                    "relative z-10 h-full w-auto object-contain drop-shadow-2xl",
+                                                    !reduced &&
+                                                        "transition-transform duration-500 ease-out group-hover:scale-110",
+                                                )}
+                                            />
+                                        </div>
+
+                                        {/* Copy */}
+                                        <div className="flex flex-1 flex-col p-4 pt-0">
+                                            <h3
+                                                className={cn(
+                                                    "font-outfit text-sm font-bold leading-tight tracking-tight text-foreground transition-colors",
+                                                    product.hoverText,
+                                                )}
+                                            >
+                                                {product.title}
+                                            </h3>
+                                            <span
+                                                className={cn(
+                                                    "mt-3 inline-flex items-center gap-1.5 text-xs font-bold transition-transform",
+                                                    !reduced && "group-hover:translate-x-1",
+                                                    product.buttonColor,
+                                                )}
+                                            >
+                                                {product.buttonText}
+                                                <ExternalLink className="size-3.5" aria-hidden />
+                                            </span>
+                                        </div>
+                                    </a>
                                 </motion.div>
+                            ))}
+                        </motion.div>
+                    </div>
 
-                                {/* Hint Text */}
-                                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white/50 text-[10px] px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Click to flip
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
+                    {/* RIGHT: intentional negative space — reveals the artist's face
+                        in the fixed background video. Hidden on mobile (single column). */}
+                    <div aria-hidden className="hidden lg:block" />
                 </div>
-
-                <motion.div
-                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-2"
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-100px" }}
-                    variants={{
-                        hidden: {},
-                        show: {
-                            transition: {
-                                staggerChildren: 0.15
-                            }
-                        }
-                    }}
-                >
-                    {displayProducts.map((product) => (
-                        <Link key={product.id} href={product.link} target="_blank">
-                            <motion.div
-                                variants={{
-                                    hidden: { opacity: 0, scale: 0.8, y: 50 },
-                                    show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 60 } }
-                                }}
-                                whileHover={{ y: -10, transition: { duration: 0.2 } }}
-                                className={`h-full bg-gradient-to-br ${product.gradient} border border-white/20 dark:border-white/10 rounded-3xl p-1 overflow-hidden relative group shadow-lg hover:shadow-xl dark:shadow-none transition-shadow duration-500 backdrop-blur-sm`}
-                            >
-                                {/* Hover Glow */}
-                                <div className={`absolute inset-0 bg-gradient-to-r ${product.gradient.replace('/10', '/20').replace('/20', '/10')} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                                {/* Glass Card Content */}
-                                <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl rounded-[22px] p-6 h-full flex flex-col items-center text-center relative z-10 transition-colors group-hover:bg-white/60 dark:group-hover:bg-black/30">
-                                    <div className={`absolute top-4 right-4 ${product.tagColor} text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm`}>
-                                        {product.tag}
-                                    </div>
-
-                                    {/* Image Container with "Popout" feel - Reduced overflow clipping issues by making image container larger */}
-                                    <div className="w-56 h-56 -mt-4 mb-4 relative flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500 ease-out">
-                                        <div
-                                            className="absolute inset-4 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"
-                                            style={{ backgroundColor: product.tagColor.replace('bg-', '').replace('-500', '') }}
-                                        />
-                                        <Image
-                                            src={product.image}
-                                            alt={product.title}
-                                            width={240}
-                                            height={240}
-                                            className="object-contain drop-shadow-2xl relative z-10"
-                                            style={{
-                                                // More subtle shadow for better blending
-                                                filter: `drop-shadow(0 10px 20px ${product.glowColor})`
-                                            }}
-                                        />
-                                    </div>
-
-                                    <h3 className={`text-2xl font-bold font-outfit mb-2 transition-colors ${product.hoverText} text-foreground`}>
-                                        {product.title}
-                                    </h3>
-                                    <p className="text-foreground/80 mb-6 text-sm leading-relaxed">
-                                        {product.description}
-                                    </p>
-
-                                    <div className={`mt-auto flex items-center gap-2 font-bold transition-transform group-hover:translate-x-1 ${product.buttonColor}`}>
-                                        {product.buttonText} <ExternalLink className="w-4 h-4" />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </Link>
-                    ))}
-                </motion.div>
             </div>
-        </section >
+        </section>
     );
 }

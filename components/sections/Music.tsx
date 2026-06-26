@@ -1,146 +1,239 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Music, Play } from "lucide-react";
-import Link from "next/link";
+import { Music2, ArrowUpRight } from "lucide-react";
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import {
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    type Timestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { SOCIALS } from "@/lib/site";
+import { cn } from "@/lib/utils";
+import { GlassPanel } from "@/components/ui/glass";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Reveal, staggerContainer, staggerItem } from "@/components/ui/reveal";
+import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
+
+/** A single track sourced from Firestore (or the hardcoded fallback). */
+interface Track {
+    id: string;
+    title: string;
+    /** Full <iframe> HTML, rendered via dangerouslySetInnerHTML. */
+    embedCode: string;
+    order?: number;
+    createdAt?: Timestamp | null;
+}
+
+/** Shape of a Firestore "music" document. */
+interface MusicDoc {
+    title?: string;
+    embedCode?: string;
+    order?: number;
+    createdAt?: Timestamp | null;
+}
+
+/** Build a BandLab embed iframe with consistent attributes. */
+function bandlabEmbed(src: string, title: string): string {
+    return `<iframe width="100%" height="450" src="${src}" frameborder="0" allowfullscreen title="${title} — BandLab player"></iframe>`;
+}
+
+/** Fallback tracks shown when the Firestore collection is empty. */
+const FALLBACK_TRACKS: Track[] = [
+    {
+        id: "fallback-latest-heat",
+        title: "Latest Heat",
+        embedCode: bandlabEmbed(
+            "https://www.bandlab.com/embed/?id=7d44e991-08cf-f011-8196-000d3a96100f&blur=true",
+            "Latest Heat",
+        ),
+    },
+    {
+        id: "fallback-night-vibes",
+        title: "Night Vibes",
+        embedCode: bandlabEmbed(
+            "https://www.bandlab.com/embed/?id=2f1287da-399e-f011-8e64-6045bd354e91&blur=true",
+            "Night Vibes",
+        ),
+    },
+    {
+        id: "fallback-studio-sessions",
+        title: "Studio Sessions",
+        embedCode: bandlabEmbed(
+            "https://www.bandlab.com/embed/?id=bcdc5788-3f63-f011-8dc9-000d3a960be3&blur=true",
+            "Studio Sessions",
+        ),
+    },
+];
 
 export default function MusicSection() {
-    const [tracks, setTracks] = useState<any[]>([
-        {
-            id: "7d44e991-08cf-f011-8196-000d3a96100f",
-            title: "Latest Heat",
-            genre: "Hip Hop • Trap",
-            gradient: "from-purple-500/20 to-blue-500/20",
-            border: "hover:border-purple-500/50",
-            shadow: "hover:shadow-purple-500/20",
-            isLegacy: true
-        },
-        {
-            id: "2f1287da-399e-f011-8e64-6045bd354e91",
-            title: "Night Vibes",
-            genre: "Lo-Fi • Chill",
-            gradient: "from-pink-500/20 to-red-500/20",
-            border: "hover:border-pink-500/50",
-            shadow: "hover:shadow-pink-500/20",
-            isLegacy: true
-        },
-        {
-            id: "bcdc5788-3f63-f011-8dc9-000d3a960be3",
-            title: "Studio Sessions",
-            genre: "Experimental • Vibe",
-            gradient: "from-blue-500/20 to-indigo-500/20",
-            border: "hover:border-blue-500/50",
-            shadow: "hover:shadow-blue-500/20",
-            isLegacy: true
-        },
-    ]);
+    const reduced = usePrefersReducedMotion();
+    const [tracks, setTracks] = useState<Track[]>(FALLBACK_TRACKS);
 
     useEffect(() => {
+        let unsubscribe: (() => void) | undefined;
+
         try {
             const q = query(collection(db, "music"), orderBy("createdAt", "desc"));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                if (!snapshot.empty) {
-                    const fetchedTracks = snapshot.docs.map(doc => {
-                        const data = doc.data();
-                        // Extract src from iframe if provided
-                        let src = "";
-                        if (data.embedCode && data.embedCode.includes("src=\"")) {
-                            const match = data.embedCode.match(/src="([^"]+)"/);
-                            if (match) src = match[1];
-                        } else {
-                            src = data.embedCode; // Assume it's a raw URL or ID if no iframe tag
-                        }
+            unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    if (snapshot.empty) {
+                        setTracks(FALLBACK_TRACKS);
+                        return;
+                    }
 
-                        return {
-                            id: doc.id,
-                            title: data.title,
-                            genre: "Exclusive", // Default genre for dynamic tracks
-                            gradient: "from-indigo-500/20 to-purple-500/20",
-                            border: "hover:border-indigo-500/50",
-                            shadow: "hover:shadow-indigo-500/20",
-                            src: src
-                        };
-                    });
-                    setTracks(fetchedTracks);
-                }
-            }, (error) => { });
-            return () => unsubscribe();
-        } catch (e) { }
+                    const fetched: Track[] = snapshot.docs
+                        .map((d) => {
+                            const data = d.data() as MusicDoc;
+                            return {
+                                id: d.id,
+                                title: data.title ?? "Untitled",
+                                embedCode: data.embedCode ?? "",
+                                order: data.order,
+                                createdAt: data.createdAt ?? null,
+                            };
+                        })
+                        // Only keep docs that actually carry an embed.
+                        .filter((t) => t.embedCode.trim().length > 0);
+
+                    setTracks(fetched.length > 0 ? fetched : FALLBACK_TRACKS);
+                },
+                () => {
+                    // On any read error, gracefully fall back.
+                    setTracks(FALLBACK_TRACKS);
+                },
+            );
+        } catch {
+            setTracks(FALLBACK_TRACKS);
+        }
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     return (
-        <section id="music" className="min-h-screen flex items-center justify-center relative py-20 overflow-hidden">
-            {/* NO Solid Background - Transparency for Shader */}
+        <section
+            id="music"
+            className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden py-24 text-foreground"
+        >
+            {/* Soft brand glow only — the fixed background video (his face) stays
+                visible in the empty LEFT half for an editorial, page-by-page feel.
+                No full-bleed scrim, so the video reads through. */}
+            <div
+                aria-hidden
+                className={cn(
+                    "pointer-events-none absolute -right-32 top-1/4 -z-10 size-[28rem] rounded-full bg-brand/12 blur-[130px]",
+                    !reduced && "animate-glow",
+                )}
+            />
 
-            <div className="container mx-auto px-6 z-10 relative">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    transition={{ duration: 1 }}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-5xl md:text-7xl font-black font-outfit text-foreground mb-4 drop-shadow-xl">
-                        BEATS & <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">MUSIC</span>
-                    </h2>
-                    <p className="text-xl text-muted-foreground">Crafting sounds on BandLab</p>
-                </motion.div>
+            {/* Directional scrim: darkens the content (right) half; the left
+                half stays open to reveal the face. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-l from-background via-background/55 to-transparent" />
 
-                <motion.div
-                    className="grid md:grid-cols-3 gap-8"
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-100px" }}
-                    variants={{
-                        hidden: {},
-                        show: {
-                            transition: {
-                                staggerChildren: 0.2
-                            }
-                        }
-                    }}
-                >
-                    {tracks.map((track, index) => (
-                        <motion.div
-                            key={track.id}
-                            variants={{
-                                hidden: { opacity: 0, y: 50 },
-                                show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50, damping: 20 } }
-                            }}
-                            className="group"
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
+                <div className="grid items-center gap-10 lg:grid-cols-2">
+                    {/* LEFT: intentional negative space — reveals the artist's face
+                        in the fixed background video. Hidden on mobile (single column). */}
+                    <div aria-hidden className="hidden lg:block" />
+
+                    {/* RIGHT: the content column */}
+                    <div className="max-w-xl lg:ml-auto">
+                        <SectionHeading
+                            eyebrow="Listen"
+                            title="THE"
+                            accent="SOUND"
+                            align="left"
                         >
-                            {/* Glassmorphism Card */}
-                            <div className={`bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-3xl p-4 border border-white/20 dark:border-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl ${track.border} ${track.shadow}`}>
-                                <div className={`relative aspect-square rounded-2xl overflow-hidden mb-4 bg-gradient-to-br ${track.gradient}`}>
-                                    <iframe
-                                        src={track.src || `https://www.bandlab.com/embed/?id=${track.id}`}
-                                        className="absolute inset-0 w-full h-full opacity-90 hover:opacity-100 transition-opacity"
-                                        frameBorder="0"
-                                        allow="autoplay"
-                                    ></iframe>
-                                </div>
-                                <div className="flex justify-between items-start px-2">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-foreground font-outfit mb-1">{track.title}</h3>
-                                        <p className="text-sm text-muted-foreground font-medium">{track.genre}</p>
-                                    </div>
-                                    <div className="p-3 bg-purple-600 rounded-full shadow-lg shadow-purple-600/40 opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
-                                        <Play className="w-4 h-4 fill-white text-white" />
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </motion.div>
+                            Fresh heat straight from the lab — press play and roll with
+                            the Bonnet Gang.
+                        </SectionHeading>
 
-                <div className="mt-16 text-center">
-                    <Link href="https://www.bandlab.com/kyebeezy" target="_blank" className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold rounded-full hover:bg-white/20 hover:scale-110 transition-all shadow-lg hover:shadow-purple-500/20">
-                        Listen on BandLab <Music className="w-4 h-4" />
-                    </Link>
+                        {/* Compact stack of larger track cards: single column, two on xl.
+                            Fewer, bigger cards read more premium than a wide grid. */}
+                        <motion.ul
+                            className="mt-8 grid list-none grid-cols-1 gap-5 xl:grid-cols-2"
+                            variants={reduced ? undefined : staggerContainer}
+                            initial={reduced ? undefined : "hidden"}
+                            whileInView={reduced ? undefined : "show"}
+                            viewport={{ once: true, amount: 0.15 }}
+                        >
+                            {tracks.map((track) => (
+                                <motion.li
+                                    key={track.id}
+                                    variants={reduced ? undefined : staggerItem}
+                                    className="group"
+                                >
+                                    <GlassPanel
+                                        hover
+                                        className="flex h-full flex-col gap-4 p-3 sm:p-4"
+                                    >
+                                        {/* Aspect-square embed frame */}
+                                        <div
+                                            title={`${track.title} — BandLab player`}
+                                            className={cn(
+                                                "relative aspect-square w-full overflow-hidden rounded-2xl",
+                                                "border border-white/10 bg-black/30",
+                                                // Make the injected iframe fill the frame.
+                                                "[&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:h-full [&>iframe]:w-full [&>iframe]:border-0",
+                                            )}
+                                            dangerouslySetInnerHTML={{
+                                                __html: track.embedCode,
+                                            }}
+                                        />
+
+                                        {/* Title row */}
+                                        <div className="flex items-center justify-between gap-3 px-1.5 pb-1">
+                                            <div className="min-w-0">
+                                                <h3 className="truncate font-outfit text-lg font-bold tracking-tight text-foreground">
+                                                    {track.title}
+                                                </h3>
+                                                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                                                    On BandLab
+                                                </p>
+                                            </div>
+                                            <span
+                                                aria-hidden
+                                                className={cn(
+                                                    "flex size-10 shrink-0 items-center justify-center rounded-full",
+                                                    "bg-brand-gradient text-white shadow-lg shadow-brand/30",
+                                                    "transition-all duration-300",
+                                                    !reduced &&
+                                                        "translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100",
+                                                )}
+                                            >
+                                                <Music2 className="size-4" />
+                                            </span>
+                                        </div>
+                                    </GlassPanel>
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+
+                        {/* BandLab CTA — full-width on mobile, inline on desktop */}
+                        <Reveal direction="up" delay={0.1} className="mt-8">
+                            <a
+                                href={SOCIALS.bandlab}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                    "group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 sm:w-auto",
+                                    "text-sm font-bold tracking-wide text-white btn-brand",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                )}
+                            >
+                                Hear it all on BandLab
+                                <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                            </a>
+                        </Reveal>
+                    </div>
                 </div>
             </div>
-        </section >
+        </section>
     );
 }
