@@ -105,10 +105,6 @@ export default function AboutSection() {
                 className="pointer-events-none absolute -left-32 top-1/4 -z-10 size-[28rem] rounded-full bg-brand/12 blur-[130px]"
             />
 
-            {/* Directional scrim: darkens the content (left) half into a clean
-                readable zone; the right half stays open to reveal the face. */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-r from-background via-background/55 to-transparent [mask-image:linear-gradient(to_bottom,transparent,black_16%,black_84%,transparent)]" />
-
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
                 <div className="grid items-center gap-10 lg:grid-cols-2">
                     {/* LEFT: the content column */}

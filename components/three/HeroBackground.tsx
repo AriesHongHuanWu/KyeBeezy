@@ -33,12 +33,17 @@ export default function HeroBackground() {
     const lowPower = useIsLowPower();
     const dimRef = useRef<HTMLDivElement>(null);
     const [mode, setMode] = useState<Mode>("loading");
+    // Wide 16:9 desktop clip — only used if it actually ships.
+    const [hasWide, setHasWide] = useState(false);
 
     useEffect(() => {
         let on = true;
         (async () => {
             if (await exists("/models/kye.glb")) return on && setMode("glb");
-            if (await exists("/hero/turntable.mp4")) return on && setMode("video");
+            if (await exists("/hero/turntable.mp4")) {
+                if (await exists("/hero/turntable-wide.mp4")) on && setHasWide(true);
+                return on && setMode("video");
+            }
             return on && setMode("image");
         })();
         return () => {
@@ -74,7 +79,10 @@ export default function HeroBackground() {
                     />
                 </div>
             ) : mode === "video" ? (
-                <ScrollVideo src="/hero/turntable.mp4" />
+                <ScrollVideo
+                    src="/hero/turntable.mp4"
+                    srcWide={hasWide ? "/hero/turntable-wide.mp4" : undefined}
+                />
             ) : mode === "glb" || mode === "image" ? (
                 <HeroScene lowPower={lowPower} />
             ) : null}

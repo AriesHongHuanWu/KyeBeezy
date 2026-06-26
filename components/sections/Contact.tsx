@@ -120,10 +120,6 @@ export default function ContactSection() {
                 className="pointer-events-none absolute bottom-0 right-1/4 -z-10 size-[24rem] rounded-full bg-brand-2/12 blur-[140px]"
             />
 
-            {/* Directional scrim: darkens the content (right) half; the left
-                half stays open to reveal the face. */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden lg:block bg-gradient-to-l from-background via-background/55 to-transparent [mask-image:linear-gradient(to_bottom,transparent,black_16%,black_84%,transparent)]" />
-
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 w-full">
                 <div className="grid items-center gap-10 lg:grid-cols-2">
                     {/* LEFT: intentional negative space — reveals the artist's face
