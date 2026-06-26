@@ -8,6 +8,7 @@ import { usePrefersReducedMotion, useIsLowPower } from "@/lib/hooks/usePrefersRe
 // Heavy / client-only — load on demand.
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), { ssr: false });
 const ScrollVideo = dynamic(() => import("@/components/three/ScrollVideo"), { ssr: false });
+const Atmosphere = dynamic(() => import("@/components/three/Atmosphere"), { ssr: false });
 
 type Mode = "loading" | "glb" | "video" | "image";
 
@@ -98,6 +99,14 @@ export default function HeroBackground() {
                 />
             ) : mode === "glb" || mode === "image" ? (
                 <HeroScene lowPower={lowPower} />
+            ) : null}
+
+            {/* 3D depth atmosphere over the video — floating brand-tinted motes
+                that parallax with pointer + scroll. The CSS fallback (HeroScene)
+                already has its own particles, so only layer this over the video,
+                and never on reduced-motion / low-power devices. */}
+            {mode === "video" && !reduced && !lowPower ? (
+                <Atmosphere lowPower={lowPower} />
             ) : null}
 
             {/* Modern purple tint — a soft glow from the bottom + a faint top

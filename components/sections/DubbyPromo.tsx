@@ -10,6 +10,7 @@ import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
 import { GlassPanel } from "@/components/ui/glass";
+import { Tilt3D } from "@/components/ui/tilt3d";
 import { Reveal, staggerContainer, staggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 
@@ -169,6 +170,7 @@ export default function DubbyPromo() {
 
                         {/* Partner lockup + click-to-copy code + CTA */}
                         <Reveal direction="up" delay={0.05} className="mt-8">
+                            <Tilt3D max={5} scale={1.015}>
                             <GlassPanel className="relative overflow-hidden p-6 sm:p-8">
                                 <span
                                     aria-hidden
@@ -261,6 +263,7 @@ export default function DubbyPromo() {
                                     </a>
                                 </div>
                             </GlassPanel>
+                            </Tilt3D>
                         </Reveal>
 
                         {/* Compact 2-up product grid — a taste of the catalog. */}
@@ -273,6 +276,7 @@ export default function DubbyPromo() {
                         >
                             {products.slice(0, 4).map((product) => (
                                 <motion.div key={product.id} variants={staggerItem}>
+                                    <Tilt3D max={9} scale={1.03} radiusClassName="rounded-2xl" className="h-full">
                                     <a
                                         href={product.link}
                                         target="_blank"
@@ -341,6 +345,7 @@ export default function DubbyPromo() {
                                             </span>
                                         </div>
                                     </a>
+                                    </Tilt3D>
                                 </motion.div>
                             ))}
                         </motion.div>
