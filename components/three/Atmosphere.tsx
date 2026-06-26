@@ -105,6 +105,37 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
         const points = new THREE.Points(geo, mat);
         scene.add(points);
 
+        // ---- Floating wireframe "crystals" — literal 3D structure with depth.
+        // Additive thin lines: a faint glowing lattice in dark mode, invisible
+        // over the light clip (keeps light theme clean). ----
+        const crystalMat = new THREE.LineBasicMaterial({
+            color: 0xc4a8ff,
+            transparent: true,
+            opacity: 0.26,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false,
+        });
+        const crystalDefs = [
+            { r: 1.7, x: -8.5, y: 3.4, z: -10, sx: 0.18, sy: 0.26, ph: 0.0 },
+            { r: 2.6, x: 9.5, y: -2.6, z: -15, sx: -0.12, sy: 0.15, ph: 1.4 },
+            { r: 1.1, x: 6.0, y: 4.6, z: -7, sx: 0.24, sy: -0.2, ph: 2.6 },
+            { r: 3.2, x: -10.5, y: -4.2, z: -19, sx: 0.08, sy: 0.11, ph: 3.7 },
+            { r: 0.9, x: -3.5, y: -5.2, z: -6, sx: -0.22, sy: 0.3, ph: 5.1 },
+        ];
+        const crystalGeos: THREE.BufferGeometry[] = [];
+        const crystals = crystalDefs.map((d) => {
+            const ico = new THREE.IcosahedronGeometry(d.r, 0);
+            const edges = new THREE.EdgesGeometry(ico);
+            ico.dispose();
+            crystalGeos.push(edges);
+            const ls = new THREE.LineSegments(edges, crystalMat);
+            ls.position.set(d.x, d.y, d.z);
+            ls.userData = { sx: d.sx, sy: d.sy, baseY: d.y, ph: d.ph };
+            scene.add(ls);
+            return ls;
+        });
+
         // ---- Pointer + scroll state (eased) ----
         const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
         const scrollT = { v: 0, t: 0 };
@@ -163,6 +194,14 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
 
             points.rotation.z += dt * 0.008;
 
+            // Crystals: slow spin + gentle vertical drift.
+            for (const c of crystals) {
+                const u = c.userData as { sx: number; sy: number; baseY: number; ph: number };
+                c.rotation.x += dt * u.sx;
+                c.rotation.y += dt * u.sy;
+                c.position.y = u.baseY + Math.sin(t * 0.3 + u.ph) * 0.5;
+            }
+
             renderer.render(scene, camera);
         }
         raf = requestAnimationFrame(animate);
@@ -177,6 +216,8 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             geo.dispose();
             mat.dispose();
             sprite.dispose();
+            crystalGeos.forEach((g) => g.dispose());
+            crystalMat.dispose();
             renderer.dispose();
             if (renderer.domElement.parentNode === container) {
                 container.removeChild(renderer.domElement);

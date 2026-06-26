@@ -32,6 +32,7 @@ import { EVENT_TYPE_META, type CalendarEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
 import { GlassPanel } from "@/components/ui/glass";
+import { Tilt3D } from "@/components/ui/tilt3d";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 
@@ -343,6 +344,7 @@ function ScheduleCard({
                 ease: [0.22, 1, 0.36, 1],
             }}
         >
+            <Tilt3D max={6} scale={1.015}>
             <GlassPanel
                 hover
                 className={cn(
@@ -508,6 +510,7 @@ function ScheduleCard({
                     </div>
                 </div>
             </GlassPanel>
+            </Tilt3D>
         </motion.div>
     );
 }
