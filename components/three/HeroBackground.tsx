@@ -33,15 +33,24 @@ export default function HeroBackground() {
     const lowPower = useIsLowPower();
     const dimRef = useRef<HTMLDivElement>(null);
     const [mode, setMode] = useState<Mode>("loading");
-    // Wide 16:9 desktop clip — only used if it actually ships.
-    const [hasWide, setHasWide] = useState(false);
+    // Which optional source variants actually ship (dark portrait is required).
+    const [assets, setAssets] = useState<{
+        wide?: boolean;
+        light?: boolean;
+        wideLight?: boolean;
+    }>({});
 
     useEffect(() => {
         let on = true;
         (async () => {
             if (await exists("/models/kye.glb")) return on && setMode("glb");
             if (await exists("/hero/turntable.mp4")) {
-                if (await exists("/hero/turntable-wide.mp4")) on && setHasWide(true);
+                const [wide, light, wideLight] = await Promise.all([
+                    exists("/hero/turntable-wide.mp4"),
+                    exists("/hero/turntable-light.mp4"),
+                    exists("/hero/turntable-wide-light.mp4"),
+                ]);
+                if (on) setAssets({ wide, light, wideLight });
                 return on && setMode("video");
             }
             return on && setMode("image");
@@ -80,8 +89,12 @@ export default function HeroBackground() {
                 </div>
             ) : mode === "video" ? (
                 <ScrollVideo
-                    src="/hero/turntable.mp4"
-                    srcWide={hasWide ? "/hero/turntable-wide.mp4" : undefined}
+                    darkPortrait="/hero/turntable.mp4"
+                    darkWide={assets.wide ? "/hero/turntable-wide.mp4" : undefined}
+                    lightPortrait={assets.light ? "/hero/turntable-light.mp4" : undefined}
+                    lightWide={
+                        assets.wideLight ? "/hero/turntable-wide-light.mp4" : undefined
+                    }
                 />
             ) : mode === "glb" || mode === "image" ? (
                 <HeroScene lowPower={lowPower} />

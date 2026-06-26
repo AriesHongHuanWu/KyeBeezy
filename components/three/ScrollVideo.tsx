@@ -1,47 +1,80 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 /**
  * Full-bleed background video driven by SECTIONS. Each section maps to a
  * chapter timestamp in the clip. When you scroll into a new section the video
  * actually PLAYS (native decode → buttery smooth) forward to that chapter and
  * settles — so arriving at a section feels like the visual switches to a new
- * look. Scrolling back up eases the time backward. Kept in colour with a light
- * cinematic grade. Needs an all-intra encode for clean seeking on reverse.
+ * look. Scrolling back up eases the time backward. Needs an all-intra encode
+ * for clean seeking on reverse.
  *
- * Responsive source: a wide 16:9 clip fills desktop edge-to-edge; a portrait
- * clip is used on narrow screens so the face stays framed without a 3× zoom.
+ * The source adapts to two axes:
+ *   • viewport  — a wide 16:9 clip fills desktop; a portrait clip suits mobile.
+ *   • theme     — a light-background clip for light mode, dark for dark mode.
+ * Missing variants fall back gracefully (light→dark, wide→portrait).
  */
 const SECTIONS = ["hero", "about", "music", "stream", "schedule", "dubby", "contact"];
 const FWD_RATE = 1.6; // play a touch faster so the "beat" lands quickly
 const DESKTOP_MQ = "(min-width: 1024px)"; // matches Tailwind's lg breakpoint
 
+function pickSrc(
+    s: {
+        darkPortrait: string;
+        darkWide?: string;
+        lightPortrait?: string;
+        lightWide?: string;
+    },
+    light: boolean,
+    wide: boolean,
+): string {
+    if (light) {
+        // Light theme renders dark text, so a light-background clip is required
+        // for legibility — prefer light sources over a wide-but-dark fallback.
+        if (wide) return s.lightWide ?? s.lightPortrait ?? s.darkWide ?? s.darkPortrait;
+        return s.lightPortrait ?? s.darkPortrait;
+    }
+    if (wide) return s.darkWide ?? s.darkPortrait;
+    return s.darkPortrait;
+}
+
 export default function ScrollVideo({
-    src,
-    srcWide,
+    darkPortrait,
+    darkWide,
+    lightPortrait,
+    lightWide,
 }: {
-    /** Portrait/mobile source. */
-    src: string;
-    /** Optional wide (16:9) source used on desktop. Falls back to `src`. */
-    srcWide?: string;
+    /** Required dark portrait source — also the universal fallback. */
+    darkPortrait: string;
+    /** Wide (16:9) dark source for desktop. */
+    darkWide?: string;
+    /** Portrait light-mode source. */
+    lightPortrait?: string;
+    /** Wide light-mode source for desktop. */
+    lightWide?: string;
 }) {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const { resolvedTheme } = useTheme();
 
-    // Pick the source that matches the viewport, and swap if it crosses the
-    // breakpoint (e.g. rotate / resize). Defaults to portrait for SSR safety.
-    const [activeSrc, setActiveSrc] = useState(src);
+    // Pick the source matching theme + viewport, swapping when either changes.
+    // SSR-safe default: dark portrait (matches defaultTheme="dark").
+    const [activeSrc, setActiveSrc] = useState(darkPortrait);
     useEffect(() => {
-        if (!srcWide) {
-            setActiveSrc(src);
-            return;
-        }
         const mq = window.matchMedia(DESKTOP_MQ);
-        const apply = () => setActiveSrc(mq.matches ? srcWide : src);
+        const apply = () =>
+            setActiveSrc(
+                pickSrc(
+                    { darkPortrait, darkWide, lightPortrait, lightWide },
+                    resolvedTheme === "light",
+                    mq.matches,
+                ),
+            );
         apply();
         mq.addEventListener("change", apply);
         return () => mq.removeEventListener("change", apply);
-    }, [src, srcWide]);
+    }, [darkPortrait, darkWide, lightPortrait, lightWide, resolvedTheme]);
 
     useEffect(() => {
         const v = videoRef.current;
