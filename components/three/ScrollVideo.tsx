@@ -120,7 +120,7 @@ export default function ScrollVideo({ src }: { src: string }) {
             playsInline
             preload="auto"
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover [object-position:50%_18%] [filter:contrast(1.05)_saturate(0.96)_brightness(0.94)]"
+            className="absolute inset-0 h-full w-full object-cover [object-position:50%_20%] lg:[object-position:50%_40%] [filter:contrast(1.05)_saturate(0.96)_brightness(0.94)]"
         />
     );
 }
