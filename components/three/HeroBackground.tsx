@@ -44,7 +44,9 @@ export default function HeroBackground() {
     useEffect(() => {
         let on = true;
         (async () => {
-            if (await exists("/models/kye.glb")) return on && setMode("glb");
+            // Probe the shipped hero video FIRST. In the common case it exists,
+            // so we never HEAD-request an absent /models/kye.glb (which would log
+            // a harmless-but-noisy 404). GLB stays supported as a fallback.
             if (await exists("/hero/turntable.mp4")) {
                 const [wide, light, wideLight] = await Promise.all([
                     exists("/hero/turntable-wide.mp4"),
@@ -54,6 +56,7 @@ export default function HeroBackground() {
                 if (on) setAssets({ wide, light, wideLight });
                 return on && setMode("video");
             }
+            if (await exists("/models/kye.glb")) return on && setMode("glb");
             return on && setMode("image");
         })();
         return () => {

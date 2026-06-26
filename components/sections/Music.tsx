@@ -52,14 +52,6 @@ const FALLBACK_TRACKS: Track[] = [
         ),
     },
     {
-        id: "fallback-night-vibes",
-        title: "Night Vibes",
-        embedCode: bandlabEmbed(
-            "https://www.bandlab.com/embed/?id=2f1287da-399e-f011-8e64-6045bd354e91&blur=true",
-            "Night Vibes",
-        ),
-    },
-    {
         id: "fallback-studio-sessions",
         title: "Studio Sessions",
         embedCode: bandlabEmbed(
