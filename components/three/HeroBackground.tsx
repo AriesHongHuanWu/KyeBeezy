@@ -73,9 +73,20 @@ export default function HeroBackground() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
+    // Atmosphere is layered BEHIND the video (so the video's blend reveals it
+    // through the backdrop while the subject occludes it). Video only, on
+    // capable devices, never under reduced motion.
+    const showAtmosphere = mode === "video" && !reduced && !lowPower;
+
     return (
         <div className="fixed inset-0 -z-10 overflow-hidden bg-background">
             {/* Clean near-black canvas — no loud color washes */}
+
+            {/* 3D depth atmosphere — monochrome motes + crystals, rendered BEHIND
+                the video. ScrollVideo's lighten/darken blend lets the clip's
+                uniform backdrop reveal them while the lit subject occludes them,
+                so they read as depth behind the person. */}
+            {showAtmosphere ? <Atmosphere lowPower={lowPower} /> : null}
 
             {reduced ? (
                 <div className="absolute inset-0 flex items-end justify-center">
@@ -96,17 +107,10 @@ export default function HeroBackground() {
                     lightWide={
                         assets.wideLight ? "/hero/turntable-wide-light.mp4" : undefined
                     }
+                    behindParticles={showAtmosphere}
                 />
             ) : mode === "glb" || mode === "image" ? (
                 <HeroScene lowPower={lowPower} />
-            ) : null}
-
-            {/* 3D depth atmosphere over the video — floating brand-tinted motes
-                that parallax with pointer + scroll. The CSS fallback (HeroScene)
-                already has its own particles, so only layer this over the video,
-                and never on reduced-motion / low-power devices. */}
-            {mode === "video" && !reduced && !lowPower ? (
-                <Atmosphere lowPower={lowPower} />
             ) : null}
 
             {/* Modern purple tint — a soft glow from the bottom + a faint top

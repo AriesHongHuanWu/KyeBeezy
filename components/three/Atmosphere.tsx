@@ -1,31 +1,46 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 import * as THREE from "three";
 
 /**
- * Lightweight WebGL "atmosphere" — a field of soft, brand-tinted bokeh motes
- * floating in 3D depth in front of the background video. Adds parallax depth as
- * the visitor moves the pointer and scrolls (the camera dollies through the
- * field), so the page reads as a 3D space rather than a flat clip.
+ * Lightweight WebGL "atmosphere" — soft monochrome motes + wireframe crystals
+ * floating in 3D depth. It renders BEHIND the background video; the video is
+ * given a lighten/darken blend (see ScrollVideo) so its near-uniform backdrop
+ * lets these motes show through while the lit subject occludes them — the motes
+ * read as depth *behind the person*.
  *
- * Additive blending means it glows over the dark theme and all but disappears
- * over the light clip (which keeps light mode clean — by design).
+ * Colour is monochrome and tuned to the theme: a dim grey that the dark clip
+ * reveals via `lighten`, and a light grey that the light clip reveals via
+ * `darken`. Pointer + scroll dolly the camera through the field for parallax.
  *
- * Performance: one draw call (THREE.Points), capped DPR, paused when the tab is
- * hidden. The caller should only mount it on capable devices (desktop, motion
- * allowed, not low-power) — see HeroBackground.
+ * Performance: a couple of draw calls, capped DPR, paused when the tab is
+ * hidden. Mounted only on capable devices (see HeroBackground).
  */
 export default function Atmosphere({ lowPower = false }: { lowPower?: boolean }) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const { resolvedTheme } = useTheme();
+    const dark = resolvedTheme !== "light"; // defaultTheme is "dark"
+
+    const moteMatRef = useRef<THREE.PointsMaterial | null>(null);
+    const crystalMatRef = useRef<THREE.LineBasicMaterial | null>(null);
+
+    // Keep the monochrome tint in sync with the theme without rebuilding the
+    // scene. Dim grey for dark mode (revealed by `lighten`), light grey for
+    // light mode (revealed by `darken`).
+    useEffect(() => {
+        const mote = dark ? 0x8a8a8a : 0xb6b6b6;
+        const crystal = dark ? 0x6e6e6e : 0xc6c6c6;
+        moteMatRef.current?.color.setHex(mote);
+        crystalMatRef.current?.color.setHex(crystal);
+    }, [dark]);
 
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
-        let disposed = false;
         let raf = 0;
-
         let width = window.innerWidth;
         let height = window.innerHeight;
 
@@ -54,7 +69,7 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             const ctx = c.getContext("2d")!;
             const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
             g.addColorStop(0, "rgba(255,255,255,1)");
-            g.addColorStop(0.35, "rgba(255,255,255,0.55)");
+            g.addColorStop(0.35, "rgba(255,255,255,0.5)");
             g.addColorStop(1, "rgba(255,255,255,0)");
             ctx.fillStyle = g;
             ctx.fillRect(0, 0, 64, 64);
@@ -63,17 +78,10 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             return tex;
         })();
 
-        // ---- Particle field ----
+        // ---- Particle field (monochrome — material colour set by theme) ----
         const COUNT = lowPower ? 220 : 460;
         const positions = new Float32Array(COUNT * 3);
-        const colors = new Float32Array(COUNT * 3);
-        const drift = new Float32Array(COUNT); // per-mote phase for gentle bob
-        const palette = [
-            new THREE.Color(0xa855f7),
-            new THREE.Color(0xec4899),
-            new THREE.Color(0x8b5cf6),
-            new THREE.Color(0xc4b5fd),
-        ];
+        const drift = new Float32Array(COUNT);
         const SPAN_X = 26;
         const SPAN_Y = 18;
         const Z_NEAR = 4;
@@ -83,39 +91,33 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             positions[i * 3 + 1] = (Math.random() - 0.5) * SPAN_Y;
             positions[i * 3 + 2] = Z_NEAR + Math.random() * (Z_FAR - Z_NEAR);
             drift[i] = Math.random() * Math.PI * 2;
-            const col = palette[i % palette.length];
-            colors[i * 3] = col.r;
-            colors[i * 3 + 1] = col.g;
-            colors[i * 3 + 2] = col.b;
         }
         const geo = new THREE.BufferGeometry();
         geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
         const mat = new THREE.PointsMaterial({
-            size: 0.6,
+            size: 0.62,
             map: sprite,
-            vertexColors: true,
+            color: dark ? 0x8a8a8a : 0xb6b6b6,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.55,
             depthWrite: false,
             depthTest: false,
             sizeAttenuation: true,
-            blending: THREE.AdditiveBlending,
+            blending: THREE.NormalBlending,
         });
+        moteMatRef.current = mat;
         const points = new THREE.Points(geo, mat);
         scene.add(points);
 
-        // ---- Floating wireframe "crystals" — literal 3D structure with depth.
-        // Additive thin lines: a faint glowing lattice in dark mode, invisible
-        // over the light clip (keeps light theme clean). ----
+        // ---- Floating wireframe "crystals" — monochrome lattice with depth ----
         const crystalMat = new THREE.LineBasicMaterial({
-            color: 0xc4a8ff,
+            color: dark ? 0x6e6e6e : 0xc6c6c6,
             transparent: true,
-            opacity: 0.26,
-            blending: THREE.AdditiveBlending,
+            opacity: 0.3,
             depthWrite: false,
             depthTest: false,
         });
+        crystalMatRef.current = crystalMat;
         const crystalDefs = [
             { r: 1.7, x: -8.5, y: 3.4, z: -10, sx: 0.18, sy: 0.26, ph: 0.0 },
             { r: 2.6, x: 9.5, y: -2.6, z: -15, sx: -0.12, sy: 0.15, ph: 1.4 },
@@ -179,13 +181,11 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             ptr.y = lerp(ptr.y, ptr.ty, 0.04);
             scrollT.v = lerp(scrollT.v, scrollT.t, 0.05);
 
-            // Camera parallax (pointer) + a slow dolly through the field (scroll).
             camera.position.x = ptr.x * 1.4;
             camera.position.y = -ptr.y * 0.9;
             camera.position.z = 10 - scrollT.v * 9;
             camera.lookAt(0, 0, -4);
 
-            // Gentle per-mote bob so the field feels alive (cheap: y only).
             const arr = geo.attributes.position.array as Float32Array;
             for (let i = 0; i < COUNT; i++) {
                 arr[i * 3 + 1] = basePos[i * 3 + 1] + Math.sin(t * 0.4 + drift[i]) * 0.35;
@@ -194,7 +194,6 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
 
             points.rotation.z += dt * 0.008;
 
-            // Crystals: slow spin + gentle vertical drift.
             for (const c of crystals) {
                 const u = c.userData as { sx: number; sy: number; baseY: number; ph: number };
                 c.rotation.x += dt * u.sx;
@@ -207,12 +206,13 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
         raf = requestAnimationFrame(animate);
 
         return () => {
-            disposed = true;
             cancelAnimationFrame(raf);
             window.removeEventListener("pointermove", onPointer);
             window.removeEventListener("scroll", onScroll);
             window.removeEventListener("resize", onResize);
             document.removeEventListener("visibilitychange", onVisibility);
+            moteMatRef.current = null;
+            crystalMatRef.current = null;
             geo.dispose();
             mat.dispose();
             sprite.dispose();
@@ -222,7 +222,6 @@ export default function Atmosphere({ lowPower = false }: { lowPower?: boolean })
             if (renderer.domElement.parentNode === container) {
                 container.removeChild(renderer.domElement);
             }
-            void disposed;
         };
     }, [lowPower]);
 

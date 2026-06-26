@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 /**
  * Full-bleed background video driven by SECTIONS. Each section maps to a
@@ -45,6 +46,7 @@ export default function ScrollVideo({
     darkWide,
     lightPortrait,
     lightWide,
+    behindParticles = false,
 }: {
     /** Required dark portrait source — also the universal fallback. */
     darkPortrait: string;
@@ -54,6 +56,12 @@ export default function ScrollVideo({
     lightPortrait?: string;
     /** Wide light-mode source for desktop. */
     lightWide?: string;
+    /**
+     * When true, blend the clip so its uniform backdrop reveals the atmosphere
+     * motes rendered behind it (lighten over the dark clip, darken over the
+     * light clip), while the lit subject stays opaque.
+     */
+    behindParticles?: boolean;
 }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const { resolvedTheme } = useTheme();
@@ -181,7 +189,11 @@ export default function ScrollVideo({
             playsInline
             preload="auto"
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover [object-position:50%_20%] [filter:contrast(1.05)_saturate(0.96)_brightness(0.94)] lg:[object-position:50%_32%]"
+            className={cn(
+                "absolute inset-0 h-full w-full object-cover [object-position:50%_20%] [filter:contrast(1.05)_saturate(0.96)_brightness(0.94)] lg:[object-position:50%_32%]",
+                // Reveal the motes behind through the clip's uniform backdrop.
+                behindParticles && "mix-blend-darken dark:mix-blend-lighten",
+            )}
         />
     );
 }
